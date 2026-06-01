@@ -1,0 +1,7 @@
+# The emails/ folder contains real campaign packages that may include
+# customer data, segment IDs, etc. Keep them local.
+emails/
+
+# Python cache
+__pycache__/
+*.pyc
