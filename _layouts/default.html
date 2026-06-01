@@ -11,7 +11,7 @@
 <style>
   /* ============================================================================
      Halo Email Resources — default page layout
-     Header + left nav + right content. Inherits Halo UI System tokens.
+     Header + (back button + page TOC) on left + content on right.
      ============================================================================ */
 
   :root {
@@ -33,12 +33,6 @@
     --halo-yellow: #fcd62d;
     --halo-yellow-soft: #fff8d6;
     --halo-blue: #2f93f3;
-    --halo-success: #22c55e;
-    --halo-success-soft: #eaf9f0;
-    --halo-warning: #f59e0b;
-    --halo-warning-soft: #fff7df;
-    --halo-danger: #dc2626;
-    --halo-danger-soft: #fff1f1;
 
     --halo-radius-sm: 6px;
     --halo-radius-md: 8px;
@@ -68,7 +62,7 @@
   a { color: var(--halo-blue); text-decoration: none; }
   a:hover { text-decoration: underline; }
 
-  /* --- Top header (matches index.html exactly) --- */
+  /* --- Top header --- */
   .halo-header {
     position: sticky; top: 0; z-index: 30;
     border-bottom: 1px solid var(--halo-gray-200);
@@ -88,7 +82,7 @@
     font-size: 0.9375rem; font-weight: 800; letter-spacing: 0.04em;
   }
 
-  /* --- Page shell: nav + content --- */
+  /* --- Page shell: sidebar + content --- */
   .halo-page {
     width: min(1280px, calc(100% - 32px));
     margin-inline: auto;
@@ -99,8 +93,8 @@
     padding-bottom: 96px;
   }
 
-  /* --- Left nav --- */
-  .halo-nav {
+  /* --- Left sidebar (back button + TOC) --- */
+  .halo-sidebar {
     position: sticky;
     top: 88px;
     align-self: start;
@@ -108,43 +102,87 @@
     overflow-y: auto;
     padding-right: 8px;
   }
-  .halo-nav__back {
-    display: inline-flex; align-items: center; gap: 6px;
-    font-size: 0.8125rem; font-weight: 600;
-    color: var(--halo-gray-600);
-    margin-bottom: 24px;
-    transition: color var(--halo-duration-fast) var(--halo-ease-out);
-  }
-  .halo-nav__back:hover { color: var(--halo-ink); text-decoration: none; }
-  .halo-nav__back::before { content: "←"; }
 
-  .halo-nav__group { margin-bottom: 28px; }
-  .halo-nav__group-title {
-    font-size: 0.75rem; font-weight: 800;
-    letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--halo-gray-600);
-    margin: 0 0 10px 0;
+  /* Back button — pill-shaped, prominent enough to stand out from the TOC */
+  .halo-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px 10px 14px;
+    border-radius: var(--halo-radius-pill);
+    background: var(--halo-gray-100);
+    color: var(--halo-ink);
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 32px;
+    transition:
+      background var(--halo-duration-fast) var(--halo-ease-out),
+      transform var(--halo-duration-fast) var(--halo-ease-out);
   }
-  .halo-nav__list { list-style: none; margin: 0; padding: 0; }
-  .halo-nav__list li { margin: 0; }
-  .halo-nav__list a {
+  .halo-back:hover {
+    background: var(--halo-gray-200);
+    text-decoration: none;
+    color: var(--halo-ink);
+  }
+  .halo-back:hover .halo-back__arrow {
+    transform: translateX(-2px);
+  }
+  .halo-back__arrow {
+    display: inline-block;
+    font-size: 1rem;
+    line-height: 1;
+    transition: transform var(--halo-duration-fast) var(--halo-ease-out);
+  }
+
+  /* TOC */
+  .halo-toc__label {
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--halo-gray-600);
+    margin: 0 0 12px 0;
+  }
+  .halo-toc {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-left: 1px solid var(--halo-gray-200);
+  }
+  .halo-toc li { margin: 0; }
+  .halo-toc a {
     display: block;
     padding: 6px 12px;
-    border-radius: var(--halo-radius-sm);
-    font-size: 0.9375rem; font-weight: 500;
-    color: var(--halo-gray-700);
-    transition: background var(--halo-duration-fast) var(--halo-ease-out),
-                color var(--halo-duration-fast) var(--halo-ease-out);
+    margin-left: -1px;
+    border-left: 2px solid transparent;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--halo-gray-600);
+    line-height: 1.4;
+    transition:
+      color var(--halo-duration-fast) var(--halo-ease-out),
+      border-color var(--halo-duration-fast) var(--halo-ease-out);
   }
-  .halo-nav__list a:hover {
-    background: var(--halo-gray-100);
+  .halo-toc a:hover {
     color: var(--halo-ink);
     text-decoration: none;
   }
-  .halo-nav__list a.current {
-    background: var(--halo-gray-100);
+  .halo-toc a.active {
     color: var(--halo-ink);
     font-weight: 650;
+    border-left-color: var(--halo-yellow);
+  }
+  /* H3 entries indented under their parent H2 */
+  .halo-toc .toc-h3 a {
+    padding-left: 28px;
+    font-size: 0.8125rem;
+    font-weight: 400;
+  }
+  .halo-toc__empty {
+    color: var(--halo-gray-500);
+    font-size: 0.8125rem;
+    font-style: italic;
+    padding: 6px 12px;
   }
 
   /* --- Right content area --- */
@@ -193,7 +231,7 @@
   .halo-content em { font-style: italic; }
   .halo-content hr { border: 0; border-top: 1px solid var(--halo-gray-200); margin: 40px 0; }
 
-  /* --- Blockquotes (treated as callouts) --- */
+  /* --- Blockquotes (callouts) --- */
   .halo-content blockquote {
     margin: 20px 0;
     padding: 16px 20px;
@@ -258,7 +296,6 @@
   }
   .halo-content td code { font-size: 0.8125rem; }
 
-  /* --- Images --- */
   .halo-content img {
     max-width: 100%;
     height: auto;
@@ -273,13 +310,14 @@
       gap: 24px;
       padding-top: 24px;
     }
-    .halo-nav {
+    .halo-sidebar {
       position: static;
       max-height: none;
       padding: 16px;
       background: var(--halo-gray-50);
       border-radius: var(--halo-radius-md);
     }
+    .halo-back { margin-bottom: 20px; }
   }
   @media (max-width: 560px) {
     .halo-header__inner { width: calc(100% - 24px); }
@@ -302,13 +340,154 @@
 </header>
 
 <div class="halo-page">
-  {% include nav.html %}
+  <aside class="halo-sidebar">
+    <a class="halo-back" href="{{ '/' | relative_url }}">
+      <span class="halo-back__arrow" aria-hidden="true">←</span>
+      All resources
+    </a>
 
-  <main class="halo-content">
+    <p class="halo-toc__label">On this page</p>
+    <ul class="halo-toc" id="halo-toc">
+      <!-- populated by JavaScript on load -->
+    </ul>
+  </aside>
+
+  <main class="halo-content" id="halo-content">
     {% if page.eyebrow %}<p class="eyebrow">{{ page.eyebrow }}</p>{% endif %}
     {{ content }}
   </main>
 </div>
+
+<script>
+(function () {
+  // ---------- TOC builder ----------
+  // Walks the rendered content, finds every H2 and H3, injects anchor IDs
+  // (slugified from the heading text), and builds the sidebar TOC list.
+  function slugify(text) {
+    return text
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  function buildTOC() {
+    var content = document.getElementById('halo-content');
+    var toc = document.getElementById('halo-toc');
+    if (!content || !toc) return [];
+
+    var headings = content.querySelectorAll('h2, h3');
+    if (!headings.length) {
+      toc.innerHTML = '<li class="halo-toc__empty">No sections</li>';
+      return [];
+    }
+
+    var entries = [];
+    var usedSlugs = {};
+
+    headings.forEach(function (h) {
+      var text = h.textContent.trim();
+      var slug = slugify(text);
+      // Deduplicate slugs in case two headings have the same text
+      if (usedSlugs[slug]) {
+        usedSlugs[slug] += 1;
+        slug = slug + '-' + usedSlugs[slug];
+      } else {
+        usedSlugs[slug] = 1;
+      }
+      // Don't overwrite an existing id (kramdown may have added one)
+      if (!h.id) h.id = slug;
+
+      var li = document.createElement('li');
+      if (h.tagName.toLowerCase() === 'h3') li.className = 'toc-h3';
+      var a = document.createElement('a');
+      a.href = '#' + h.id;
+      a.textContent = text;
+      li.appendChild(a);
+      toc.appendChild(li);
+
+      entries.push({ id: h.id, heading: h, link: a });
+    });
+
+    return entries;
+  }
+
+  // ---------- Scroll-spy ----------
+  // Highlights the TOC entry whose heading is closest to the top of the viewport.
+  function setupScrollSpy(entries) {
+    if (!entries.length || !('IntersectionObserver' in window)) return;
+
+    // Track which headings are currently "visible" (above some threshold line)
+    var visible = new Map();
+
+    var observer = new IntersectionObserver(function (changes) {
+      changes.forEach(function (change) {
+        if (change.isIntersecting) {
+          visible.set(change.target, change.intersectionRatio);
+        } else {
+          visible.delete(change.target);
+        }
+      });
+      updateActive();
+    }, {
+      // Trigger when heading enters/leaves the top ~30% of the viewport
+      rootMargin: '-80px 0px -70% 0px',
+      threshold: 0
+    });
+
+    entries.forEach(function (e) { observer.observe(e.heading); });
+
+    function updateActive() {
+      // Clear all
+      entries.forEach(function (e) { e.link.classList.remove('active'); });
+
+      if (visible.size === 0) {
+        // Nothing in the trigger zone — find the closest one above viewport instead
+        var aboveTop = entries.filter(function (e) {
+          return e.heading.getBoundingClientRect().top < 100;
+        });
+        if (aboveTop.length) {
+          aboveTop[aboveTop.length - 1].link.classList.add('active');
+        } else if (entries[0]) {
+          // Before any heading — highlight the first
+          entries[0].link.classList.add('active');
+        }
+        return;
+      }
+
+      // Pick the topmost visible heading
+      var topMost = null;
+      var topY = Infinity;
+      visible.forEach(function (_, heading) {
+        var y = heading.getBoundingClientRect().top;
+        if (y < topY) {
+          topY = y;
+          topMost = heading;
+        }
+      });
+      if (topMost) {
+        var entry = entries.find(function (e) { return e.heading === topMost; });
+        if (entry) entry.link.classList.add('active');
+      }
+    }
+
+    // Initial highlight
+    updateActive();
+  }
+
+  // Run on DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () {
+      var entries = buildTOC();
+      setupScrollSpy(entries);
+    });
+  } else {
+    var entries = buildTOC();
+    setupScrollSpy(entries);
+  }
+})();
+</script>
 
 </body>
 </html>

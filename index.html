@@ -1,3 +1,6 @@
+---
+layout: null
+---
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,10 +18,8 @@
      ============================================================================ */
 
   :root {
-    /* Font stacks */
     --halo-font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Arial, sans-serif;
 
-    /* Brand colors */
     --halo-blue-950: #071826;
     --halo-blue-50: #f5f9fc;
     --halo-ink: var(--halo-blue-950);
@@ -30,7 +31,6 @@
     --halo-yellow: #fcd62d;
     --halo-blue: #2f93f3;
 
-    /* Semantic roles */
     --halo-color-surface-raised: var(--halo-white);
     --halo-color-surface-muted: var(--halo-gray-100);
     --halo-color-text-primary: var(--halo-ink);
@@ -39,13 +39,8 @@
     --halo-color-action-secondary: var(--halo-ink);
     --halo-color-focus: var(--halo-blue);
 
-    /* Radii */
     --halo-radius-md: 8px;
-
-    /* Type */
     --halo-type-caption: 0.75rem;
-
-    /* Motion */
     --halo-duration-fast: 140ms;
     --halo-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   }
@@ -61,13 +56,11 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* The shell — wraps header AND content for consistent gutters */
   .overview-shell {
     width: min(880px, calc(100% - 32px));
     margin-inline: auto;
   }
 
-  /* Sticky header with frosted-glass effect */
   .overview-header {
     position: sticky;
     top: 0;
@@ -99,7 +92,6 @@
     letter-spacing: 0.04em;
   }
 
-  /* Index content */
   .overview-index {
     padding: clamp(56px, 8vh, 96px) 0 clamp(64px, 10vh, 112px);
   }
@@ -179,7 +171,6 @@
     outline-offset: 2px;
   }
 
-  /* Optional descriptive subtext under each link */
   .overview-link-list a .desc {
     display: block;
     margin-top: 2px;
@@ -202,7 +193,7 @@
   <div class="overview-shell">
     <nav class="overview-nav" aria-label="Site">
       <a href="/halo-resources/" class="overview-logo" aria-label="Halo Email Resources home">
-        <img src="https://topdecileinc.github.io/halo-resources/design-libraries/assets/shared-images/halo-logo-dark.svg" alt="Halo">
+        <img src="/halo-resources/design-libraries/assets/shared-images/halo-logo-dark.svg" alt="Halo">
       </a>
       <span class="overview-brand-mark">Email Resources</span>
     </nav>
@@ -220,19 +211,19 @@
       <h2 id="grp-getting-started">Getting Started</h2>
       <ul class="overview-link-list">
         <li>
-          <a href="https://github.com/topdecileinc/halo-resources/blob/main/README.md">
+          <a href="/halo-resources/README.html">
             Developer README
             <span class="desc">How the email engine is put together and how to work in it.</span>
           </a>
         </li>
         <li>
-          <a href="https://github.com/topdecileinc/halo-resources/blob/main/prompt_email_generation.md">
+          <a href="/halo-resources/prompt_email_generation.html">
             Orchestrator (prompt_email_generation.md)
             <span class="desc">The entry point the AI reads first — defines the flow and the prefix system.</span>
           </a>
         </li>
         <li>
-          <a href="https://github.com/topdecileinc/halo-resources/blob/main/brief_sample.md">
+          <a href="/halo-resources/brief_sample.html">
             Brief template (brief_sample.md)
             <span class="desc">The blank brief copied per campaign and filled in.</span>
           </a>
@@ -244,43 +235,43 @@
       <h2 id="grp-brand-standards">Brand Standards</h2>
       <ul class="overview-link-list">
         <li>
-          <a href="https://github.com/topdecileinc/halo-resources/blob/main/brand-standards/rules_brand.md">
+          <a href="/halo-resources/brand-standards/rules_brand.html">
             Brand identity (rules_brand.md)
             <span class="desc">Brand name, site, voice, hosted logo URL.</span>
           </a>
         </li>
         <li>
-          <a href="https://github.com/topdecileinc/halo-resources/blob/main/brand-standards/rules_email_style_guide.md">
+          <a href="/halo-resources/brand-standards/rules_email_style_guide.html">
             Email style guide (rules_email_style_guide.md)
             <span class="desc">Visual standards: colors, type, layout, button variants.</span>
           </a>
         </li>
         <li>
-          <a href="https://github.com/topdecileinc/halo-resources/blob/main/brand-standards/rules_email_copy.md">
+          <a href="/halo-resources/brand-standards/rules_email_copy.html">
             Email copy rules (rules_email_copy.md)
             <span class="desc">Voice, sentence case, no em dashes.</span>
           </a>
         </li>
         <li>
-          <a href="https://github.com/topdecileinc/halo-resources/blob/main/brand-standards/rules_email_build.md">
+          <a href="/halo-resources/brand-standards/rules_email_build.html">
             Email build rules (rules_email_build.md)
             <span class="desc">HTML / code standards: tables, MSO, inline CSS, class conventions.</span>
           </a>
         </li>
         <li>
-          <a href="https://github.com/topdecileinc/halo-resources/blob/main/brand-standards/rules_email_footer.md">
+          <a href="/halo-resources/brand-standards/rules_email_footer.html">
             Footer rules (rules_email_footer.md)
             <span class="desc">Stable footer boilerplate and social icon URLs.</span>
           </a>
         </li>
         <li>
-          <a href="https://github.com/topdecileinc/halo-resources/blob/main/brand-standards/rules_segment_definition.md">
+          <a href="/halo-resources/brand-standards/rules_segment_definition.html">
             Segment definitions (rules_segment_definition.md)
             <span class="desc">Audience segments and how to write for each.</span>
           </a>
         </li>
         <li>
-          <a href="https://github.com/topdecileinc/halo-resources/blob/main/brand-standards/rules_braze_send.md">
+          <a href="/halo-resources/brand-standards/rules_braze_send.html">
             Braze send rules (rules_braze_send.md)
             <span class="desc">/messages/send schema and safety constraints.</span>
           </a>
@@ -294,13 +285,13 @@
         <li>
           <a href="https://github.com/topdecileinc/halo-resources/tree/main/design-libraries/sections">
             Sections
-            <span class="desc">Composed blocks: header, footer, and future hero / feature-row / offer sections.</span>
+            <span class="desc">Composed blocks: header, footer, and future hero / feature-row / offer sections. View the HTML source on GitHub.</span>
           </a>
         </li>
         <li>
           <a href="https://github.com/topdecileinc/halo-resources/tree/main/design-libraries/components">
             Components
-            <span class="desc">Primitives used inside sections: the bulletproof button, and more to come.</span>
+            <span class="desc">Primitives used inside sections: the bulletproof button, and more to come. View the HTML source on GitHub.</span>
           </a>
         </li>
         <li>
@@ -324,7 +315,7 @@
         <li>
           <a href="https://github.com/topdecileinc/halo-resources/tree/main/email-examples">
             Email examples
-            <span class="desc">Real, shipped emails used as tone and structure reference.</span>
+            <span class="desc">Real, shipped emails used as tone and structure reference. View the HTML source on GitHub.</span>
           </a>
         </li>
       </ul>
@@ -334,15 +325,15 @@
       <h2 id="grp-validation">Validation</h2>
       <ul class="overview-link-list">
         <li>
-          <a href="https://github.com/topdecileinc/halo-resources/tree/main/test">
-            Test harness
-            <span class="desc">Zero-dependency Python validator that catches mechanical and factual errors before any email goes out.</span>
+          <a href="/halo-resources/test/README.html">
+            Validation documentation
+            <span class="desc">What each validator module does, with check IDs and limits.</span>
           </a>
         </li>
         <li>
-          <a href="https://github.com/topdecileinc/halo-resources/blob/main/test/README.md">
-            Validation documentation
-            <span class="desc">What each validator module does, with check IDs and limits.</span>
+          <a href="https://github.com/topdecileinc/halo-resources/tree/main/test">
+            Test harness source
+            <span class="desc">Zero-dependency Python validator code. View on GitHub.</span>
           </a>
         </li>
       </ul>
