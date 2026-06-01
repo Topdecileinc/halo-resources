@@ -1,3 +1,5 @@
+---
+---
 # Email Build Rules
 
 > Reference module (prefix: `rules_`): the technical conventions for coding a marketing

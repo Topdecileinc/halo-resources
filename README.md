@@ -1,3 +1,5 @@
+---
+---
 # Halo Email Resources — Developer README
 
 This repository is a **brand-neutral email-building engine**. You give a model these

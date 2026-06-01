@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ page.title | default: site.title }}</title>
+{% if page.description %}<meta name="description" content="{{ page.description }}">{% endif %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================================
+     Halo Email Resources — default page layout
+     Header + left nav + right content. Inherits Halo UI System tokens.
+     ============================================================================ */
+
+  :root {
+    --halo-font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Arial, sans-serif;
+    --halo-font-mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+
+    --halo-blue-950: #071826;
+    --halo-blue-50: #f5f9fc;
+    --halo-ink: var(--halo-blue-950);
+    --halo-gray-700: #354c5c;
+    --halo-gray-600: #526777;
+    --halo-gray-500: #738391;
+    --halo-gray-400: #a7b3bd;
+    --halo-gray-300: #d3dce3;
+    --halo-gray-200: #e2e9ee;
+    --halo-gray-100: #f2f6f8;
+    --halo-gray-50: #fbfcfd;
+    --halo-white: #ffffff;
+    --halo-yellow: #fcd62d;
+    --halo-yellow-soft: #fff8d6;
+    --halo-blue: #2f93f3;
+    --halo-success: #22c55e;
+    --halo-success-soft: #eaf9f0;
+    --halo-warning: #f59e0b;
+    --halo-warning-soft: #fff7df;
+    --halo-danger: #dc2626;
+    --halo-danger-soft: #fff1f1;
+
+    --halo-radius-sm: 6px;
+    --halo-radius-md: 8px;
+    --halo-radius-lg: 12px;
+    --halo-radius-pill: 999px;
+
+    --halo-duration-fast: 140ms;
+    --halo-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+    --nav-width: 260px;
+    --content-max: 760px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; scroll-padding-top: 88px; }
+  body {
+    margin: 0;
+    background: var(--halo-white);
+    color: var(--halo-ink);
+    font-family: var(--halo-font-sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  a { color: var(--halo-blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* --- Top header (matches index.html exactly) --- */
+  .halo-header {
+    position: sticky; top: 0; z-index: 30;
+    border-bottom: 1px solid var(--halo-gray-200);
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: saturate(180%) blur(18px);
+    -webkit-backdrop-filter: saturate(180%) blur(18px);
+  }
+  .halo-header__inner {
+    width: min(1280px, calc(100% - 32px));
+    margin-inline: auto;
+    min-height: 64px;
+    display: flex; justify-content: space-between; align-items: center; gap: 24px;
+  }
+  .halo-header__logo img { width: 96px; height: auto; display: block; }
+  .halo-header__tag {
+    color: var(--halo-gray-600);
+    font-size: 0.9375rem; font-weight: 800; letter-spacing: 0.04em;
+  }
+
+  /* --- Page shell: nav + content --- */
+  .halo-page {
+    width: min(1280px, calc(100% - 32px));
+    margin-inline: auto;
+    display: grid;
+    grid-template-columns: var(--nav-width) minmax(0, 1fr);
+    gap: 48px;
+    padding-top: 32px;
+    padding-bottom: 96px;
+  }
+
+  /* --- Left nav --- */
+  .halo-nav {
+    position: sticky;
+    top: 88px;
+    align-self: start;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+    padding-right: 8px;
+  }
+  .halo-nav__back {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 0.8125rem; font-weight: 600;
+    color: var(--halo-gray-600);
+    margin-bottom: 24px;
+    transition: color var(--halo-duration-fast) var(--halo-ease-out);
+  }
+  .halo-nav__back:hover { color: var(--halo-ink); text-decoration: none; }
+  .halo-nav__back::before { content: "←"; }
+
+  .halo-nav__group { margin-bottom: 28px; }
+  .halo-nav__group-title {
+    font-size: 0.75rem; font-weight: 800;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--halo-gray-600);
+    margin: 0 0 10px 0;
+  }
+  .halo-nav__list { list-style: none; margin: 0; padding: 0; }
+  .halo-nav__list li { margin: 0; }
+  .halo-nav__list a {
+    display: block;
+    padding: 6px 12px;
+    border-radius: var(--halo-radius-sm);
+    font-size: 0.9375rem; font-weight: 500;
+    color: var(--halo-gray-700);
+    transition: background var(--halo-duration-fast) var(--halo-ease-out),
+                color var(--halo-duration-fast) var(--halo-ease-out);
+  }
+  .halo-nav__list a:hover {
+    background: var(--halo-gray-100);
+    color: var(--halo-ink);
+    text-decoration: none;
+  }
+  .halo-nav__list a.current {
+    background: var(--halo-gray-100);
+    color: var(--halo-ink);
+    font-weight: 650;
+  }
+
+  /* --- Right content area --- */
+  .halo-content {
+    max-width: var(--content-max);
+    min-width: 0;
+  }
+  .halo-content > .eyebrow {
+    font-size: 0.75rem; font-weight: 800;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--halo-gray-600);
+    margin: 0 0 12px 0;
+  }
+
+  /* --- Typography for rendered markdown --- */
+  .halo-content h1 {
+    font-size: clamp(2.25rem, 5vw, 3rem);
+    font-weight: 650; line-height: 1.05; letter-spacing: -0.01em;
+    margin: 0 0 16px 0;
+    text-wrap: balance;
+  }
+  .halo-content h1 + p { font-size: 1.0625rem; color: var(--halo-gray-700); margin-top: 0; }
+  .halo-content h2 {
+    font-size: 1.625rem; font-weight: 650; line-height: 1.2;
+    margin: 56px 0 16px 0;
+    padding-top: 28px;
+    border-top: 1px solid var(--halo-gray-200);
+    scroll-margin-top: 88px;
+  }
+  .halo-content h2:first-of-type { border-top: 0; padding-top: 0; margin-top: 40px; }
+  .halo-content h3 {
+    font-size: 1.25rem; font-weight: 650; line-height: 1.3;
+    margin: 36px 0 12px 0;
+    scroll-margin-top: 88px;
+  }
+  .halo-content h4 {
+    font-size: 1.0625rem; font-weight: 650;
+    margin: 24px 0 8px 0;
+    color: var(--halo-gray-700);
+  }
+  .halo-content p, .halo-content li { font-size: 1rem; line-height: 1.65; }
+  .halo-content p { margin: 0 0 16px 0; }
+  .halo-content ul, .halo-content ol { margin: 0 0 16px 0; padding-left: 24px; }
+  .halo-content li { margin: 6px 0; }
+  .halo-content strong { font-weight: 650; color: var(--halo-ink); }
+  .halo-content em { font-style: italic; }
+  .halo-content hr { border: 0; border-top: 1px solid var(--halo-gray-200); margin: 40px 0; }
+
+  /* --- Blockquotes (treated as callouts) --- */
+  .halo-content blockquote {
+    margin: 20px 0;
+    padding: 16px 20px;
+    border-left: 3px solid var(--halo-yellow);
+    background: var(--halo-yellow-soft);
+    border-radius: 0 var(--halo-radius-md) var(--halo-radius-md) 0;
+    color: var(--halo-ink);
+  }
+  .halo-content blockquote > p:last-child { margin-bottom: 0; }
+  .halo-content blockquote strong:first-child { color: var(--halo-ink); }
+
+  /* --- Inline code + code blocks --- */
+  .halo-content code {
+    font-family: var(--halo-font-mono);
+    font-size: 0.875em;
+    padding: 0.15em 0.4em;
+    background: var(--halo-gray-100);
+    border-radius: 4px;
+    color: var(--halo-ink);
+  }
+  .halo-content pre {
+    margin: 20px 0;
+    padding: 16px 20px;
+    background: var(--halo-ink);
+    color: #e8eef3;
+    border-radius: var(--halo-radius-md);
+    overflow-x: auto;
+    font-size: 0.875rem;
+    line-height: 1.55;
+  }
+  .halo-content pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    font-size: inherit;
+  }
+
+  /* --- Tables --- */
+  .halo-content table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 20px 0;
+    font-size: 0.9375rem;
+    border: 1px solid var(--halo-gray-200);
+    border-radius: var(--halo-radius-md);
+    overflow: hidden;
+  }
+  .halo-content th, .halo-content td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--halo-gray-200);
+  }
+  .halo-content tr:last-child td { border-bottom: 0; }
+  .halo-content th {
+    background: var(--halo-gray-50);
+    font-weight: 650;
+    color: var(--halo-gray-700);
+    font-size: 0.8125rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  .halo-content td code { font-size: 0.8125rem; }
+
+  /* --- Images --- */
+  .halo-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--halo-radius-md);
+    margin: 16px 0;
+  }
+
+  /* --- Mobile --- */
+  @media (max-width: 900px) {
+    .halo-page {
+      grid-template-columns: 1fr;
+      gap: 24px;
+      padding-top: 24px;
+    }
+    .halo-nav {
+      position: static;
+      max-height: none;
+      padding: 16px;
+      background: var(--halo-gray-50);
+      border-radius: var(--halo-radius-md);
+    }
+  }
+  @media (max-width: 560px) {
+    .halo-header__inner { width: calc(100% - 24px); }
+    .halo-page { width: calc(100% - 24px); padding-bottom: 64px; }
+    .halo-content h1 { font-size: 2rem; }
+    .halo-content h2 { font-size: 1.375rem; margin-top: 40px; }
+    .halo-content pre { padding: 12px 14px; font-size: 0.8125rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="halo-header">
+  <div class="halo-header__inner">
+    <a href="{{ '/' | relative_url }}" class="halo-header__logo" aria-label="Halo Email Resources home">
+      <img src="{{ '/design-libraries/assets/shared-images/halo-logo-dark.svg' | relative_url }}" alt="Halo">
+    </a>
+    <span class="halo-header__tag">Email Resources</span>
+  </div>
+</header>
+
+<div class="halo-page">
+  {% include nav.html %}
+
+  <main class="halo-content">
+    {% if page.eyebrow %}<p class="eyebrow">{{ page.eyebrow }}</p>{% endif %}
+    {{ content }}
+  </main>
+</div>
+
+</body>
+</html>

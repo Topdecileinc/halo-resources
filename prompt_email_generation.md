@@ -1,3 +1,5 @@
+---
+---
 # Email Generation — Main Prompt
 
 > **What this is:** The single entry point and orchestrator for generating a marketing

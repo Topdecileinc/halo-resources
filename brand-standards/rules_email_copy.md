@@ -1,3 +1,5 @@
+---
+---
 # Email Copy Rules
 
 > Binding reference (prefix: `rules_`): conventions for the **words** in an email — voice,

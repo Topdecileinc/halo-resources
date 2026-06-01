@@ -1,3 +1,5 @@
+---
+---
 # Email Footer & Legal
 
 > Binding reference (prefix: `rules_`): the standing footer, legal line, and unsubscribe

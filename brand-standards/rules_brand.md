@@ -1,3 +1,5 @@
+---
+---
 # Brand Identity
 
 > Binding reference (prefix: `rules_`): the standing brand identity for this setup. The

@@ -1,3 +1,5 @@
+---
+---
 # Braze Test Send via `/messages/send`
 
 > Binding reference (prefix: `rules_`): the request schema for sending a **test** email

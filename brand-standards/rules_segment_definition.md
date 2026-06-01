@@ -1,3 +1,5 @@
+---
+---
 # Segment Definitions
 
 > Binding reference (prefix: `rules_`): the audience segments this program emails. A brief

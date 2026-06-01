@@ -1,3 +1,5 @@
+---
+---
 # Email Brief — [Campaign Name]
 
 > Copy this file for each new email, rename it (e.g. `brief_mothers_day_2026.md`), and

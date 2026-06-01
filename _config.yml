@@ -3,12 +3,30 @@ description: Brand-neutral email-building engine — resources, rules, and valid
 url: https://topdecileinc.github.io
 baseurl: /halo-resources
 
-# Use the Cayman theme as a baseline for any .md files that don't have their own layout.
-# Our custom index.html uses layout: null so it renders standalone without theme wrapping.
-theme: jekyll-theme-cayman
+# Apply the default layout to every markdown file automatically.
+# No need to add `layout: default` to each file's front matter.
+defaults:
+  - scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: "default"
 
-# Exclude files from being processed/published
+# Exclude code, archives, and the test folder from being published as pages.
 exclude:
   - test/
   - "*.zip"
   - "*.py"
+  - "*.pyc"
+  - "__pycache__"
+  - ".gitignore"
+
+# Tell Jekyll to also process README files into pages.
+include:
+  - README.md
+
+# Enable kramdown features for nicer markdown rendering.
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge

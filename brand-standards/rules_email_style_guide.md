@@ -1,3 +1,5 @@
+---
+---
 # Halo Email Style Guide
 
 > Source: Halo Email Design System (Figma), "Style Guide" frame. Version dated **April 2026**.
