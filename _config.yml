@@ -1,0 +1,14 @@
+title: Halo Email Resources
+description: Brand-neutral email-building engine — resources, rules, and validation.
+url: https://topdecileinc.github.io
+baseurl: /halo-resources
+
+# Use the Cayman theme as a baseline for any .md files that don't have their own layout.
+# Our custom index.html uses layout: null so it renders standalone without theme wrapping.
+theme: jekyll-theme-cayman
+
+# Exclude files from being processed/published
+exclude:
+  - test/
+  - "*.zip"
+  - "*.py"
