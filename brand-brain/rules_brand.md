@@ -13,7 +13,7 @@
 
 - **Brand name:** Halo Collar (use "Halo Collar"; "Halo" is acceptable as shorthand once context is established).
 - **Brand site / default CTA destination:** https://www.halocollar.com/
-- **Logo asset:** hosted at `https://braze-images.com/appboy/communication/assets/image_assets/images/6408dc0aee82fd0a9a02e8ca/original.png?1678302218` (the email links to this URL directly). Reference copy: `img_header.webp` in `design-libraries/assets/shared-images/`. Logo treatment per the style guide's Logos section.
+- **Logo asset:** hosted at `https://braze-images.com/appboy/communication/assets/image_assets/images/6408dc0aee82fd0a9a02e8ca/original.png?1678302218` (the email links to this URL directly). Reference copy: `img_header.webp` in `email-design-system/assets/shared-images/`. Logo treatment per the style guide's Logos section.
 
 ## Voice (always)
 

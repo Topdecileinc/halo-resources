@@ -33,7 +33,7 @@ Jekyll convention and is required for them to be picked up.
 
 After the rebuild, visit any markdown file's URL on your site. For example:
 - `https://topdecileinc.github.io/halo-resources/README.html`
-- `https://topdecileinc.github.io/halo-resources/brand-standards/rules_brand.html`
+- `https://topdecileinc.github.io/halo-resources/brand-brain/rules_brand.html`
 
 Note that GitHub Pages serves `.md` files as `.html` URLs. The `.md` extension
 in your repo, the `.html` extension on the live site.

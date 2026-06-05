@@ -20,7 +20,7 @@
 ## Social icons (hosted)
 
 The footer links these hosted icon URLs directly. Reference copies live in
-`design-libraries/assets/social-icons/` (`social_*.webp`) for preview, but the email uses
+`email-design-system/assets/social-icons/` (`social_*.webp`) for preview, but the email uses
 the hosted URLs below:
 
 | Icon | Hosted URL |

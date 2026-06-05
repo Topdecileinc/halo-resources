@@ -73,21 +73,22 @@ repo grows.
 halo-resources/
 ├── prompt_email_generation.md          ← this file (entry point / orchestrator)
 ├── brief_sample.md                     ← copy per campaign → brief_<name>.md
-├── brand-standards/
-│   ├── rules_brand.md                  ← brand identity (name, site, voice)
-│   ├── rules_segment_definition.md     ← audience segment definitions
+├── brand-brain/
+│   └── rules_brand.md                  ← brand identity (name, site, voice)
+├── email-design-system/
 │   ├── rules_email_style_guide.md      ← visual design standards
 │   ├── rules_email_copy.md             ← copy/voice + punctuation rules
 │   ├── rules_email_build.md            ← HTML/code standards
 │   ├── rules_email_footer.md           ← stable footer/legal boilerplate
-│   └── rules_braze_send.md             ← Braze /messages/send schema + safety
-├── design-libraries/
-│   ├── sections/                      ← section_*.html (header, footer, ...)
-│   ├── components/                    ← component_*.html (button, ...)
-│   ├── templates/                     ← template_*.html (when built)
+│   ├── sections/                       ← section_*.html (header, footer, ...)
+│   ├── components/                     ← component_*.html (button, ...)
+│   ├── templates/                      ← template_*.html (when built)
 │   └── assets/
-│       ├── shared-images/             ← img_*.webp
-│       └── social-icons/              ← social_*.webp
+│       ├── shared-images/              ← img_*.webp
+│       └── social-icons/               ← social_*.webp
+├── braze-deployment/
+│   ├── rules_segment_definition.md     ← audience segment definitions
+│   └── rules_braze_send.md             ← Braze /messages/send schema + safety
 └── email-examples/                     ← sample_*.html
 ```
 

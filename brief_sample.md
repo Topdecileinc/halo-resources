@@ -30,7 +30,7 @@
 |---|---|
 | Target segment | (which segment this email is for — see `rules_segment_definition.md`) |
 
-> Segments are defined in `brand-standards/rules_segment_definition.md`. The chosen segment
+> Segments are defined in `braze-deployment/rules_segment_definition.md`. The chosen segment
 > shapes what the email is about, its tone, and its offer emphasis. Name the segment here;
 > the definition drives the rest.
 
@@ -114,7 +114,7 @@ CTA** — a blank CTA renders nothing.
 | Notes | (anything specific to this send — leave blank if none) |
 
 > Footer, legal line, and unsubscribe text are **not** set here — they're the same on
-> every send and live in `brand-standards/rules_email_footer.md`. Only note an exception
+> every send and live in `email-design-system/rules_email_footer.md`. Only note an exception
 > in "Notes for the builder" if this specific email needs different footer/legal text.
 
 ## 9. Sender (for the Braze send)

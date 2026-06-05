@@ -55,10 +55,10 @@ recipient's inbox. There is no local `assets/` swap step anymore.
 
 ## Sections and components
 
-Build emails from two kinds of reusable HTML in `design-libraries/`:
+Build emails from two kinds of reusable HTML in `email-design-system/`:
 
-- **Sections** (`design-libraries/sections/`) — composed blocks that occupy a vertical slice of the email. These are what brief §7 names.
-- **Components** (`design-libraries/components/`) — primitives used *inside* sections (button, card, etc.). Brief §7 does NOT name these directly.
+- **Sections** (`email-design-system/sections/`) — composed blocks that occupy a vertical slice of the email. These are what brief §7 names.
+- **Components** (`email-design-system/components/`) — primitives used *inside* sections (button, card, etc.). Brief §7 does NOT name these directly.
 
 Both are partial HTML — table rows meant to drop **inside** the 600px container table, in order.
 

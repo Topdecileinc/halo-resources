@@ -118,7 +118,7 @@ inbox:
 
 You do not need to upload brand assets into the project resources for them to appear in
 emails; the hosted URLs handle that. (Reference copies of the assets still live in the repo
-under `design-libraries/assets/` for preview and design reference.)
+under `email-design-system/assets/` for preview and design reference.)
 
 ### 4. Run an email (per-campaign workflow)
 
@@ -134,7 +134,7 @@ Once setup is done, producing an email is repeatable:
 
 This sends an immediate test email through Braze's `/messages/send` endpoint. It targets
 a **designated test segment** in a test/non-production Braze workspace — never production.
-The schema and safety constraints are documented in `brand-standards/rules_braze_send.md`.
+The schema and safety constraints are documented in `braze-deployment/rules_braze_send.md`.
 
 **One-time setup — set your env vars** (do this once per shell session, or add to your
 `~/.zshrc` / `~/.bashrc` to persist):
@@ -211,21 +211,22 @@ structure. The brief wins on what this specific send says. The orchestrator only
 halo-resources/
 ├── prompt_email_generation.md          ← entry point / orchestrator (the ONE prompt_)
 ├── brief_sample.md                     ← copy per campaign → brief_<name>.md
-├── brand-standards/
-│   ├── rules_brand.md                  ← brand identity (name, site, voice)
-│   ├── rules_segment_definition.md     ← audience segment definitions
+├── brand-brain/
+│   └── rules_brand.md                  ← brand identity (name, site, voice)
+├── email-design-system/
 │   ├── rules_email_style_guide.md      ← visual standards (from Figma design system)
 │   ├── rules_email_copy.md             ← copy/voice + punctuation rules
 │   ├── rules_email_build.md            ← HTML / code standards
 │   ├── rules_email_footer.md           ← stable footer/legal boilerplate
-│   └── rules_braze_send.md             ← Braze /messages/send schema + safety
-├── design-libraries/
 │   ├── sections/                       ← section_*.html (header, footer, ...)
 │   ├── components/                     ← component_*.html (button, ...)
 │   ├── templates/                      ← template_*.html   (to be built)
 │   └── assets/
 │       ├── shared-images/              ← img_*.webp
 │       └── social-icons/               ← social_*.webp
+├── braze-deployment/
+│   ├── rules_segment_definition.md     ← audience segment definitions
+│   └── rules_braze_send.md             ← Braze /messages/send schema + safety
 ├── email-examples/                     ← sample_*.html
 ├── test/                               ← validation harness (NOT synced; see "Testing" below)
 │   ├── validate.py                     ← Python 3 entry point
@@ -271,7 +272,7 @@ README). It's tooling for your local runner, not source material for the engine.
 
 - **JSON send body** — schema, required fields, UUID formats, the chat-mask leak (`[email protected]`), forbidden fields (`audience`, `campaign_id`, etc.), `broadcast: true` for segment sends.
 - **HTML hygiene** — well-formedness, em-dash detection, `<img>` attribute completeness, absolute URL enforcement, no `display:flex`/`grid`, table-based structure, MSO conditionals, web-safe font fallback.
-- **Brand fidelity** — reads `brand-standards/*.md` at runtime; verifies the footer legal line, unsubscribe link, social icon URLs, and brand logo URL actually appear in the HTML.
+- **Brand fidelity** — reads the `rules_` files (`brand-brain/`, `email-design-system/`, `braze-deployment/`) at runtime; verifies the footer legal line, unsubscribe link, social icon URLs, and brand logo URL actually appear in the HTML.
 - **Brief reconciliation** — confirms the JSON's `app_id`, `from`, and `segment_id` match what the brief said; verifies pricing math reconciles; confirms brief prices and headline appear in the HTML. This is the "not making things up" layer.
 - **W3C HTML validation (optional)** — disabled by default; when enabled, uses W3C's free web service at validator.w3.org/nu (no install needed) with email-specific exceptions filtered out.
 
@@ -319,7 +320,7 @@ lands. Human review still required.
 The whole point of the design is that **you rarely touch the orchestrator.** To add
 capability, drop in a correctly-prefixed file:
 
-- **New standard** (e.g. copy/voice rules, or image-generation rules if that ever returns) → add a `rules_` file in `brand-standards/`. The flow already says "read all `rules_` files."
+- **New standard** (e.g. copy/voice rules, or image-generation rules if that ever returns) → add a `rules_` file in the matching layer folder (`brand-brain/`, `email-design-system/`, or `braze-deployment/`). The flow already says "read all `rules_` files."
 - **New section** (composed block like hero, feature row) → add a `section_*.html` file. The flow already assembles from `section_*.html`.
 - **New component** (primitive like button, card, used inside sections) → add a `component_*.html` file.
 - **New email shape** → add a `template_` file. The flow already starts from `template_`.
@@ -334,7 +335,7 @@ register a new file.
 - Match the prefix to the role (see the table above).
 - Lowercase, underscores, no spaces or special characters.
 - Keep each `rules_` file scoped to **one domain** (build, style, copy…). Avoid a catch-all `rules_everything.md`.
-- Put binding standards in `brand-standards/`. If something is reference-but-not-binding, it isn't a `rules_` file — give it its own prefix and home.
+- Put binding standards in the matching layer folder (`brand-brain/`, `email-design-system/`, `braze-deployment/`). If something is reference-but-not-binding, it isn't a `rules_` file — give it its own prefix and home.
 
 ---
 
@@ -344,18 +345,18 @@ register a new file.
 |---|---|
 | Role + "start here" handoff | Initial prompt (tool settings, not this repo) |
 | Flow, prefix system, precedence | `prompt_email_generation.md` |
-| Brand identity (name, site, voice) | `brand-standards/rules_brand.md` |
-| Audience segment definitions | `brand-standards/rules_segment_definition.md` |
-| Colors, type, buttons, logos | `brand-standards/rules_email_style_guide.md` |
-| HTML structure, CSS, Outlook, image markup, checklist | `brand-standards/rules_email_build.md` |
-| Footer, legal line, unsubscribe text (stable across sends) | `brand-standards/rules_email_footer.md` |
-| Braze `/messages/send` schema + safety constraints | `brand-standards/rules_braze_send.md` |
+| Brand identity (name, site, voice) | `brand-brain/rules_brand.md` |
+| Audience segment definitions | `braze-deployment/rules_segment_definition.md` |
+| Colors, type, buttons, logos | `email-design-system/rules_email_style_guide.md` |
+| HTML structure, CSS, Outlook, image markup, checklist | `email-design-system/rules_email_build.md` |
+| Footer, legal line, unsubscribe text (stable across sends) | `email-design-system/rules_email_footer.md` |
+| Braze `/messages/send` schema + safety constraints | `braze-deployment/rules_braze_send.md` |
 | Product, price, copy, CTA, hero image (per campaign) | the active `brief_` file |
-| Composed blocks (header, footer, hero, feature row, ...) | `design-libraries/sections/` |
-| Reusable primitives (button, card, ...) used inside sections | `design-libraries/components/` |
-| Email skeletons | `design-libraries/templates/` |
+| Composed blocks (header, footer, hero, feature row, ...) | `email-design-system/sections/` |
+| Reusable primitives (button, card, ...) used inside sections | `email-design-system/components/` |
+| Email skeletons | `email-design-system/templates/` |
 | Tone / pattern reference | `email-examples/` |
-| Logo, icons | `design-libraries/assets/` |
+| Logo, icons | `email-design-system/assets/` |
 | Pre-send validation (JSON, HTML, brief reconciliation, optional W3C) | `test/validate.py` (config in `test/config.ini`) |
 
 ---
@@ -379,7 +380,7 @@ provide the hero image, and attach it to the chat.
 The email's angle is driven by **which segment it targets**. Name the segment in the brief;
 its definition drives the message, tone, and offer emphasis.
 
-> Segment definitions live in `brand-standards/rules_segment_definition.md` — that's the
+> Segment definitions live in `braze-deployment/rules_segment_definition.md` — that's the
 > source of truth (and it's a synced `rules_` file, so the model reads it at build time).
 > Add or refine segments there, not here. Example: **Acquisition** = people we're targeting
 > to buy the product but who don't own one yet → email emphasizes core value, trust, and a
@@ -470,7 +471,7 @@ a row of imagery, or a structured grouping. Sections can be built from primitive
 (`component_*.html` files like the button), but they are not the same thing as
 components. **Brief §7 names sections, not components.**
 
-The source of truth for what sections exist is **`design-libraries/sections/`** — every
+The source of truth for what sections exist is **`email-design-system/sections/`** — every
 `section_*.html` file in that folder is a recognized section name.
 
 ### Currently formalized
@@ -493,13 +494,13 @@ the sample patterns and the rules when you name them in §7. Promote any of them
 ### How the system grows
 
 When a section pattern stabilizes across multiple campaigns, promote it to a
-`section_*.html` file in `design-libraries/sections/`. The vocabulary above expands
+`section_*.html` file in `email-design-system/sections/`. The vocabulary above expands
 automatically — there's no separate list to maintain. If you're describing something
 that doesn't fit any pattern here, describe it in your own words and add detail in §8
 (Notes for the builder).
 
 > **Components ≠ sections.** Primitives like the button live in
-> `design-libraries/components/` and are used *inside* sections. Don't name a component
+> `email-design-system/components/` and are used *inside* sections. Don't name a component
 > in §7 — name a section.
 
 ---
