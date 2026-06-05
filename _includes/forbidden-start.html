@@ -1,0 +1,13 @@
+{%- comment -%}
+  Forbidden box. Red-bordered list of things to never do.
+
+  Usage:
+    {% include forbidden-start.html title="Never do this" %}
+    - Italics for emphasis
+    - Border-radius outside the allowed values
+    {% include forbidden-end.html %}
+
+  The list items between are processed by markdown.
+{%- endcomment -%}
+<div class="halo-forbidden">
+  <p class="halo-forbidden__title">{{ include.title | default: "Forbidden" }}</p>

@@ -10,13 +10,13 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   /* ============================================================================
-     Halo Email Resources — default page layout
-     Header + (back button + page TOC) on left + content on right.
+     Halo Email Resources — default layout + design system primitives
      ============================================================================ */
 
   :root {
     --halo-font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Arial, sans-serif;
     --halo-font-mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+    --halo-font-live: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
     --halo-blue-950: #071826;
     --halo-blue-50: #f5f9fc;
@@ -33,21 +33,33 @@
     --halo-yellow: #fcd62d;
     --halo-yellow-soft: #fff8d6;
     --halo-blue: #2f93f3;
+    --halo-blue-link: #1d6fc0;
+    --halo-blue-soft: #eaf4fe;
+    --halo-success: #22c55e;
+    --halo-success-soft: #dcf1e2;
+    --halo-warning: #f59e0b;
+    --halo-warning-soft: #ffe6d2;
+    --halo-danger: #dc2626;
+    --halo-danger-soft: #fbe0e0;
+    --halo-membership-soft: #edf7ff;
 
     --halo-radius-sm: 6px;
     --halo-radius-md: 8px;
     --halo-radius-lg: 12px;
+    --halo-radius-xl: 16px;
     --halo-radius-pill: 999px;
+
+    --halo-shadow-card: 0 1px 2px rgba(7, 24, 38, 0.04), 0 1px 4px rgba(7, 24, 38, 0.02);
+    --halo-shadow-raised: 0 4px 14px rgba(7, 24, 38, 0.06), 0 1px 2px rgba(7, 24, 38, 0.04);
 
     --halo-duration-fast: 140ms;
     --halo-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
     --nav-width: 260px;
-    --content-max: 760px;
+    --content-max: 960px;
   }
 
   *, *::before, *::after { box-sizing: border-box; }
-
   html { scroll-behavior: smooth; scroll-padding-top: 88px; }
   body {
     margin: 0;
@@ -62,7 +74,7 @@
   a { color: var(--halo-blue); text-decoration: none; }
   a:hover { text-decoration: underline; }
 
-  /* --- Top header --- */
+  /* --- Header --- */
   .halo-header {
     position: sticky; top: 0; z-index: 30;
     border-bottom: 1px solid var(--halo-gray-200);
@@ -77,12 +89,9 @@
     display: flex; justify-content: space-between; align-items: center; gap: 24px;
   }
   .halo-header__logo img { width: 96px; height: auto; display: block; }
-  .halo-header__tag {
-    color: var(--halo-gray-600);
-    font-size: 0.9375rem; font-weight: 800; letter-spacing: 0.04em;
-  }
+  .halo-header__tag { color: var(--halo-gray-600); font-size: 0.9375rem; font-weight: 800; letter-spacing: 0.04em; }
 
-  /* --- Page shell: sidebar + content --- */
+  /* --- Page shell --- */
   .halo-page {
     width: min(1280px, calc(100% - 32px));
     margin-inline: auto;
@@ -93,238 +102,357 @@
     padding-bottom: 96px;
   }
 
-  /* --- Left sidebar (back button + TOC) --- */
+  /* --- Sidebar (back + TOC) --- */
   .halo-sidebar {
-    position: sticky;
-    top: 88px;
-    align-self: start;
-    max-height: calc(100vh - 100px);
-    overflow-y: auto;
-    padding-right: 8px;
+    position: sticky; top: 88px; align-self: start;
+    max-height: calc(100vh - 100px); overflow-y: auto; padding-right: 8px;
   }
-
-  /* Back button — pill-shaped, prominent enough to stand out from the TOC */
   .halo-back {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 16px 10px 14px;
-    border-radius: var(--halo-radius-pill);
-    background: var(--halo-gray-100);
-    color: var(--halo-ink);
-    font-size: 0.875rem;
-    font-weight: 600;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 16px 10px 14px; border-radius: var(--halo-radius-pill);
+    background: var(--halo-gray-100); color: var(--halo-ink);
+    font-size: 0.875rem; font-weight: 600;
     margin-bottom: 32px;
-    transition:
-      background var(--halo-duration-fast) var(--halo-ease-out),
-      transform var(--halo-duration-fast) var(--halo-ease-out);
+    transition: background var(--halo-duration-fast) var(--halo-ease-out);
   }
-  .halo-back:hover {
-    background: var(--halo-gray-200);
-    text-decoration: none;
-    color: var(--halo-ink);
-  }
-  .halo-back:hover .halo-back__arrow {
-    transform: translateX(-2px);
-  }
-  .halo-back__arrow {
-    display: inline-block;
-    font-size: 1rem;
-    line-height: 1;
-    transition: transform var(--halo-duration-fast) var(--halo-ease-out);
-  }
+  .halo-back:hover { background: var(--halo-gray-200); text-decoration: none; color: var(--halo-ink); }
+  .halo-back:hover .halo-back__arrow { transform: translateX(-2px); }
+  .halo-back__arrow { display: inline-block; font-size: 1rem; line-height: 1; transition: transform var(--halo-duration-fast) var(--halo-ease-out); }
 
-  /* TOC */
-  .halo-toc__label {
-    font-size: 0.75rem;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--halo-gray-600);
-    margin: 0 0 12px 0;
-  }
-  .halo-toc {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    border-left: 1px solid var(--halo-gray-200);
-  }
+  .halo-toc__label { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--halo-gray-600); margin: 0 0 12px 0; }
+  .halo-toc { list-style: none; margin: 0; padding: 0; border-left: 1px solid var(--halo-gray-200); }
   .halo-toc li { margin: 0; }
   .halo-toc a {
-    display: block;
-    padding: 6px 12px;
-    margin-left: -1px;
+    display: block; padding: 6px 12px; margin-left: -1px;
     border-left: 2px solid transparent;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--halo-gray-600);
-    line-height: 1.4;
-    transition:
-      color var(--halo-duration-fast) var(--halo-ease-out),
-      border-color var(--halo-duration-fast) var(--halo-ease-out);
+    font-size: 0.875rem; font-weight: 500; color: var(--halo-gray-600); line-height: 1.4;
+    transition: color var(--halo-duration-fast) var(--halo-ease-out), border-color var(--halo-duration-fast) var(--halo-ease-out);
   }
-  .halo-toc a:hover {
-    color: var(--halo-ink);
-    text-decoration: none;
-  }
-  .halo-toc a.active {
-    color: var(--halo-ink);
-    font-weight: 650;
-    border-left-color: var(--halo-yellow);
-  }
-  /* H3 entries indented under their parent H2 */
-  .halo-toc .toc-h3 a {
-    padding-left: 28px;
-    font-size: 0.8125rem;
-    font-weight: 400;
-  }
-  .halo-toc__empty {
-    color: var(--halo-gray-500);
-    font-size: 0.8125rem;
-    font-style: italic;
-    padding: 6px 12px;
-  }
+  .halo-toc a:hover { color: var(--halo-ink); text-decoration: none; }
+  .halo-toc a.active { color: var(--halo-ink); font-weight: 650; border-left-color: var(--halo-yellow); }
+  .halo-toc .toc-h3 a { padding-left: 28px; font-size: 0.8125rem; font-weight: 400; }
+  .halo-toc__empty { color: var(--halo-gray-500); font-size: 0.8125rem; font-style: italic; padding: 6px 12px; }
 
-  /* --- Right content area --- */
-  .halo-content {
-    max-width: var(--content-max);
-    min-width: 0;
-  }
-  .halo-content > .eyebrow {
-    font-size: 0.75rem; font-weight: 800;
-    letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--halo-gray-600);
-    margin: 0 0 12px 0;
-  }
+  /* --- Content --- */
+  .halo-content { max-width: var(--content-max); min-width: 0; }
+  .halo-content > .eyebrow { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--halo-gray-600); margin: 0 0 12px 0; }
 
-  /* --- Typography for rendered markdown --- */
-  .halo-content h1 {
-    font-size: clamp(2.25rem, 5vw, 3rem);
-    font-weight: 650; line-height: 1.05; letter-spacing: -0.01em;
-    margin: 0 0 16px 0;
-    text-wrap: balance;
-  }
-  .halo-content h1 + p { font-size: 1.0625rem; color: var(--halo-gray-700); margin-top: 0; }
-  .halo-content h2 {
-    font-size: 1.625rem; font-weight: 650; line-height: 1.2;
-    margin: 56px 0 16px 0;
-    padding-top: 28px;
-    border-top: 1px solid var(--halo-gray-200);
-    scroll-margin-top: 88px;
-  }
-  .halo-content h2:first-of-type { border-top: 0; padding-top: 0; margin-top: 40px; }
-  .halo-content h3 {
-    font-size: 1.25rem; font-weight: 650; line-height: 1.3;
-    margin: 36px 0 12px 0;
-    scroll-margin-top: 88px;
-  }
-  .halo-content h4 {
-    font-size: 1.0625rem; font-weight: 650;
-    margin: 24px 0 8px 0;
-    color: var(--halo-gray-700);
-  }
+  /* --- Markdown typography --- */
+  .halo-content h1 { font-size: clamp(2.25rem, 5vw, 3rem); font-weight: 650; line-height: 1.05; letter-spacing: -0.01em; margin: 0 0 16px 0; text-wrap: balance; }
+  .halo-content h1 + p { font-size: 1.0625rem; color: var(--halo-gray-700); margin-top: 0; max-width: 60ch; }
+  .halo-content h2 { font-size: 1.625rem; font-weight: 650; line-height: 1.2; margin: 64px 0 16px 0; scroll-margin-top: 88px; }
+  .halo-content h2:first-of-type { margin-top: 40px; }
+  .halo-content h3 { font-size: 1.25rem; font-weight: 650; line-height: 1.3; margin: 36px 0 12px 0; scroll-margin-top: 88px; }
+  .halo-content h4 { font-size: 1.0625rem; font-weight: 650; margin: 24px 0 8px 0; color: var(--halo-gray-700); }
   .halo-content p, .halo-content li { font-size: 1rem; line-height: 1.65; }
-  .halo-content p { margin: 0 0 16px 0; }
+  .halo-content p { margin: 0 0 16px 0; max-width: 60ch; }
   .halo-content ul, .halo-content ol { margin: 0 0 16px 0; padding-left: 24px; }
   .halo-content li { margin: 6px 0; }
   .halo-content strong { font-weight: 650; color: var(--halo-ink); }
   .halo-content em { font-style: italic; }
   .halo-content hr { border: 0; border-top: 1px solid var(--halo-gray-200); margin: 40px 0; }
-
-  /* --- Blockquotes (callouts) --- */
-  .halo-content blockquote {
-    margin: 20px 0;
-    padding: 16px 20px;
-    border-left: 3px solid var(--halo-yellow);
-    background: var(--halo-yellow-soft);
-    border-radius: 0 var(--halo-radius-md) var(--halo-radius-md) 0;
-    color: var(--halo-ink);
-  }
+  .halo-content blockquote { margin: 20px 0; padding: 16px 20px; border-left: 3px solid var(--halo-yellow); background: var(--halo-yellow-soft); border-radius: 0 var(--halo-radius-md) var(--halo-radius-md) 0; color: var(--halo-ink); }
   .halo-content blockquote > p:last-child { margin-bottom: 0; }
-  .halo-content blockquote strong:first-child { color: var(--halo-ink); }
+  .halo-content code { font-family: var(--halo-font-mono); font-size: 0.875em; padding: 0.15em 0.4em; background: var(--halo-gray-100); border-radius: 4px; color: var(--halo-ink); }
+  .halo-content pre { margin: 20px 0; padding: 16px 20px; background: var(--halo-ink); color: #e8eef3; border-radius: var(--halo-radius-md); overflow-x: auto; font-size: 0.875rem; line-height: 1.55; }
+  .halo-content pre code { background: transparent; color: inherit; padding: 0; font-size: inherit; }
+  .halo-content table { width: 100%; border-collapse: separate; border-spacing: 0; margin: 20px 0; font-size: 0.9375rem; border: 1px solid var(--halo-gray-200); border-radius: var(--halo-radius-md); overflow: hidden; }
+  .halo-content th, .halo-content td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--halo-gray-200); }
+  .halo-content tr:last-child td { border-bottom: 0; }
+  .halo-content th { background: var(--halo-gray-50); font-weight: 650; color: var(--halo-gray-700); font-size: 0.8125rem; letter-spacing: 0.02em; text-transform: uppercase; }
+  .halo-content td code { font-size: 0.8125rem; }
+  .halo-content img { max-width: 100%; height: auto; border-radius: var(--halo-radius-md); margin: 16px 0; }
 
-  /* --- Inline code + code blocks --- */
-  .halo-content code {
+  /* ============================================================================
+     DESIGN SYSTEM PRIMITIVES
+     ============================================================================ */
+
+  /* --- Token pill (used inside many primitives) --- */
+  .halo-token {
+    display: inline-block;
+    padding: 4px 10px;
+    background: var(--halo-blue-soft);
+    color: var(--halo-blue-link);
     font-family: var(--halo-font-mono);
-    font-size: 0.875em;
-    padding: 0.15em 0.4em;
-    background: var(--halo-gray-100);
-    border-radius: 4px;
-    color: var(--halo-ink);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    border-radius: var(--halo-radius-sm);
+    line-height: 1.4;
   }
-  .halo-content pre {
-    margin: 20px 0;
-    padding: 16px 20px;
-    background: var(--halo-ink);
-    color: #e8eef3;
-    border-radius: var(--halo-radius-md);
-    overflow-x: auto;
-    font-size: 0.875rem;
-    line-height: 1.55;
-  }
-  .halo-content pre code {
-    background: transparent;
-    color: inherit;
-    padding: 0;
-    font-size: inherit;
-  }
+  .halo-token--neutral { background: var(--halo-gray-100); color: var(--halo-gray-700); }
+  .halo-token--small { font-size: 0.75rem; padding: 2px 8px; }
 
-  /* --- Tables --- */
-  .halo-content table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    margin: 20px 0;
-    font-size: 0.9375rem;
-    border: 1px solid var(--halo-gray-200);
-    border-radius: var(--halo-radius-md);
-    overflow: hidden;
+  /* --- Section eyebrow + title --- */
+  .halo-section {
+    margin: 96px 0 0 0;
+    padding-top: 56px;
+    border-top: 1px solid var(--halo-gray-200);
   }
-  .halo-content th, .halo-content td {
-    text-align: left;
-    padding: 10px 14px;
+  .halo-section:first-child, .halo-section.halo-section--first {
+    margin-top: 24px; padding-top: 0; border-top: 0;
+  }
+  .halo-section__eyebrow {
+    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--halo-blue-link);
+    margin: 0 0 12px 0;
+  }
+  .halo-section__title {
+    font-size: clamp(2rem, 4vw, 2.75rem);
+    font-weight: 650; line-height: 1.05; letter-spacing: -0.01em;
+    margin: 0 0 16px 0; color: var(--halo-ink);
+    text-wrap: balance;
+  }
+  .halo-section__lead {
+    font-size: 1rem; color: var(--halo-gray-700); line-height: 1.55;
+    max-width: 60ch; margin: 0 0 40px 0;
+  }
+  .halo-section__lead strong { font-weight: 650; color: var(--halo-ink); }
+
+  /* Subsection title (smaller, no border) */
+  .halo-subsection { margin: 56px 0 24px 0; }
+  .halo-subsection__title { font-size: 1.5rem; font-weight: 650; line-height: 1.2; margin: 0 0 8px 0; color: var(--halo-ink); }
+  .halo-subsection__lead { font-size: 0.9375rem; color: var(--halo-gray-700); line-height: 1.5; max-width: 60ch; margin: 0 0 24px 0; }
+
+  /* --- Color cards --- */
+  .halo-color-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+  }
+  .halo-color-card {
+    background: var(--halo-white);
+    border: 1px solid var(--halo-gray-200);
+    border-radius: var(--halo-radius-lg);
+    overflow: hidden;
+    box-shadow: var(--halo-shadow-card);
+    display: flex; flex-direction: column;
+  }
+  .halo-color-card__swatch {
+    aspect-ratio: 16 / 9;
     border-bottom: 1px solid var(--halo-gray-200);
   }
-  .halo-content tr:last-child td { border-bottom: 0; }
-  .halo-content th {
-    background: var(--halo-gray-50);
-    font-weight: 650;
+  .halo-color-card--saturated .halo-color-card__swatch {
+    /* tall, saturated brand color */
+    aspect-ratio: 16 / 11;
+  }
+  .halo-color-card__body {
+    padding: 18px 20px 20px;
+    flex: 1;
+    display: flex; flex-direction: column;
+  }
+  .halo-color-card__name {
+    font-size: 1rem; font-weight: 700; color: var(--halo-ink);
+    margin: 0 0 10px 0;
+  }
+  .halo-color-card__token {
+    display: inline-block; align-self: flex-start;
+    margin-bottom: 8px;
+    background: var(--halo-gray-100);
     color: var(--halo-gray-700);
-    font-size: 0.8125rem;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
+    font-family: var(--halo-font-mono);
+    font-size: 0.75rem; font-weight: 500;
+    padding: 3px 8px; border-radius: var(--halo-radius-sm);
+    word-break: break-all;
   }
-  .halo-content td code { font-size: 0.8125rem; }
+  .halo-color-card__hex {
+    display: inline-block; align-self: flex-start;
+    margin-bottom: 12px;
+    background: var(--halo-blue-soft);
+    color: var(--halo-blue-link);
+    font-family: var(--halo-font-mono);
+    font-size: 0.75rem; font-weight: 500;
+    padding: 3px 8px; border-radius: var(--halo-radius-sm);
+  }
+  .halo-color-card__usage {
+    font-size: 0.8125rem; line-height: 1.5; color: var(--halo-gray-600);
+    margin: 0;
+  }
 
-  .halo-content img {
-    max-width: 100%;
-    height: auto;
-    border-radius: var(--halo-radius-md);
-    margin: 16px 0;
+  /* --- Type font cards (large preview) --- */
+  .halo-type-stack-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: 20px; margin: 24px 0;
   }
+  .halo-type-stack {
+    background: var(--halo-white);
+    border: 1px solid var(--halo-gray-200);
+    border-radius: var(--halo-radius-lg);
+    padding: 28px 32px;
+  }
+  .halo-type-stack__eyebrow {
+    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--halo-blue-link);
+    margin: 0 0 12px 0;
+  }
+  .halo-type-stack__token { margin-bottom: 24px; }
+  .halo-type-stack__preview {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 400; line-height: 1.15; color: var(--halo-ink);
+    margin: 0 0 20px 0;
+    font-family: var(--halo-font-live);
+  }
+  .halo-type-stack__preview--narrow { letter-spacing: -0.01em; }
+  .halo-type-stack__stack {
+    font-size: 0.8125rem; line-height: 1.5; color: var(--halo-gray-600);
+    margin: 0;
+  }
+
+  /* --- Type role specimens --- */
+  .halo-type-role {
+    display: grid;
+    grid-template-columns: 200px 1fr 180px;
+    gap: 32px;
+    padding: 32px 0;
+    border-top: 1px solid var(--halo-gray-200);
+    align-items: start;
+  }
+  .halo-type-role:first-of-type { border-top: 1px solid var(--halo-gray-200); }
+  .halo-type-role__meta { display: flex; flex-direction: column; gap: 12px; }
+  .halo-type-role__role {
+    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--halo-blue-link);
+  }
+  .halo-type-role__token { align-self: flex-start; }
+  .halo-type-role__specs {
+    display: grid; grid-template-columns: auto 1fr; gap: 4px 16px;
+    margin-top: 8px;
+    font-size: 0.75rem;
+  }
+  .halo-type-role__spec-label {
+    font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--halo-gray-500);
+  }
+  .halo-type-role__spec-value {
+    color: var(--halo-gray-700); font-family: var(--halo-font-mono);
+  }
+  .halo-type-role__sample {
+    color: var(--halo-ink);
+    font-family: var(--halo-font-live);
+    word-break: break-word;
+  }
+  .halo-type-role__usage {
+    font-size: 0.8125rem; line-height: 1.5; color: var(--halo-gray-600);
+  }
+
+  /* --- Container width bars --- */
+  .halo-bars { margin: 24px 0; display: flex; flex-direction: column; gap: 24px; }
+  .halo-bar { display: flex; flex-direction: column; gap: 8px; }
+  .halo-bar__track {
+    height: 16px; background: var(--halo-blue);
+    border-radius: var(--halo-radius-sm);
+  }
+  .halo-bar__meta {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    font-size: 0.875rem;
+  }
+  .halo-bar__name { font-weight: 700; color: var(--halo-ink); }
+  .halo-bar__value { color: var(--halo-gray-600); font-family: var(--halo-font-mono); font-size: 0.8125rem; }
+
+  /* --- Spacing scale --- */
+  .halo-spacing {
+    display: flex; align-items: flex-end; gap: 24px;
+    margin: 24px 0; flex-wrap: wrap;
+  }
+  .halo-spacing__step { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .halo-spacing__chip {
+    background: var(--halo-ink);
+    border-radius: var(--halo-radius-md);
+    color: var(--halo-white);
+    font-family: var(--halo-font-mono); font-size: 0.75rem; font-weight: 500;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .halo-spacing__label { font-size: 0.75rem; color: var(--halo-gray-600); font-family: var(--halo-font-mono); }
+
+  /* --- Surface token cards (compact) --- */
+  .halo-surface-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+  }
+  .halo-surface-card {
+    background: var(--halo-white);
+    border: 1px solid var(--halo-gray-200);
+    border-radius: var(--halo-radius-md);
+    padding: 18px 20px;
+  }
+  .halo-surface-card__name { font-size: 0.9375rem; font-weight: 650; color: var(--halo-ink); margin: 0 0 8px 0; }
+  .halo-surface-card__value {
+    background: var(--halo-gray-100); color: var(--halo-gray-700);
+    font-family: var(--halo-font-mono); font-size: 0.8125rem; font-weight: 500;
+    padding: 4px 10px; border-radius: var(--halo-radius-sm);
+    display: inline-block;
+  }
+
+  /* --- Component rows --- */
+  .halo-comp-rows {
+    margin: 32px 0;
+    border-top: 1px solid var(--halo-gray-200);
+  }
+  .halo-comp-row {
+    display: grid; grid-template-columns: 240px 1fr;
+    gap: 32px; padding: 28px 0;
+    border-bottom: 1px solid var(--halo-gray-200);
+    align-items: center;
+  }
+  .halo-comp-row__meta { display: flex; flex-direction: column; gap: 4px; }
+  .halo-comp-row__name { font-size: 1rem; font-weight: 650; color: var(--halo-ink); }
+  .halo-comp-row__desc { font-size: 0.8125rem; color: var(--halo-gray-600); line-height: 1.5; }
+  .halo-comp-row__demos {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+
+  /* Live button demos */
+  .halo-demo-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 12px 24px; border-radius: var(--halo-radius-pill);
+    font-family: var(--halo-font-sans); font-size: 0.875rem; font-weight: 650;
+    line-height: 1; cursor: pointer; border: 0;
+    transition: background var(--halo-duration-fast) var(--halo-ease-out);
+  }
+  .halo-demo-btn--primary { background: var(--halo-yellow); color: var(--halo-ink); }
+  .halo-demo-btn--secondary { background: var(--halo-ink); color: var(--halo-white); }
+  .halo-demo-btn--ghost { background: transparent; color: var(--halo-ink); border: 1px solid var(--halo-gray-300); }
+  .halo-demo-btn--disabled { background: var(--halo-gray-200); color: var(--halo-gray-500); cursor: not-allowed; }
+
+  /* Badges */
+  .halo-demo-badge {
+    display: inline-flex; align-items: center;
+    padding: 5px 12px; border-radius: var(--halo-radius-pill);
+    font-family: var(--halo-font-sans); font-size: 0.75rem; font-weight: 700;
+    letter-spacing: 0.04em; text-transform: uppercase; line-height: 1;
+  }
+  .halo-demo-badge--neutral { background: var(--halo-gray-100); color: var(--halo-gray-700); }
+  .halo-demo-badge--sale { background: var(--halo-ink); color: var(--halo-white); }
+  .halo-demo-badge--membership { background: var(--halo-membership-soft); color: var(--halo-blue-link); }
+  .halo-demo-badge--featured { background: var(--halo-yellow); color: var(--halo-ink); }
+  .halo-demo-badge--outline { background: transparent; color: var(--halo-ink); box-shadow: inset 0 0 0 1px var(--halo-gray-300); }
+
+  /* --- Forbidden box --- */
+  .halo-forbidden {
+    margin: 24px 0; padding: 20px 24px;
+    background: var(--halo-danger-soft);
+    border-left: 3px solid var(--halo-danger);
+    border-radius: 0 var(--halo-radius-md) var(--halo-radius-md) 0;
+  }
+  .halo-forbidden__title {
+    font-size: 0.875rem; font-weight: 700; color: var(--halo-danger);
+    margin: 0 0 8px 0; letter-spacing: 0.02em;
+  }
+  .halo-forbidden ul { margin: 0; padding-left: 20px; }
+  .halo-forbidden li { color: var(--halo-ink); font-size: 0.9375rem; margin: 4px 0; }
 
   /* --- Mobile --- */
   @media (max-width: 900px) {
-    .halo-page {
-      grid-template-columns: 1fr;
-      gap: 24px;
-      padding-top: 24px;
-    }
-    .halo-sidebar {
-      position: static;
-      max-height: none;
-      padding: 16px;
-      background: var(--halo-gray-50);
-      border-radius: var(--halo-radius-md);
-    }
-    .halo-back { margin-bottom: 20px; }
+    .halo-page { grid-template-columns: 1fr; gap: 24px; padding-top: 24px; }
+    .halo-sidebar { position: static; max-height: none; padding: 16px; background: var(--halo-gray-50); border-radius: var(--halo-radius-md); }
+    .halo-type-role { grid-template-columns: 1fr; gap: 16px; }
+    .halo-comp-row { grid-template-columns: 1fr; gap: 16px; }
   }
   @media (max-width: 560px) {
     .halo-header__inner { width: calc(100% - 24px); }
     .halo-page { width: calc(100% - 24px); padding-bottom: 64px; }
-    .halo-content h1 { font-size: 2rem; }
-    .halo-content h2 { font-size: 1.375rem; margin-top: 40px; }
-    .halo-content pre { padding: 12px 14px; font-size: 0.8125rem; }
   }
 </style>
 </head>
@@ -345,11 +473,8 @@
       <span class="halo-back__arrow" aria-hidden="true">←</span>
       All resources
     </a>
-
     <p class="halo-toc__label">On this page</p>
-    <ul class="halo-toc" id="halo-toc">
-      <!-- populated by JavaScript on load -->
-    </ul>
+    <ul class="halo-toc" id="halo-toc"></ul>
   </aside>
 
   <main class="halo-content" id="halo-content">
@@ -360,132 +485,56 @@
 
 <script>
 (function () {
-  // ---------- TOC builder ----------
-  // Walks the rendered content, finds every H2 and H3, injects anchor IDs
-  // (slugified from the heading text), and builds the sidebar TOC list.
   function slugify(text) {
-    return text
-      .toLowerCase()
-      .trim()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/[\s_-]+/g, '-')
-      .replace(/^-+|-+$/g, '');
+    return text.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-').replace(/^-+|-+$/g, '');
   }
-
   function buildTOC() {
     var content = document.getElementById('halo-content');
     var toc = document.getElementById('halo-toc');
     if (!content || !toc) return [];
-
-    var headings = content.querySelectorAll('h2, h3');
-    if (!headings.length) {
-      toc.innerHTML = '<li class="halo-toc__empty">No sections</li>';
-      return [];
-    }
-
-    var entries = [];
-    var usedSlugs = {};
-
+    // Include section titles (the visual primitives) AND H2/H3 from regular markdown
+    var headings = content.querySelectorAll('h2, h3, .halo-section__title, .halo-subsection__title');
+    if (!headings.length) { toc.innerHTML = '<li class="halo-toc__empty">No sections</li>'; return []; }
+    var entries = [], used = {};
     headings.forEach(function (h) {
       var text = h.textContent.trim();
       var slug = slugify(text);
-      // Deduplicate slugs in case two headings have the same text
-      if (usedSlugs[slug]) {
-        usedSlugs[slug] += 1;
-        slug = slug + '-' + usedSlugs[slug];
-      } else {
-        usedSlugs[slug] = 1;
-      }
-      // Don't overwrite an existing id (kramdown may have added one)
+      if (used[slug]) { used[slug] += 1; slug = slug + '-' + used[slug]; } else { used[slug] = 1; }
       if (!h.id) h.id = slug;
-
       var li = document.createElement('li');
-      if (h.tagName.toLowerCase() === 'h3') li.className = 'toc-h3';
+      var isH3 = h.tagName.toLowerCase() === 'h3' || h.classList.contains('halo-subsection__title');
+      if (isH3) li.className = 'toc-h3';
       var a = document.createElement('a');
-      a.href = '#' + h.id;
-      a.textContent = text;
-      li.appendChild(a);
-      toc.appendChild(li);
-
+      a.href = '#' + h.id; a.textContent = text;
+      li.appendChild(a); toc.appendChild(li);
       entries.push({ id: h.id, heading: h, link: a });
     });
-
     return entries;
   }
-
-  // ---------- Scroll-spy ----------
-  // Highlights the TOC entry whose heading is closest to the top of the viewport.
   function setupScrollSpy(entries) {
     if (!entries.length || !('IntersectionObserver' in window)) return;
-
-    // Track which headings are currently "visible" (above some threshold line)
     var visible = new Map();
-
     var observer = new IntersectionObserver(function (changes) {
-      changes.forEach(function (change) {
-        if (change.isIntersecting) {
-          visible.set(change.target, change.intersectionRatio);
-        } else {
-          visible.delete(change.target);
-        }
-      });
+      changes.forEach(function (c) { if (c.isIntersecting) visible.set(c.target, c.intersectionRatio); else visible.delete(c.target); });
       updateActive();
-    }, {
-      // Trigger when heading enters/leaves the top ~30% of the viewport
-      rootMargin: '-80px 0px -70% 0px',
-      threshold: 0
-    });
-
+    }, { rootMargin: '-80px 0px -70% 0px', threshold: 0 });
     entries.forEach(function (e) { observer.observe(e.heading); });
-
     function updateActive() {
-      // Clear all
       entries.forEach(function (e) { e.link.classList.remove('active'); });
-
       if (visible.size === 0) {
-        // Nothing in the trigger zone — find the closest one above viewport instead
-        var aboveTop = entries.filter(function (e) {
-          return e.heading.getBoundingClientRect().top < 100;
-        });
-        if (aboveTop.length) {
-          aboveTop[aboveTop.length - 1].link.classList.add('active');
-        } else if (entries[0]) {
-          // Before any heading — highlight the first
-          entries[0].link.classList.add('active');
-        }
+        var above = entries.filter(function (e) { return e.heading.getBoundingClientRect().top < 100; });
+        if (above.length) above[above.length - 1].link.classList.add('active');
+        else if (entries[0]) entries[0].link.classList.add('active');
         return;
       }
-
-      // Pick the topmost visible heading
-      var topMost = null;
-      var topY = Infinity;
-      visible.forEach(function (_, heading) {
-        var y = heading.getBoundingClientRect().top;
-        if (y < topY) {
-          topY = y;
-          topMost = heading;
-        }
-      });
-      if (topMost) {
-        var entry = entries.find(function (e) { return e.heading === topMost; });
-        if (entry) entry.link.classList.add('active');
-      }
+      var topMost = null, topY = Infinity;
+      visible.forEach(function (_, h) { var y = h.getBoundingClientRect().top; if (y < topY) { topY = y; topMost = h; } });
+      if (topMost) { var entry = entries.find(function (e) { return e.heading === topMost; }); if (entry) entry.link.classList.add('active'); }
     }
-
-    // Initial highlight
     updateActive();
   }
-
-  // Run on DOM ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () {
-      var entries = buildTOC();
-      setupScrollSpy(entries);
-    });
-  } else {
-    var entries = buildTOC();
-    setupScrollSpy(entries);
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setupScrollSpy(buildTOC()); });
+  else setupScrollSpy(buildTOC());
 })();
 </script>
 

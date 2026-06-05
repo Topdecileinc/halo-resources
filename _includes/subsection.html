@@ -1,0 +1,10 @@
+{%- comment -%}
+  Smaller subsection title with optional lead.
+
+  Usage:
+    {% include subsection.html title="Container widths" lead="..." %}
+{%- endcomment -%}
+<div class="halo-subsection">
+  <h3 class="halo-subsection__title">{{ include.title }}</h3>
+  {% if include.lead %}<p class="halo-subsection__lead">{{ include.lead }}</p>{% endif %}
+</div>

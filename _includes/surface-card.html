@@ -1,0 +1,15 @@
+{%- comment -%}
+  Surface token card. Small card showing a single radius/shadow/surface value.
+
+  Usage:
+    {% include surface-card.html name="Container radius" token="halo-radius-container" value="24px" %}
+
+  Parameters:
+    name  — display name (required)
+    token — token name without -- (required)
+    value — the value (required), e.g. "24px"
+{%- endcomment -%}
+<div class="halo-surface-card">
+  <p class="halo-surface-card__name">{{ include.name }}</p>
+  <span class="halo-surface-card__value">--{{ include.token }}: {{ include.value }}</span>
+</div>

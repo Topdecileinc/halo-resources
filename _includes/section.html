@@ -1,0 +1,20 @@
+{%- comment -%}
+  Section header with blue eyebrow + large title + optional lead.
+
+  Usage in markdown:
+    {% include section.html eyebrow="COLOR" title="The Halo email palette" lead="Three roles do the heavy lifting..." %}
+
+  Parameters:
+    eyebrow — small uppercase label (required)
+    title   — large title (required)
+    lead    — optional lead paragraph; supports basic HTML
+    first   — pass "true" for the first section on the page (no top border)
+{%- endcomment -%}
+{%- assign section_class = "halo-section" -%}
+{%- if include.first == "true" -%}{%- assign section_class = "halo-section halo-section--first" -%}{%- endif -%}
+
+<section class="{{ section_class }}">
+  <p class="halo-section__eyebrow">{{ include.eyebrow }}</p>
+  <h2 class="halo-section__title">{{ include.title }}</h2>
+  {% if include.lead %}<p class="halo-section__lead">{{ include.lead }}</p>{% endif %}
+</section>
