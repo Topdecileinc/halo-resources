@@ -3,7 +3,8 @@
 test/validate.py
 
 Walks every campaign folder under emails/ and validates the email package against
-the rules in brand-standards/ and the sections/components in design-libraries/.
+the rules (brand-brain/, email-design-system/, braze-deployment/) and the
+sections/components in email-design-system/.
 
 Each campaign folder must contain exactly:
   - one .html file (the email)
@@ -72,8 +73,8 @@ def load_config():
         "repo_root":      repo_root,
         "emails_dir":     resolve(cp.get("paths", "emails_dir", fallback="./emails")),
         "rules_dirs":     rules_dirs,
-        "sections_dir":   resolve(cp.get("paths", "sections_dir", fallback="design-libraries/sections"), base=repo_root),
-        "components_dir": resolve(cp.get("paths", "components_dir", fallback="design-libraries/components"), base=repo_root),
+        "sections_dir":   resolve(cp.get("paths", "sections_dir", fallback="email-design-system/sections"), base=repo_root),
+        "components_dir": resolve(cp.get("paths", "components_dir", fallback="email-design-system/components"), base=repo_root),
         "fail_fast":            cp.getboolean("behavior", "fail_fast", fallback=False),
         "verbose_passed":       cp.getboolean("behavior", "verbose_passed", fallback=True),
         "strict_rule_parsing":  cp.getboolean("behavior", "strict_rule_parsing", fallback=True),
