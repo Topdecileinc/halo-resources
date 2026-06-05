@@ -1,0 +1,19 @@
+<!--
+  section_header.html
+  Logo header section. Sits at the very top of the email body, LEFT-aligned.
+  Always included in every email (you don't name it in brief §7; it's part of the frame).
+
+  - Logo asset: use the hosted logo URL from rules_brand.md for [IMG_LOGO] (reference copy: design-libraries/assets/shared-images/img_header.webp).
+  - Logo links to the brand site (URL supplied by the brief).
+  - Sizing: 140x40 is the reference; adjust to the actual logo's aspect ratio.
+  - The logo is LEFT-aligned (not centered). Keep align="left" and a left-edge padding that matches the email's content inset.
+
+  Drop this in as the first row inside the 600px container table.
+-->
+<tr class="section-header">
+  <td align="left" style="padding:8px 24px 24px 24px;">
+    <a href="[BRAND_URL]" target="_blank" style="text-decoration:none; border:0;">
+      <img src="[IMG_LOGO]" width="140" height="40" alt="[BRAND_NAME]" style="display:block; border:0; outline:none; width:140px; height:40px;">
+    </a>
+  </td>
+</tr>

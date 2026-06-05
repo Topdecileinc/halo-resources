@@ -1,0 +1,44 @@
+<!--
+  component_button.html
+  Reusable bulletproof pill button (cross-client, Outlook-safe).
+
+  WHY THIS IS A COMPONENT: the dual MSO v:roundrect / non-MSO anchor pattern is easy to
+  get subtly wrong (mismatched widths, missing anchorlock, dropped mso-hide). Write it
+  once here; reuse everywhere. Only colors and label change between buttons.
+
+  HOW TO USE:
+  - Drop this <table> wherever a CTA is needed (e.g. inside a hero overlay or a content card).
+  - Fill the [BRACKETED] placeholders. Keep the MSO width in sync with the visible button —
+    if you widen the padding, update width:Npx in the v:roundrect to match.
+  - COLORS come from the style guide button variants (rules_email_style_guide.md):
+      Yellow  → fill #FCD62D, text #333333   (primary)
+      Blue    → fill #2F93F3, text #FFFFFF
+      White   → fill #FFFFFF, text #333333
+    Use the style guide's guidance for which variant goes on which background.
+  - Pill shape uses arcsize="100%" (MSO) and border-radius:999px (everyone else).
+  - Add an optional :hover rule in the <head> <style> block keyed to the class if desired.
+
+  Placeholders:
+    [BTN_HREF]       destination URL (from the brief)
+    [BTN_FILL]       background hex, e.g. #FCD62D
+    [BTN_TEXT_COLOR] label hex, e.g. #333333
+    [BTN_LABEL]      button text, e.g. Shop now
+    [BTN_WIDTH]      MSO width in px (match the visible button), e.g. 220
+-->
+<table class="component-button" role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+  <tr>
+    <td align="center" style="border-radius:999px; background-color:[BTN_FILL];">
+      <!--[if mso]>
+      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="[BTN_HREF]" style="height:52px;v-text-anchor:middle;width:[BTN_WIDTH]px;" arcsize="100%" stroke="f" fillcolor="[BTN_FILL]">
+        <w:anchorlock/>
+        <center style="color:[BTN_TEXT_COLOR];font-family:Arial,sans-serif;font-size:16px;font-weight:bold;">[BTN_LABEL]</center>
+      </v:roundrect>
+      <![endif]-->
+      <!--[if !mso]><!-- -->
+      <a href="[BTN_HREF]" target="_blank" class="btn-text" style="display:inline-block; padding:15px 40px; font-family:'Inter', Arial, Helvetica, sans-serif; font-size:16px; font-weight:bold; color:[BTN_TEXT_COLOR]; text-decoration:none; border-radius:999px; mso-hide:all;">
+        [BTN_LABEL]
+      </a>
+      <!--<![endif]-->
+    </td>
+  </tr>
+</table>

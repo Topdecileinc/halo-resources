@@ -1,239 +1,149 @@
 ---
-title: Email style guide
-eyebrow: Email Design System
+---
+# Halo Email Style Guide
+
+> Source: Halo Email Design System (Figma), "Style Guide" frame. Version dated **April 2026**.
+> This document captures the visual standards for Halo email design: color, typography,
+> text/background combinations, buttons, and logo usage. Values are taken directly from the
+> Figma design tokens.
+
 ---
 
-# Email style guide
+## Colors
 
-Visual standards for every Halo email. The values here are the single source
-of truth for the build — the validator flags any value outside this set,
-and the AI orchestrator pulls from this file when assembling new emails.
+### Core palette
 
-{% include section.html
-   first="true"
-   eyebrow="COLOR"
-   title="The Halo email palette"
-   lead="<strong>Yellow</strong> drives action, <strong>blue</strong> marks links and selection, and <strong>deep navy</strong> anchors text. Supporting surface tints extend the same cool, brand-anchored palette into backgrounds." %}
+| Token | Name | Hex |
+|---|---|---|
+| `--halo-yellow` | Halo Yellow | `#FCD62D` |
+| `--halo-blue` | Halo Blue | `#2F93F3` |
+| `--gray-bg` | Gray 01 (background) | `#F2F4F4` |
+| `--dark-gray-bg` | Gray 02 (dark background) | `#434343` |
+| `--text` | Text (primary) | `#333333` |
+| `--text-fine-print` | Text, fine print | `#9D9D9D` |
+| — | Gray 900 (near-black headings) | `#1B1B1B` |
 
-{% include subsection.html title="Brand colors" lead="The three roles that do the heavy lifting. Use saturated values on CTAs, primary links, and dark ink surfaces — never as decorative fill." %}
+### Use cases
 
-{% include color-grid-start.html %}
+- **Text priority:** `#333333` for primary body and headline text.
+- **Text fine print:** `#9D9D9D` for legal/disclaimer/fine print.
+- **Background priority:** White is the default background.
+- **Secondary background:** `#F5F5F5` for alternating/secondary panels.
 
-{% include color-card.html
-   variant="saturated"
-   name="Action primary"
-   token="halo-color-yellow"
-   hex="#FCD62D"
-   usage="Primary CTAs, promo actions, top-of-funnel offers." %}
+> Note: the design uses two near-identical light grays — `#F2F4F4` (Gray 01 token) for component
+> backgrounds and `#F5F5F5` (named "Secondary Background" in use cases). Treat them as
+> interchangeable light-panel grays unless a spec says otherwise.
 
-{% include color-card.html
-   variant="saturated"
-   name="Link / selected"
-   token="halo-color-blue"
-   hex="#2F93F3"
-   usage="Secondary CTAs, links, technical accents." %}
+---
 
-{% include color-card.html
-   variant="saturated"
-   name="Ink / dark"
-   token="halo-color-ink"
-   hex="#1B1B1B"
-   usage="Headings, primary text, dark buttons, footer." %}
+## Border radius
 
-{% include color-grid-end.html %}
+- **Default corner radius is 24px** for containers, content cards, panels, hero/image blocks, and other boxed elements. Use it consistently so rounded corners feel uniform across the email.
+- **Exception — buttons stay fully-rounded pills.** CTA buttons keep their pill shape (border-radius ~100px / `999px`), not 24px. The 24px rule is for boxes; the pill rule (see Buttons) governs CTAs.
 
-{% include subsection.html title="Surfaces" lead="Backgrounds and section fills. Keep these light — surfaces are scaffolding, not the message." %}
+> Outlook note: older Outlook renders rounded corners as square. Treat the 24px radius as
+> a progressive enhancement, and don't rely on it to convey meaning (see the build rules'
+> rendering-risk flags).
 
-{% include color-grid-start.html %}
+---
 
-{% include color-card.html
-   name="Page wash"
-   token="halo-color-surface-page"
-   hex="#FFFFFF"
-   usage="Default email background." %}
+## Text & background combinations
 
-{% include color-card.html
-   name="Surface light"
-   token="halo-color-surface-light"
-   hex="#F5F5F5"
-   usage="Alternate section backgrounds, content cards." %}
+Approved foreground/background pairings, with guardrails:
 
-{% include color-card.html
-   name="Surface alt"
-   token="halo-color-surface-alt"
-   hex="#F2F4F4"
-   usage="Secondary section backgrounds." %}
+| Background | Eyebrow (small bold) | Headline | Body copy |
+|---|---|---|---|
+| **Yellow** `#FCD62D` | White | Dark gray `#333` | Dark gray `#333` |
+| **Gray 01** `#F2F4F4` | Halo Blue `#2F93F3` | Dark gray `#333` *(or Halo Blue for emphasis)* | Dark gray `#333` |
+| **Blue** `#2F93F3` | Dark gray `#333` | White | White — short runs only |
+| **Dark Gray** `#434343` | Halo Yellow `#FCD62D` | White | White — short runs only |
 
-{% include color-grid-end.html %}
+**Guardrail:** Don't use white for longer areas of small text, and don't pair white text with blue buttons. Reserve white text for short runs on blue or dark-gray backgrounds.
 
-{% include subsection.html title="Text" lead="Three text colors handle every email. Body uses the mid-gray; muted handles fine print and disclaimers; ink is reserved for headings and primary copy." %}
+---
 
-{% include color-grid-start.html %}
+## Typography
 
-{% include color-card.html
-   name="Body text"
-   token="halo-color-text-body"
-   hex="#333333"
-   usage="Default body copy." %}
+**Typeface:** Inter (open-source, by Rasmus Andersson).
+Download: https://fonts.google.com/specimen/Inter · More info: https://rsms.me/inter/
+**Email fallback stack:** `Inter, Arial, Helvetica, sans-serif` (Outlook will fall back to Arial).
 
-{% include color-card.html
-   name="Dark surface text"
-   token="halo-color-text-dark"
-   hex="#434343"
-   usage="Text on light surfaces with extra contrast needs." %}
+### Desktop scale
 
-{% include color-card.html
-   name="Muted / fine print"
-   token="halo-color-text-muted"
-   hex="#9D9D9D"
-   usage="Disclaimers, footer legal, secondary annotations." %}
+| Level | Weight | Size | Line height |
+|---|---|---|---|
+| H1 | Bold (700) | 34px | 100% |
+| H2 | Bold (700) | 30px | 100% |
+| H3 | Bold (700) | 24px | 100% |
+| P1 (body) | Light (300) | 18px | 28px |
+| P2 (fine print) | Regular (400) | 12px | 24px |
 
-{% include color-grid-end.html %}
+### Mobile scale
 
-{% include section.html
-   eyebrow="TYPOGRAPHY"
-   title="Type scale"
-   lead="Inter on every Halo email, with web-safe fallbacks for email-client compatibility. Headings and body both run at <strong>400 (Regular)</strong> by default — the system stays unbold and lets size, color, and white space carry hierarchy. Subject lines, eyebrows, and labels switch to <strong>700 (Bold)</strong> for emphasis." %}
+| Level | Weight | Size | Line height |
+|---|---|---|---|
+| H1 | Bold (700) | 20px | 1.2 |
+| H2 | Bold (700) | 18px | 1.2 |
+| H3 | Bold (700) | 16px | 1.2 |
+| P1 (body) | Regular (400) | 14px | 1.4 |
+| P2 (fine print) | Regular (400) | 10px | 1.4 |
 
-{% include type-stack-grid-start.html %}
+### Typography rules
 
-{% include type-stack.html
-   eyebrow="PRIMARY EMAIL STACK"
-   token="halo-font-email"
-   preview="Halo email body text"
-   stack='"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' %}
+- **Capitalization:** Headlines in **sentence case** — no all-caps headlines. Small "eyebrows" above a headline may be all caps when needed. Initial Caps are acceptable for short headers and labeled areas.
+- **Alignment:** Left-align text when possible; centered is acceptable for short runs.
+- **Emphasis:** Use **bold** or a **color** for emphasis instead of italics.
 
-{% include type-stack.html
-   eyebrow="LEGAL & FINE-PRINT STACK"
-   token="halo-font-legal"
-   preview="LEGAL · DISCLAIMERS · FINE PRINT"
-   stack='Arial, Helvetica, sans-serif' %}
+---
 
-{% include type-stack-grid-end.html %}
+## Buttons
 
-{% include subsection.html title="Type roles" lead="Every email uses these roles. Sizes are calibrated for inbox rendering — they read at the same hierarchy in Gmail, Outlook, and Apple Mail." %}
+Pill-shaped buttons, fully rounded (border-radius ~100px), Inter Semi Bold ~18px, centered label, roughly 16px vertical / 55px horizontal padding (~51px tall).
 
-{% include type-role.html
-   role="HERO / H1"
-   token="halo-type-hero"
-   size="32px"
-   weight="700"
-   leading="1.1"
-   tracking="-0.01em"
-   sample="Save $75 on the Halo Collar 5"
-   usage="Top of the email — the campaign headline." %}
+| Variant | Fill | Label color | Use on |
+|---|---|---|---|
+| Yellow | `#FCD62D` | Dark gray `#333` | Light, blue, dark backgrounds (primary CTA) |
+| Blue | `#2F93F3` | White | Light / yellow backgrounds |
+| White | White | Dark gray `#333` | Yellow, blue, dark backgrounds |
 
-{% include type-role.html
-   role="SECTION / H2"
-   token="halo-type-section"
-   size="22px"
-   weight="650"
-   leading="1.2"
-   tracking="0"
-   sample="Built for adventures together"
-   usage="Section breaks within longer emails." %}
+**Guardrail:** Avoid white text on blue buttons (per the text-combination rules).
 
-{% include type-role.html
-   role="BODY"
-   token="halo-type-body"
-   size="16px"
-   weight="400"
-   leading="1.55"
-   tracking="0"
-   sample="The quick brown fox jumps over the lazy dog. Designed for every dog, every property, every adventure."
-   usage="Default body copy throughout the email." %}
+**Buttons are for CTAs only.** Pill / button styling (the rounded fill of any variant
+above) is reserved exclusively for actual clickable calls to action. No other element may
+reuse it. In particular, offer/discount badges, eyebrows, and labels must **not** be
+rendered as a filled pill — sitting a pill-shaped offer badge next to a pill-shaped CTA
+makes the badge look like a second button and dilutes the real one.
 
-{% include type-role.html
-   role="FINE PRINT"
-   token="halo-type-fine"
-   size="11px"
-   weight="400"
-   leading="1.4"
-   tracking="0.02em"
-   sample="Protect Animals with Satellites LLC d/b/a Halo Collar | 55 S.E. 2nd Avenue #15R | Delray Beach, FL 33444"
-   usage="Footer legal line and disclaimers." %}
+### Offer / discount callouts (not a button)
 
-{% include section.html
-   eyebrow="LAYOUT"
-   title="Container, spacing, rhythm"
-   lead="Email is a fixed-width medium. The container is 600px on desktop, fluid below 600. Within the container, a four-step spacing scale handles every padding, gap, and gutter — never inject custom values." %}
+Present sale messaging the way the `sample_` emails do — through **type weight and color,
+not a filled pill**:
 
-{% include subsection.html title="Container width" lead="Every Halo email uses the same 600px outer container. Mobile clients render at their own scale; the build doesn't fight that." %}
+- State the discount as **bold colored text** (Halo Yellow or the body dark gray for emphasis), not inside a rounded chip.
+- Show price as inline text: struck-through original next to the bold sale price (e.g. ~~$529~~ **$479**).
+- It must be visually distinct enough from the CTA that there is no confusion about what is clickable. Different shape (no pill), and ideally separated by spacing from the button.
 
-<div class="halo-bars">
-{% include width-bar.html name="Email body" token="halo-container-email" width_px="600" max_px="600" %}
-</div>
+---
 
-{% include subsection.html title="Spacing scale" lead="Four base units — used for section padding, gaps between blocks, and content insets. Doubling above 32 for larger sections." %}
+## Logos
 
-{% include spacing-scale.html values="8,16,24,32,48" %}
+Use the horizontal Halo logo (paw + wordmark). **Always left-aligned** in the email header
+(not centered). Color treatment depends on background:
 
-{% include section.html
-   eyebrow="SURFACE TOKENS"
-   title="Radius & shape"
-   lead="Two radius values cover every email use case. The validator flags any other value." %}
+| Background | Paw mark | Wordmark |
+|---|---|---|
+| Light | Halo Yellow | Gray 02 (`#434343`) |
+| Dark | Halo Yellow | White |
+| Halo Yellow | White | Gray 02 (`#434343`) |
 
-{% include surface-grid-start.html %}
+---
 
-{% include surface-card.html
-   name="Container radius"
-   token="halo-radius-container"
-   value="24px" %}
+## Quick reference for email coding
 
-{% include surface-card.html
-   name="Pill radius (CTA only)"
-   token="halo-radius-pill"
-   value="999px" %}
+When translating this guide into HTML email:
 
-{% include surface-grid-end.html %}
-
-{% include section.html
-   eyebrow="COMPONENTS"
-   title="Component review area"
-   lead="The live element catalog for this design system. The actual build artifacts live in <code>email-design-system/components/</code> as <code>component_*.html</code> files; these previews mirror what the build produces." %}
-
-{% capture btn_demos %}
-<button class="halo-demo-btn halo-demo-btn--primary">Shop Now</button>
-<button class="halo-demo-btn halo-demo-btn--secondary">Learn more</button>
-<button class="halo-demo-btn halo-demo-btn--ghost">View details</button>
-<button class="halo-demo-btn halo-demo-btn--disabled" disabled>Unavailable</button>
-{% endcapture %}
-
-{% capture badge_demos %}
-<span class="halo-demo-badge halo-demo-badge--neutral">NEW</span>
-<span class="halo-demo-badge halo-demo-badge--sale">SAVE $75</span>
-<span class="halo-demo-badge halo-demo-badge--membership">MEMBER PERK</span>
-<span class="halo-demo-badge halo-demo-badge--featured">MOST POPULAR</span>
-<span class="halo-demo-badge halo-demo-badge--outline">WHILE SUPPLIES LAST</span>
-{% endcapture %}
-
-{% include comp-rows-start.html %}
-
-{% include comp-row.html
-   name="Buttons"
-   desc="Primary, secondary, ghost, and disabled states. Pills only on CTAs."
-   demos=btn_demos %}
-
-{% include comp-row.html
-   name="Badges"
-   desc="Status, offer, and inventory labels. Bold text, not interactive."
-   demos=badge_demos %}
-
-{% include comp-rows-end.html %}
-
-{% include section.html
-   eyebrow="GUARDRAILS"
-   title="What not to do"
-   lead="Hard rules the validator enforces. If you find yourself reaching for something on this list, the right answer is almost always a different primitive from the system above." %}
-
-{% include forbidden-start.html title="Never" %}
-
-- Use italic tags (`<i>`, `<em>`) for emphasis — use bold or color instead.
-- Use border-radius values outside `24px` and `999px`.
-- Apply pill styling to non-clickable elements (badges, eyebrows, offer callouts).
-- Use hex colors outside the documented palette.
-- Write `font-family` without Inter and a web-safe fallback.
-- Use `display: flex` or `display: grid` — email clients don't support them.
-- Use em dashes (`—`) anywhere in copy — use commas or colons.
-
-{% include forbidden-end.html %}
+- Body text: Inter/Arial fallback, `#333`, 18px desktop / 14px mobile.
+- Fine print: `#9D9D9D`, 12px desktop / 10px mobile.
+- Primary CTA: yellow pill `#FCD62D`, dark `#333` label.
+- Section panels: white default, `#F2F4F4`/`#F5F5F5` for secondary.
+- Headlines: Inter Bold, sentence case, left-aligned where possible.
