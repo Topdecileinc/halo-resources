@@ -9,12 +9,18 @@ class Context:
     """Carries parsed inputs and accumulates errors/warnings/passed for one campaign."""
 
     def __init__(self, campaign_name, html_path=None, json_path=None,
-                 brief_path=None, rules_dir=None):
+                 brief_path=None, rules_dirs=None):
         self.campaign = campaign_name
         self.html_path = Path(html_path) if html_path else None
         self.json_path = Path(json_path) if json_path else None
         self.brief_path = Path(brief_path) if brief_path else None
-        self.rules_dir = Path(rules_dir) if rules_dir else None
+        # Rules are split across the layered folders, so search a list of dirs.
+        # Accept a single path too, for backward compatibility.
+        if rules_dirs is None:
+            rules_dirs = []
+        elif isinstance(rules_dirs, (str, Path)):
+            rules_dirs = [rules_dirs]
+        self.rules_dirs = [Path(d) for d in rules_dirs]
 
         self.html = self.html_path.read_text(encoding="utf-8") if self.html_path else None
         self.brief = self.brief_path.read_text(encoding="utf-8") if self.brief_path else None
@@ -41,11 +47,12 @@ class Context:
         self.passed.append(check)
 
     def read_rule(self, filename):
-        """Read a rule file from rules_dir, or None if missing."""
-        if not self.rules_dir:
-            return None
-        p = self.rules_dir / filename
-        return p.read_text(encoding="utf-8") if p.exists() else None
+        """Read a rule file by searching the configured rule dirs; None if missing."""
+        for d in self.rules_dirs:
+            p = d / filename
+            if p.exists():
+                return p.read_text(encoding="utf-8")
+        return None
 
     def brief_field(self, section_num, label):
         """Extract a value from a brief table row inside section §N.

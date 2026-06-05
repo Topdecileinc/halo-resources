@@ -12,7 +12,7 @@ def _extract_urls(text):
 
 
 def check(ctx, strict=True):
-    if not ctx.html or not ctx.rules_dir:
+    if not ctx.html or not ctx.rules_dirs:
         return
 
     visible = _normalize(re.sub(r"<[^>]+>", " ", ctx.html))

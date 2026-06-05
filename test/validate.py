@@ -61,10 +61,17 @@ def load_config():
     # Resolve repo_root first; other paths default to inside it
     repo_root = resolve(cp.get("paths", "repo_root", fallback=".."))
 
+    # Rules can live across several layered folders. Accept a comma-separated
+    # `rules_dirs`; fall back to a legacy single `rules_dir` if that's all that's set.
+    rules_spec = cp.get("paths", "rules_dirs",
+                        fallback=cp.get("paths", "rules_dir",
+                                        fallback="brand-brain, email-design-system, braze-deployment"))
+    rules_dirs = [resolve(d.strip(), base=repo_root) for d in rules_spec.split(",") if d.strip()]
+
     return {
         "repo_root":      repo_root,
         "emails_dir":     resolve(cp.get("paths", "emails_dir", fallback="./emails")),
-        "rules_dir":      resolve(cp.get("paths", "rules_dir", fallback="brand-standards"), base=repo_root),
+        "rules_dirs":     rules_dirs,
         "sections_dir":   resolve(cp.get("paths", "sections_dir", fallback="design-libraries/sections"), base=repo_root),
         "components_dir": resolve(cp.get("paths", "components_dir", fallback="design-libraries/components"), base=repo_root),
         "fail_fast":            cp.getboolean("behavior", "fail_fast", fallback=False),
@@ -230,7 +237,7 @@ def validate_campaign(campaign, html_path, json_path, brief_path, cfg):
         html_path=html_path,
         json_path=json_path,
         brief_path=brief_path,
-        rules_dir=cfg["rules_dir"] if cfg["rules_dir"].exists() else None,
+        rules_dirs=[d for d in cfg["rules_dirs"] if d.exists()] or None,
     )
     strict = cfg["strict_rule_parsing"]
 
@@ -312,12 +319,12 @@ def main():
 
     print(f"Repo root:          {cfg['repo_root']}")
     print(f"Validating emails:  {cfg['emails_dir']}")
-    print(f"Rules:              {cfg['rules_dir']}")
+    print(f"Rules:              {', '.join(str(d) for d in cfg['rules_dirs'])}")
     print(f"Sections:           {cfg['sections_dir']}")
     print(f"Components:         {cfg['components_dir']}")
 
-    if not cfg["rules_dir"].exists():
-        print(f"WARNING: rules dir not found — brand/style/footer checks may degrade")
+    if not any(d.exists() for d in cfg["rules_dirs"]):
+        print(f"WARNING: no rules dirs found — brand/style/footer checks may degrade")
     if not cfg["w3c_enabled"]:
         print(f"Note: W3C validation disabled in config.ini")
 

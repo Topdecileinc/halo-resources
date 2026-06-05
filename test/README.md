@@ -97,9 +97,9 @@ directory so the script runs identically from any working directory.
 |---|---|---|
 | `repo_root` | `..` | Root of the resources repo. Other path defaults are derived from this. Change this one setting if the test folder ever moves. |
 | `emails_dir` | `./emails` | Where campaign subfolders live. |
-| `rules_dir` | `brand-standards` | Where `rules_*.md` files live (relative to `repo_root`). |
-| `sections_dir` | `design-libraries/sections` | Where `section_*.html` files live. |
-| `components_dir` | `design-libraries/components` | Where `component_*.html` files live. |
+| `rules_dirs` | `brand-brain, email-design-system, braze-deployment` | Comma-separated folders where `rules_*.md` files live (relative to `repo_root`). Rules are split across the layered folders; for each rule file the validator searches these in order. A legacy single `rules_dir` is still honored if `rules_dirs` is absent. |
+| `sections_dir` | `email-design-system/sections` | Where `section_*.html` files live. |
+| `components_dir` | `email-design-system/components` | Where `component_*.html` files live. |
 
 ### `[behavior]`
 
@@ -227,8 +227,8 @@ exact match position.
 ### Module 5: Block fidelity — sections + components (`block_fidelity.py`)
 
 **Why:** The repo has reusable HTML blocks: sections (composed blocks like header
-and footer) in `design-libraries/sections/`, and components (primitives like the
-button) in `design-libraries/components/`. The build is supposed to use them
+and footer) in `email-design-system/sections/`, and components (primitives like the
+button) in `email-design-system/components/`. The build is supposed to use them
 verbatim with placeholders filled in — not rewrite or restyle them per email. This
 module verifies that what shows up in the rendered email actually matches the source.
 
