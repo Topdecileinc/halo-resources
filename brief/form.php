@@ -211,6 +211,9 @@ function fld($label, $for, $summary, $anchor, $control) {
   }
   .halo-header__inner img { width: 92px; height: auto; display: block; }
   .halo-header__tag { color: var(--halo-gray-600); font-weight: 800; letter-spacing: 0.04em; font-size: 0.9rem; }
+  .halo-header__inner .spacer { flex: 1; }
+  .halo-header__inner .home { font-weight: 650; font-size: 0.92rem; }
+  .back { display: inline-block; margin-bottom: 16px; font-weight: 600; font-size: 0.9rem; }
 
   main { width: min(900px, calc(100% - 32px)); margin-inline: auto; padding: 40px 0 96px; }
   .lede { max-width: 62ch; color: var(--halo-gray-700); }
@@ -270,10 +273,13 @@ function fld($label, $for, $summary, $anchor, $control) {
     <div class="halo-header__inner">
       <img src="https://topdecileinc.github.io/halo-resources/email-design-system/assets/shared-images/halo-logo-dark.svg" alt="Halo">
       <span class="halo-header__tag">EMAIL BRIEF</span>
+      <span class="spacer"></span>
+      <a class="home" href="https://topdecileinc.github.io/halo-resources/">All resources</a>
     </div>
   </header>
 
   <main>
+    <a class="back" href="https://topdecileinc.github.io/halo-resources/">&larr; Back to all resources</a>
 <?php if ($isPost): ?>
     <div class="panel <?php echo $saveError ? 'warn' : 'ok'; ?>">
       <h2><?php echo $saveError ? '&#9888; Brief built — but not saved' : '&#10003; Brief saved'; ?></h2>
