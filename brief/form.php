@@ -133,9 +133,45 @@ $briefMd   = '';
 
 if ($isPost) {
     @set_time_limit(0);              // generation + send can take a few minutes
-    $gen = null;                     // populated below if the pipeline runs
-    // ---- filename: brief_<slug>_<YYYYMMDD>.md ----
-    $campaign = field('campaign_name');
+    $gen = null; $mode = 'preview'; $sent = null; $sentEmail = null; $base = null;
+    $cfgFile = __DIR__ . '/config.php';
+    $cfg = is_file($cfgFile) ? require $cfgFile : null;
+    $cfgReady = (is_array($cfg) && !empty($cfg['enabled']) && !empty($cfg['anthropic_api_key'])
+                && strpos((string) $cfg['anthropic_api_key'], 'REPLACE') === false);
+    $action = isset($_POST['action']) ? $_POST['action'] : 'brief';
+
+    if ($action === 'send') {
+        // ---- SEND a previously-generated email (chosen from the preview) ----
+        $mode = 'sent';
+        if ($cfgReady) {
+            require_once __DIR__ . '/lib/claude_pipeline.php';
+            $base = preg_replace('/[^a-z0-9_]/', '', basename((string) ($_POST['base'] ?? '')));
+            $sent = hp_send_saved($cfg, $base);
+            $sentEmail = hp_load_send_email($cfg, $base);
+        } else {
+            $sent = ['attempted' => false, 'ok' => false, 'code' => 0, 'message' => 'Generation is not configured (config.php).'];
+        }
+    } elseif ($action === 'redo') {
+        // ---- REDO: regenerate from the saved brief, then preview again ----
+        if ($cfgReady) {
+            require_once __DIR__ . '/lib/claude_pipeline.php';
+            $savedName = basename((string) ($_POST['brief'] ?? ''));
+            $bm = ($savedName !== '' && is_file(__DIR__ . '/../submissions/' . $savedName))
+                ? (string) @file_get_contents(__DIR__ . '/../submissions/' . $savedName) : '';
+            $slug = preg_replace('/^brief_/', '', preg_replace('/_\d{8}\.md$/', '', $savedName));
+            if ($slug === '') $slug = 'untitled';
+            if ($bm !== '') {
+                try { $gen = hp_run_pipeline($cfg, $bm, $slug); }
+                catch (Throwable $e) { $gen = ['ok' => false, 'error' => $e->getMessage()]; }
+            } else {
+                $gen = ['ok' => false, 'error' => 'Could not find the saved brief to redo.'];
+            }
+        } else {
+            $gen = ['ok' => false, 'error' => 'Generation is not configured (config.php).'];
+        }
+    } else {
+        // ---- filename: brief_<slug>_<YYYYMMDD>.md ----
+        $campaign = field('campaign_name');
     $slug = strtolower($campaign !== '' ? $campaign : 'untitled');
     $slug = preg_replace('/[^a-z0-9]+/', '_', $slug);
     $slug = trim($slug, '_');
@@ -249,20 +285,16 @@ Test sends target a designated test segment in a non-production Braze workspace.
         $gen = ['ok' => false, 'preflight' => true, 'errors' => $preflight];
     }
 
-    // ---- generate via Claude + send via Braze (only if config.php is set up) ----
-    $cfgFile = __DIR__ . '/config.php';
-    if (!$saveError && !$preflight && is_file($cfgFile)) {
-        $cfg = require $cfgFile;
-        if (is_array($cfg) && !empty($cfg['enabled']) && !empty($cfg['anthropic_api_key'])
-            && strpos($cfg['anthropic_api_key'], 'REPLACE') === false) {
-            require_once __DIR__ . '/lib/claude_pipeline.php';
-            try {
-                $gen = hp_run_pipeline($cfg, $briefMd, $slug);
-            } catch (Throwable $e) {
-                $gen = ['ok' => false, 'error' => $e->getMessage(), 'send' => null];
-            }
+    // ---- generate via Claude (preview only — sending is a separate, manual step) ----
+    if (!$saveError && !$preflight && $cfgReady) {
+        require_once __DIR__ . '/lib/claude_pipeline.php';
+        try {
+            $gen = hp_run_pipeline($cfg, $briefMd, $slug);
+        } catch (Throwable $e) {
+            $gen = ['ok' => false, 'error' => $e->getMessage()];
         }
     }
+    }  // end brief action
 }
 
 /**
@@ -382,6 +414,10 @@ function fld($label, $for, $summary, $anchor, $control) {
   .btn--ghost { background: var(--halo-white); color: var(--halo-ink); border: 1px solid var(--halo-gray-300); }
   .btn:disabled { opacity: 0.65; cursor: progress; box-shadow: none; transform: none; }
 
+  .email-preview { border: 1px solid var(--halo-gray-200); border-radius: var(--halo-radius-lg); overflow: hidden; margin-top: 18px; }
+  .email-preview__bar { padding: 9px 14px; border-bottom: 1px solid var(--halo-gray-200); background: var(--halo-gray-50); font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; color: var(--halo-gray-600); }
+  .email-preview__frame { width: 100%; height: 640px; border: 0; display: block; background: #fff; }
+
   /* full-screen processing overlay — blocks the form while generating + sending */
   .pg-loading {
     position: fixed; inset: 0; z-index: 100;
@@ -432,90 +468,131 @@ function fld($label, $for, $summary, $anchor, $control) {
   <main>
     <a class="back" href="https://topdecileinc.github.io/halo-resources/">&larr; Back to all resources</a>
 <?php if ($isPost): ?>
+
+  <?php if ($mode === 'sent'): $sok = ($sent && !empty($sent['ok'])); ?>
+    <!-- SENT confirmation -->
+    <div class="panel <?php echo $sok ? 'ok' : 'warn'; ?>">
+      <h2><?php echo $sok ? '&#10003; Sent' : '&#9888; Send failed — not sent'; ?></h2>
+      <?php if ($sentEmail): ?>
+        <p><strong>Subject:</strong> <?php echo htmlspecialchars($sentEmail['subject'], ENT_QUOTES, 'UTF-8'); ?></p>
+        <p><strong>Preheader:</strong> <?php echo htmlspecialchars($sentEmail['preheader'], ENT_QUOTES, 'UTF-8'); ?></p>
+      <?php endif; ?>
+      <p><strong>Braze /messages/send:</strong> HTTP <?php echo (int) ($sent['code'] ?? 0); ?><?php echo (isset($sent['message']) && $sent['message'] !== '') ? ' — ' . htmlspecialchars($sent['message'], ENT_QUOTES, 'UTF-8') : ''; ?></p>
+      <div class="actions" style="margin-top:16px;"><a class="btn btn--ghost" href="form.php">Start a new brief</a></div>
+    </div>
+    <?php if ($sentEmail && $sentEmail['html'] !== ''): ?>
+      <div class="email-preview">
+        <div class="email-preview__bar">Email preview</div>
+        <iframe class="email-preview__frame" srcdoc="<?php echo htmlspecialchars($sentEmail['html'], ENT_QUOTES, 'UTF-8'); ?>" title="Sent email preview"></iframe>
+      </div>
+    <?php endif; ?>
+
+  <?php elseif ($gen !== null && !empty($gen['ok'])): ?>
+    <!-- PREVIEW: generated, ready to review → redo or send -->
+    <div class="panel ok">
+      <h2>&#10003; Email generated &mdash; review &amp; send</h2>
+      <p><strong>Subject:</strong> <?php echo htmlspecialchars($gen['subject'], ENT_QUOTES, 'UTF-8'); ?></p>
+      <p><strong>Preheader:</strong> <?php echo htmlspecialchars($gen['preheader'], ENT_QUOTES, 'UTF-8'); ?></p>
+      <?php if (!empty($gen['validated'])): ?>
+        <p class="hardcoded">&#10003; Passed all validation checks<?php echo ((int) ($gen['attempts'] ?? 1) > 1) ? ' (on attempt ' . (int) $gen['attempts'] . ')' : ''; ?>.</p>
+      <?php endif; ?>
+      <?php if (!empty($gen['advisories'])): ?>
+        <details style="margin-top:8px;">
+          <summary style="cursor:pointer; font-weight:650; font-size:0.9rem; color:var(--halo-gray-700);">AI review notes — advisory, did <strong>not</strong> block (<?php echo count($gen['advisories']); ?>)</summary>
+          <ul style="margin:8px 0 4px 18px;">
+            <?php foreach ($gen['advisories'] as $a): ?>
+              <li style="font-size:0.88rem; color:var(--halo-gray-700);"><?php echo htmlspecialchars($a, ENT_QUOTES, 'UTF-8'); ?></li>
+            <?php endforeach; ?>
+          </ul>
+        </details>
+      <?php endif; ?>
+      <?php if (!empty($gen['ai_error'])): ?>
+        <p class="hardcoded">Note: the AI review pass couldn't run (advisory, didn't block): <?php echo htmlspecialchars($gen['ai_error'], ENT_QUOTES, 'UTF-8'); ?></p>
+      <?php endif; ?>
+      <?php if (!empty($gen['truncated'])): ?>
+        <p class="hardcoded">&#9888; Output hit the token limit and may be truncated — raise <code>max_tokens</code> in config.php.</p>
+      <?php endif; ?>
+      <p class="hardcoded" style="margin-top:8px;">Nothing has been sent yet — review the preview below, then <strong>Send</strong> or <strong>Redo</strong>.</p>
+      <div class="actions" style="margin-top:16px; display:flex; gap:12px; flex-wrap:wrap;">
+        <form method="post" action="" data-overlay="send" style="margin:0;">
+          <input type="hidden" name="action" value="send">
+          <input type="hidden" name="base" value="<?php echo htmlspecialchars($gen['base'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+          <button type="submit" class="btn">Send this email</button>
+        </form>
+        <form method="post" action="" data-overlay="generate" style="margin:0;">
+          <input type="hidden" name="action" value="redo">
+          <input type="hidden" name="brief" value="<?php echo htmlspecialchars($savedName ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+          <button type="submit" class="btn btn--ghost">Redo</button>
+        </form>
+        <a class="btn btn--ghost" href="form.php">New brief</a>
+      </div>
+    </div>
+    <div class="email-preview">
+      <div class="email-preview__bar">Email preview</div>
+      <iframe class="email-preview__frame" srcdoc="<?php echo htmlspecialchars($gen['html'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" title="Email preview"></iframe>
+    </div>
+    <?php if (!empty($gen['loaded'])): ?>
+      <details style="margin-top:12px;">
+        <summary style="cursor:pointer; font-weight:650; font-size:0.9rem; color:var(--halo-gray-700);">Context loaded into Claude (<?php echo count($gen['loaded']); ?> files)</summary>
+        <pre class="preview"><?php echo htmlspecialchars(implode("\n", $gen['loaded']), ENT_QUOTES, 'UTF-8'); ?></pre>
+      </details>
+    <?php endif; ?>
+
+  <?php elseif ($gen !== null && !empty($gen['preflight'])): ?>
+    <div class="panel warn">
+      <h2>&#9888; Brief incomplete — nothing generated</h2>
+      <p>It's missing required information, so it was <strong>not</strong> sent to the generator. Fix these and resubmit:</p>
+      <ul style="margin:0 0 4px 18px;">
+        <?php foreach (($gen['errors'] ?? []) as $erow): ?>
+          <li style="font-size:0.9rem;"><?php echo htmlspecialchars($erow, ENT_QUOTES, 'UTF-8'); ?></li>
+        <?php endforeach; ?>
+      </ul>
+      <div class="actions" style="margin-top:16px;"><a class="btn btn--ghost" href="form.php">Back to the brief</a></div>
+    </div>
+
+  <?php elseif ($gen !== null && !empty($gen['validation_failed'])): ?>
+    <div class="panel warn">
+      <h2>&#9888; Couldn&rsquo;t generate a compliant email &mdash; not sent</h2>
+      <p>After <?php echo (int) ($gen['attempts'] ?? 2); ?> attempts the email still broke binding rules, so it was <strong>not sent</strong>. The last attempt is in <code>generated/<?php echo htmlspecialchars($gen['html_file'] ?? '', ENT_QUOTES, 'UTF-8'); ?></code> for review.</p>
+      <p style="margin-bottom:6px;"><strong>Rules it failed:</strong></p>
+      <ul style="margin:0 0 4px 18px;">
+        <?php foreach (($gen['errors'] ?? []) as $erow): ?>
+          <li style="font-size:0.9rem;"><?php echo htmlspecialchars($erow, ENT_QUOTES, 'UTF-8'); ?></li>
+        <?php endforeach; ?>
+      </ul>
+      <div class="actions" style="margin-top:16px; display:flex; gap:12px; flex-wrap:wrap;">
+        <?php if (!empty($savedName)): ?>
+        <form method="post" action="" data-overlay="generate" style="margin:0;">
+          <input type="hidden" name="action" value="redo">
+          <input type="hidden" name="brief" value="<?php echo htmlspecialchars($savedName, ENT_QUOTES, 'UTF-8'); ?>">
+          <button type="submit" class="btn btn--ghost">Redo</button>
+        </form>
+        <?php endif; ?>
+        <a class="btn btn--ghost" href="form.php">New brief</a>
+      </div>
+    </div>
+
+  <?php elseif ($gen !== null): ?>
+    <div class="panel warn">
+      <h2>&#9888; Email generation failed</h2>
+      <p><em><?php echo htmlspecialchars($gen['error'] ?? 'Unknown error', ENT_QUOTES, 'UTF-8'); ?></em></p>
+      <div class="actions" style="margin-top:16px;"><a class="btn btn--ghost" href="form.php">Back to the brief</a></div>
+    </div>
+
+  <?php else: ?>
+    <!-- brief saved, but generation not configured -->
     <div class="panel <?php echo $saveError ? 'warn' : 'ok'; ?>">
       <h2><?php echo $saveError ? '&#9888; Brief built — but not saved' : '&#10003; Brief saved'; ?></h2>
       <?php if ($saveError): ?>
-        <p>The brief could <strong>not</strong> be saved to <code>submissions/</code>:</p>
         <p><em><?php echo htmlspecialchars($saveError, ENT_QUOTES, 'UTF-8'); ?></em></p>
-        <p>Here is the brief so it isn't lost — copy it from below.</p>
       <?php else: ?>
-        <p>Saved to <code>submissions/<?php echo htmlspecialchars($savedName, ENT_QUOTES, 'UTF-8'); ?></code>.</p>
+        <p>Saved to <code>submissions/<?php echo htmlspecialchars($savedName ?? '', ENT_QUOTES, 'UTF-8'); ?></code>. Automated generation isn't configured (no <code>config.php</code>).</p>
       <?php endif; ?>
-      <div class="actions" style="margin-top:16px;">
-        <a class="btn btn--ghost" href="form.php">Start a new brief</a>
-      </div>
-      <pre class="preview"><?php echo htmlspecialchars($briefMd, ENT_QUOTES, 'UTF-8'); ?></pre>
+      <div class="actions" style="margin-top:16px;"><a class="btn btn--ghost" href="form.php">Start a new brief</a></div>
+      <pre class="preview"><?php echo htmlspecialchars($briefMd ?? '', ENT_QUOTES, 'UTF-8'); ?></pre>
     </div>
+  <?php endif; ?>
 
-    <?php if ($gen !== null): ?>
-      <?php if (!empty($gen['preflight'])): ?>
-        <div class="panel warn">
-          <h2>&#9888; Brief incomplete — nothing generated</h2>
-          <p>The brief was saved, but it's missing required information, so it was <strong>not</strong> sent to the generator (no Claude call was made). Fix these and resubmit:</p>
-          <ul style="margin:0 0 4px 18px;">
-            <?php foreach (($gen['errors'] ?? []) as $erow): ?>
-              <li style="font-size:0.9rem;"><?php echo htmlspecialchars($erow, ENT_QUOTES, 'UTF-8'); ?></li>
-            <?php endforeach; ?>
-          </ul>
-        </div>
-      <?php elseif (!empty($gen['validation_failed'])): ?>
-        <div class="panel warn">
-          <h2>&#9888; Couldn&rsquo;t generate a compliant email &mdash; not sent</h2>
-          <p>After <?php echo (int) ($gen['attempts'] ?? 2); ?> attempts the email still broke binding rules, so it was <strong>not sent</strong>. The brief is saved; the last attempt is in <code>generated/<?php echo htmlspecialchars($gen['html_file'] ?? '', ENT_QUOTES, 'UTF-8'); ?></code> for review.</p>
-          <p style="margin-bottom:6px;"><strong>Rules it failed:</strong></p>
-          <ul style="margin:0 0 4px 18px;">
-            <?php foreach (($gen['errors'] ?? []) as $erow): ?>
-              <li style="font-size:0.9rem;"><?php echo htmlspecialchars($erow, ENT_QUOTES, 'UTF-8'); ?></li>
-            <?php endforeach; ?>
-          </ul>
-        </div>
-      <?php elseif (empty($gen['ok'])): ?>
-        <div class="panel warn">
-          <h2>&#9888; Email generation failed</h2>
-          <p>The brief was saved, but the email could not be generated:</p>
-          <p><em><?php echo htmlspecialchars($gen['error'] ?? 'Unknown error', ENT_QUOTES, 'UTF-8'); ?></em></p>
-        </div>
-      <?php else: $send = $gen['send'] ?? null; $sendOk = $send && !empty($send['ok']); ?>
-        <div class="panel <?php echo ($send && empty($send['ok'])) ? 'warn' : 'ok'; ?>">
-          <h2><?php echo $sendOk ? '&#10003; Email generated, validated &amp; sent' : ($send ? '&#9888; Generated &amp; validated, but the send failed' : '&#10003; Email generated &amp; validated'); ?></h2>
-          <p><strong>Subject:</strong> <?php echo htmlspecialchars($gen['subject'], ENT_QUOTES, 'UTF-8'); ?></p>
-          <p><strong>Preheader:</strong> <?php echo htmlspecialchars($gen['preheader'], ENT_QUOTES, 'UTF-8'); ?></p>
-          <?php if (!empty($gen['validated'])): ?>
-            <p class="hardcoded">&#10003; Passed all validation checks<?php echo ((int) ($gen['attempts'] ?? 1) > 1) ? ' (on attempt ' . (int) $gen['attempts'] . ')' : ''; ?>.</p>
-          <?php endif; ?>
-          <?php if (!empty($gen['advisories'])): ?>
-            <details style="margin-top:8px;">
-              <summary style="cursor:pointer; font-weight:650; font-size:0.9rem; color:var(--halo-gray-700);">AI review notes — advisory, did <strong>not</strong> block (<?php echo count($gen['advisories']); ?>)</summary>
-              <ul style="margin:8px 0 4px 18px;">
-                <?php foreach ($gen['advisories'] as $a): ?>
-                  <li style="font-size:0.88rem; color:var(--halo-gray-700);"><?php echo htmlspecialchars($a, ENT_QUOTES, 'UTF-8'); ?></li>
-                <?php endforeach; ?>
-              </ul>
-            </details>
-          <?php endif; ?>
-          <?php if (!empty($gen['ai_error'])): ?>
-            <p class="hardcoded">Note: the AI review pass couldn't run (advisory, didn't block): <?php echo htmlspecialchars($gen['ai_error'], ENT_QUOTES, 'UTF-8'); ?></p>
-          <?php endif; ?>
-          <?php if (!empty($gen['truncated'])): ?>
-            <p class="hardcoded">&#9888; Output hit the token limit and may be truncated — raise <code>max_tokens</code> in config.php.</p>
-          <?php endif; ?>
-          <p>Saved to <code>generated/<?php echo htmlspecialchars($gen['html_file'], ENT_QUOTES, 'UTF-8'); ?></code> and <code>generated/<?php echo htmlspecialchars($gen['json_file'], ENT_QUOTES, 'UTF-8'); ?></code>.</p>
-          <?php if ($send): ?>
-            <p><strong>Braze /messages/send:</strong> HTTP <?php echo (int) $send['code']; ?><?php echo (isset($send['message']) && $send['message'] !== '') ? ' — ' . htmlspecialchars($send['message'], ENT_QUOTES, 'UTF-8') : ''; ?></p>
-          <?php else: ?>
-            <p class="hardcoded">Auto-send is off (<code>auto_send</code>) — the email was generated and saved but not sent.</p>
-          <?php endif; ?>
-        </div>
-      <?php endif; ?>
-      <?php if (!empty($gen['loaded'])): ?>
-        <details style="margin-top:12px;">
-          <summary style="cursor:pointer; font-weight:650; font-size:0.9rem; color:var(--halo-gray-700);">Context loaded into Claude (<?php echo count($gen['loaded']); ?> files)</summary>
-          <pre class="preview"><?php echo htmlspecialchars(implode("\n", $gen['loaded']), ENT_QUOTES, 'UTF-8'); ?></pre>
-        </details>
-      <?php endif; ?>
-    <?php elseif (!$saveError): ?>
-      <p class="hardcoded" style="margin-top:14px;">Automated generation is not configured on this server (no <code>config.php</code>) — the brief was saved only.</p>
-    <?php endif; ?>
 <?php else: ?>
     <h1>Email brief</h1>
     <p class="lede">Fill this in for one campaign. On submit it saves a copy to the team's
@@ -677,59 +754,75 @@ function fld($label, $for, $summary, $anchor, $control) {
       </fieldset>
 
       <div class="actions">
-        <button type="submit" class="btn">Save brief</button>
+        <button type="submit" class="btn">Generate email</button>
       </div>
     </form>
+<?php endif; ?>
 
     <div class="pg-loading" id="pg-loading" aria-hidden="true" role="status" aria-live="polite">
       <div class="pg-loading__card">
         <div class="pg-loading__spinner"></div>
-        <p class="pg-loading__msg" id="pg-loading-msg">Saving your brief&hellip;</p>
-        <p class="pg-loading__sub">This takes a minute or two. Please don&rsquo;t refresh, hit back, or close this tab &mdash; your email is being generated and sent.</p>
+        <p class="pg-loading__msg" id="pg-loading-msg">Working&hellip;</p>
+        <p class="pg-loading__sub" id="pg-loading-sub">This can take a minute or two. Please don&rsquo;t refresh, hit back, or close this tab.</p>
       </div>
     </div>
-<?php endif; ?>
   </main>
   <script>
     (function () {
-      var form = document.querySelector('form[method="post"]');
       var overlay = document.getElementById('pg-loading');
-      if (!form || !overlay) return;
+      var forms = document.querySelectorAll('form[method="post"]');
+      if (!overlay || !forms.length) return;
+      var msgEl = document.getElementById('pg-loading-msg');
+      var subEl = document.getElementById('pg-loading-sub');
+      var sets = {
+        generate: {
+          sub: 'This can take a minute or two. Please don’t refresh, hit back, or close this tab — your email is being generated.',
+          msgs: [
+            'Waking up the email engine…',
+            'Reading every rule (yes, all of them)…',
+            'Choosing words that don’t use em dashes…',
+            'Writing your email…',
+            'Wrestling Outlook into submission…',
+            'Making the button bulletproof…',
+            'Double-checking the pricing math…',
+            'Running the validators…',
+            'Doing stuff. Important stuff…',
+            'Almost there — hang tight…'
+          ]
+        },
+        send: {
+          sub: 'Sending the test email through Braze — this is quick. Please don’t refresh or hit back.',
+          msgs: ['Handing it to Braze…', 'Sending to the test segment…', 'Almost there…']
+        }
+      };
       var submitting = false;
-      var msgs = [
-        'Saving your brief…',
-        'Waking up the email engine…',
-        'Reading every rule (yes, all of them)…',
-        'Choosing words that don’t use em dashes…',
-        'Writing your email…',
-        'Wrestling Outlook into submission…',
-        'Making the button bulletproof…',
-        'Double-checking the pricing math…',
-        'Handing it to Braze…',
-        'Sending it to the test segment…',
-        'Doing stuff. Important stuff…',
-        'Almost there — hang tight…'
-      ];
-      form.addEventListener('submit', function (e) {
-        if (submitting) { e.preventDefault(); return; }   // block a second submit
-        submitting = true;
-        var btn = form.querySelector('button[type="submit"]');
-        if (btn) { btn.disabled = true; btn.textContent = 'Working…'; }
-        overlay.classList.add('show');
-        overlay.setAttribute('aria-hidden', 'false');
-        var el = document.getElementById('pg-loading-msg');
-        var i = 0;
-        setInterval(function () { i = (i + 1) % msgs.length; el.textContent = msgs[i]; }, 2600);
-        // native form submit proceeds; overlay stays until the result page replaces this one
+      var timer = null;
+      Array.prototype.forEach.call(forms, function (form) {
+        form.addEventListener('submit', function (e) {
+          if (submitting) { e.preventDefault(); return; }   // block any second submit
+          submitting = true;
+          var btn = form.querySelector('button[type="submit"]');
+          if (btn) { btn.setAttribute('data-orig', btn.textContent); btn.disabled = true; btn.textContent = 'Working…'; }
+          var set = sets[form.getAttribute('data-overlay') || 'generate'] || sets.generate;
+          if (subEl) subEl.textContent = set.sub;
+          var i = 0;
+          if (msgEl) msgEl.textContent = set.msgs[0];
+          overlay.classList.add('show');
+          overlay.setAttribute('aria-hidden', 'false');
+          timer = setInterval(function () { i = (i + 1) % set.msgs.length; if (msgEl) msgEl.textContent = set.msgs[i]; }, 2600);
+        });
       });
       // restore state if the user comes back via the bfcache (back button)
       window.addEventListener('pageshow', function (ev) {
         if (ev.persisted) {
           submitting = false;
+          if (timer) clearInterval(timer);
           overlay.classList.remove('show');
           overlay.setAttribute('aria-hidden', 'true');
-          var btn = form.querySelector('button[type="submit"]');
-          if (btn) { btn.disabled = false; btn.textContent = 'Save brief'; }
+          Array.prototype.forEach.call(forms, function (form) {
+            var btn = form.querySelector('button[type="submit"]');
+            if (btn) { btn.disabled = false; if (btn.getAttribute('data-orig')) btn.textContent = btn.getAttribute('data-orig'); }
+          });
         }
       });
     })();

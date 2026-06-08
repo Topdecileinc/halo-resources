@@ -8,10 +8,11 @@
  *   cp config.sample.php config.php
  *   # then edit config.php
  *
- * When `config.php` exists and `enabled` is true, submitting the brief form
- * will: (1) generate the email via the Claude REST API using the orchestrator +
- * all rule files as context, and (2) if `auto_send` is true, send the test email
- * through Braze. With no config.php present, the form just saves the brief.
+ * When `config.php` exists and `enabled` is true, submitting the brief generates
+ * the email via the Claude REST API (orchestrator + all rule files as context) and
+ * shows a PREVIEW. From the preview you choose Redo or Send — sending is a manual
+ * step now, so `auto_send` below is no longer used. With no config.php, the form
+ * just saves the brief.
  * -----------------------------------------------------------------------------
  */
 return [
@@ -43,7 +44,7 @@ return [
     'repo_root'         => __DIR__ . '/..',
 
     // ---- Braze (test send) ----
-    'auto_send'         => true,                 // POST to Braze /messages/send after generating
+    'auto_send'         => true,                 // (no longer used — sending is a manual step from the preview)
     'braze_rest_url'    => 'https://rest.iad-01.braze.com',  // YOUR Braze REST endpoint (region-specific)
     'braze_api_key'     => 'BRAZE-REST-API-KEY-REPLACE-ME',
     // These three are the hardcoded send identity (same values the form bakes into the brief):

@@ -250,9 +250,8 @@ function hp_braze_body(array $cfg, array $email) {
     ];
 }
 
-/** Send the test email through Braze. Returns ['attempted','ok','code','message']. */
-function hp_send_via_braze(array $cfg, array $email) {
-    $body = hp_braze_body($cfg, $email);
+/** POST a pre-built Braze /messages/send body. Returns ['attempted','ok','code','message']. */
+function hp_braze_post(array $cfg, array $body) {
     $url = rtrim($cfg['braze_rest_url'], '/') . '/messages/send';
     $headers = [
         'Content-Type: application/json',
@@ -263,6 +262,43 @@ function hp_send_via_braze(array $cfg, array $email) {
     $ok = ($code >= 200 && $code < 300);
     $msg = is_array($resp) && isset($resp['message']) ? $resp['message'] : substr((string) $raw, 0, 300);
     return ['attempted' => true, 'ok' => $ok, 'code' => $code, 'message' => $msg];
+}
+
+/** Send a freshly-built email through Braze. */
+function hp_send_via_braze(array $cfg, array $email) {
+    return hp_braze_post($cfg, hp_braze_body($cfg, $email));
+}
+
+/** Send a previously-generated email by its base id — reads generated/<base>.send.json. */
+function hp_send_saved(array $cfg, $base) {
+    $base = basename((string) $base);
+    if (!preg_match('/^brief_[a-z0-9_]+_\d{8}$/', $base)) {
+        return ['attempted' => false, 'ok' => false, 'code' => 0, 'message' => 'Invalid email id.'];
+    }
+    $jsonPath = rtrim($cfg['repo_root'], '/') . '/generated/' . $base . '.send.json';
+    if (!is_file($jsonPath)) {
+        return ['attempted' => false, 'ok' => false, 'code' => 0, 'message' => 'Generated email not found — please regenerate.'];
+    }
+    $body = json_decode(@file_get_contents($jsonPath), true);
+    if (!is_array($body)) {
+        return ['attempted' => false, 'ok' => false, 'code' => 0, 'message' => 'Could not read the saved send body.'];
+    }
+    return hp_braze_post($cfg, $body);
+}
+
+/** Load a generated email (subject/preheader/html) from generated/<base>.send.json, for preview. */
+function hp_load_send_email(array $cfg, $base) {
+    $base = basename((string) $base);
+    if (!preg_match('/^brief_[a-z0-9_]+_\d{8}$/', $base)) return null;
+    $jsonPath = rtrim($cfg['repo_root'], '/') . '/generated/' . $base . '.send.json';
+    if (!is_file($jsonPath)) return null;
+    $body = json_decode(@file_get_contents($jsonPath), true);
+    $email = (is_array($body) && isset($body['messages']['email'])) ? $body['messages']['email'] : [];
+    return [
+        'subject' => $email['subject'] ?? '',
+        'preheader' => $email['preheader'] ?? '',
+        'html' => $email['body'] ?? '',
+    ];
 }
 
 /** Recursively delete a directory. */
@@ -482,25 +518,24 @@ function hp_run_pipeline(array $cfg, $briefMarkdown, $slug) {
         ];
     }
 
-    // Passed the hard gate → optionally send.
-    $send = null;
-    if (!empty($cfg['auto_send'])) $send = hp_send_via_braze($cfg, $gen);
-
+    // Passed the hard gate → ready for PREVIEW. Sending is now a separate manual step
+    // (the preview page's "Send" button calls hp_send_saved with the base id).
     return [
         'ok' => true,
         'error' => null,
         'attempts' => $attempts,
         'validated' => $validate,
         'ai_reviewed' => $aiReview,
-        'advisories' => $aiBlocking ? [] : $advisories,   // AI notes (did not block the send)
+        'advisories' => $aiBlocking ? [] : $advisories,
         'ai_error' => $aiBlocking ? null : $aiError,
         'subject' => $gen['subject'],
         'preheader' => $gen['preheader'],
+        'html' => $gen['html'],
+        'base' => $base,
         'truncated' => !empty($gen['truncated']),
         'usage' => $gen['usage'],
         'loaded' => $gen['loaded'],
         'html_file' => $base . '.html',
         'json_file' => $base . '.send.json',
-        'send' => $send,
     ];
 }
