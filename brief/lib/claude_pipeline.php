@@ -120,13 +120,18 @@ function hp_output_schema() {
  * Returns ['ok'=>bool, 'error'=>?string, 'subject','preheader','html',
  *          'truncated'=>bool, 'usage'=>array, 'loaded'=>array].
  */
-function hp_generate_email(array $cfg, $briefMarkdown) {
+function hp_generate_email(array $cfg, $briefMarkdown, $feedback = '') {
     list($context, $loaded) = hp_load_context($cfg);
 
     $userText =
         "Here is the campaign brief. Build the production email now, following the orchestrator "
         . "and every rule file. Return the structured object (subject, preheader, html) and nothing "
         . "else.\n\n===== BRIEF =====\n" . $briefMarkdown;
+    if ($feedback !== '') {
+        $userText .= "\n\n===== REQUIRED FIXES =====\n"
+            . "Your previous attempt FAILED these binding validation checks. Regenerate the email and "
+            . "fix EVERY one of them without introducing new violations:\n" . $feedback;
+    }
 
     $payload = [
         'model' => $cfg['anthropic_model'],
@@ -212,33 +217,123 @@ function hp_send_via_braze(array $cfg, array $email) {
     return ['attempted' => true, 'ok' => $ok, 'code' => $code, 'message' => $msg];
 }
 
+/** Recursively delete a directory. */
+function hp_rrmdir($dir) {
+    if (!is_dir($dir)) return;
+    foreach (scandir($dir) as $e) {
+        if ($e === '.' || $e === '..') continue;
+        $p = $dir . '/' . $e;
+        is_dir($p) ? hp_rrmdir($p) : @unlink($p);
+    }
+    @rmdir($dir);
+}
+
 /**
- * Full pipeline: generate → save → (optionally) send.
- * $slug names the output files. Returns a status array for the UI.
+ * Validate a generated email against ALL rules via test/validate.py. Writes a temp
+ * campaign package (html + send json + brief), runs the validator on it, and returns
+ * ['ok'=>bool, 'ran'=>bool, 'errors'=>string[], 'output'=>string]. Every check is
+ * equal — any error fails the gate.
+ */
+function hp_validate(array $cfg, array $email, $briefMarkdown) {
+    $root = rtrim($cfg['repo_root'], '/');
+    $script = $root . '/test/validate.py';
+    if (!is_file($script)) {
+        return ['ok' => false, 'ran' => false, 'errors' => ['validator not found at test/validate.py'], 'output' => ''];
+    }
+    $tmp = rtrim(sys_get_temp_dir(), '/') . '/halo_val_' . uniqid('', true);
+    $camp = $tmp . '/campaign';
+    if (!@mkdir($camp, 0775, true)) {
+        return ['ok' => false, 'ran' => false, 'errors' => ['could not create temp validation directory'], 'output' => ''];
+    }
+    @file_put_contents($camp . '/email.html', $email['html']);
+    @file_put_contents($camp . '/send.json', json_encode(hp_braze_body($cfg, $email), JSON_UNESCAPED_SLASHES));
+    @file_put_contents($camp . '/brief.md', $briefMarkdown);
+
+    $py = $cfg['python_bin'] ?? 'python3';
+    $cmd = escapeshellarg($py) . ' ' . escapeshellarg($script) . ' --emails ' . escapeshellarg($tmp) . ' 2>&1';
+    $out = [];
+    $code = 1;
+    @exec($cmd, $out, $code);
+    $text = implode("\n", $out);
+    hp_rrmdir($tmp);
+
+    // harness sanity — if it didn't actually check the package, fail safe (never pass)
+    if (strpos($text, 'No campaign folders') !== false || strpos($text, 'No emails directory') !== false) {
+        return ['ok' => false, 'ran' => false, 'errors' => ['the validator did not run on the package (path/harness issue)'], 'output' => $text];
+    }
+    if (empty($out)) {
+        return ['ok' => false, 'ran' => false, 'errors' => ['could not run the validator (is Python on the host? check python_bin)'], 'output' => $text];
+    }
+
+    $errors = [];
+    foreach ($out as $line) {
+        if (strpos($line, '[ERR]') !== false) {
+            $errors[] = trim(preg_replace('/^\\s*\\[ERR\\]\\s*/', '', $line));
+        }
+    }
+    return ['ok' => ($code === 0), 'ran' => true, 'errors' => $errors, 'output' => $text];
+}
+
+/**
+ * Full pipeline: generate → validate (ALL rules) → retry once on failure →
+ * send only on a pass. After two failed attempts it does NOT send and returns the
+ * validation errors. Saves the last attempt's output for review either way.
  */
 function hp_run_pipeline(array $cfg, $briefMarkdown, $slug) {
-    $gen = hp_generate_email($cfg, $briefMarkdown);
-    if (empty($gen['ok'])) {
-        return ['ok' => false, 'error' => $gen['error'] ?? 'Generation failed', 'send' => null];
+    $validate = !array_key_exists('validate', $cfg) || !empty($cfg['validate']);
+    $maxAttempts = 2;          // first try + one retry
+    $feedback = '';
+    $attempts = 0;
+    $gen = null;
+    $val = ['ok' => true, 'ran' => false, 'errors' => []];
+
+    while ($attempts < $maxAttempts) {
+        $attempts++;
+        $gen = hp_generate_email($cfg, $briefMarkdown, $feedback);
+        if (empty($gen['ok'])) {
+            return ['ok' => false, 'stage' => 'generate', 'error' => $gen['error'] ?? 'Generation failed',
+                    'attempts' => $attempts, 'send' => null];
+        }
+        if (!$validate) { $val = ['ok' => true, 'ran' => false, 'errors' => []]; break; }
+        $val = hp_validate($cfg, $gen, $briefMarkdown);
+        if (!empty($val['ok'])) break;                              // passed the gate
+        $feedback = '- ' . implode("\n- ", $val['errors'] ?: ['(validation failed — see harness output)']);
     }
 
-    // Save outputs outside the web root (repo_root/generated/).
-    $genDir = rtrim($cfg['repo_root'], '/') . '/generated';
-    if (!is_dir($genDir)) @mkdir($genDir, 0775, true);
+    // Save the last attempt either way (for review).
     $base = 'brief_' . $slug . '_' . date('Ymd');
-    $htmlPath = $genDir . '/' . $base . '.html';
-    $jsonPath = $genDir . '/' . $base . '.send.json';
-    @file_put_contents($htmlPath, $gen['html']);
-    @file_put_contents($jsonPath, json_encode(hp_braze_body($cfg, $gen), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
-
-    $send = null;
-    if (!empty($cfg['auto_send'])) {
-        $send = hp_send_via_braze($cfg, $gen);
+    if (!empty($cfg['repo_root'])) {
+        $genDir = rtrim($cfg['repo_root'], '/') . '/generated';
+        if (!is_dir($genDir)) @mkdir($genDir, 0775, true);
+        @file_put_contents($genDir . '/' . $base . '.html', $gen['html']);
+        @file_put_contents($genDir . '/' . $base . '.send.json', json_encode(hp_braze_body($cfg, $gen), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
     }
+
+    // Failed validation on the final attempt → DO NOT send.
+    if (empty($val['ok'])) {
+        return [
+            'ok' => false,
+            'stage' => 'validate',
+            'validation_failed' => true,
+            'attempts' => $attempts,
+            'errors' => $val['errors'] ?? [],
+            'subject' => $gen['subject'],
+            'preheader' => $gen['preheader'],
+            'html_file' => $base . '.html',
+            'json_file' => $base . '.send.json',
+            'send' => null,
+        ];
+    }
+
+    // Passed (or validation disabled) → optionally send.
+    $send = null;
+    if (!empty($cfg['auto_send'])) $send = hp_send_via_braze($cfg, $gen);
 
     return [
         'ok' => true,
         'error' => null,
+        'attempts' => $attempts,
+        'validated' => !empty($val['ran']),
         'subject' => $gen['subject'],
         'preheader' => $gen['preheader'],
         'truncated' => !empty($gen['truncated']),

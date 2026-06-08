@@ -310,6 +310,10 @@ def main():
     ap = argparse.ArgumentParser(description="Validate email build packages.")
     ap.add_argument("--list-checks", action="store_true",
                     help="Show every check the toolkit can run and exit.")
+    ap.add_argument("--emails", metavar="DIR",
+                    help="Validate this emails dir instead of the one in config.ini "
+                         "(absolute, or relative to the current working directory). "
+                         "Used by the generation pipeline to gate one campaign at a time.")
     args = ap.parse_args()
 
     if args.list_checks:
@@ -317,6 +321,8 @@ def main():
         sys.exit(0)
 
     cfg = load_config()
+    if args.emails:
+        cfg["emails_dir"] = Path(args.emails).expanduser().resolve()
 
     print(f"Repo root:          {cfg['repo_root']}")
     print(f"Validating emails:  {cfg['emails_dir']}")

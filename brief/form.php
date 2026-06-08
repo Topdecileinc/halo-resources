@@ -430,7 +430,18 @@ function fld($label, $for, $summary, $anchor, $control) {
     </div>
 
     <?php if ($gen !== null): ?>
-      <?php if (empty($gen['ok'])): ?>
+      <?php if (!empty($gen['validation_failed'])): ?>
+        <div class="panel warn">
+          <h2>&#9888; Couldn&rsquo;t generate a compliant email &mdash; not sent</h2>
+          <p>After <?php echo (int) ($gen['attempts'] ?? 2); ?> attempts the email still broke binding rules, so it was <strong>not sent</strong>. The brief is saved; the last attempt is in <code>generated/<?php echo htmlspecialchars($gen['html_file'] ?? '', ENT_QUOTES, 'UTF-8'); ?></code> for review.</p>
+          <p style="margin-bottom:6px;"><strong>Rules it failed:</strong></p>
+          <ul style="margin:0 0 4px 18px;">
+            <?php foreach (($gen['errors'] ?? []) as $erow): ?>
+              <li style="font-size:0.9rem;"><?php echo htmlspecialchars($erow, ENT_QUOTES, 'UTF-8'); ?></li>
+            <?php endforeach; ?>
+          </ul>
+        </div>
+      <?php elseif (empty($gen['ok'])): ?>
         <div class="panel warn">
           <h2>&#9888; Email generation failed</h2>
           <p>The brief was saved, but the email could not be generated:</p>
@@ -438,9 +449,12 @@ function fld($label, $for, $summary, $anchor, $control) {
         </div>
       <?php else: $send = $gen['send'] ?? null; $sendOk = $send && !empty($send['ok']); ?>
         <div class="panel <?php echo ($send && empty($send['ok'])) ? 'warn' : 'ok'; ?>">
-          <h2><?php echo $sendOk ? '&#10003; Email generated &amp; sent' : ($send ? '&#9888; Generated, but the send failed' : '&#10003; Email generated'); ?></h2>
+          <h2><?php echo $sendOk ? '&#10003; Email generated, validated &amp; sent' : ($send ? '&#9888; Generated &amp; validated, but the send failed' : '&#10003; Email generated &amp; validated'); ?></h2>
           <p><strong>Subject:</strong> <?php echo htmlspecialchars($gen['subject'], ENT_QUOTES, 'UTF-8'); ?></p>
           <p><strong>Preheader:</strong> <?php echo htmlspecialchars($gen['preheader'], ENT_QUOTES, 'UTF-8'); ?></p>
+          <?php if (!empty($gen['validated'])): ?>
+            <p class="hardcoded">&#10003; Passed all validation checks<?php echo ((int) ($gen['attempts'] ?? 1) > 1) ? ' (on attempt ' . (int) $gen['attempts'] . ')' : ''; ?>.</p>
+          <?php endif; ?>
           <?php if (!empty($gen['truncated'])): ?>
             <p class="hardcoded">&#9888; Output hit the token limit and may be truncated — raise <code>max_tokens</code> in config.php.</p>
           <?php endif; ?>
