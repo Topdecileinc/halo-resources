@@ -2,15 +2,24 @@
 /**
  * Halo Email — Brief form
  * -----------------------------------------------------------------------------
- * Renders the email brief as an interactive form. On submit it builds a
- * filled-in markdown brief (same shape as brief_sample.md), writes it to
- * ../submissions/, and downloads it to the user.
+ * Renders the email brief as an interactive form (sections 1-8). On submit it
+ * builds a filled-in markdown brief (same shape as brief_sample.md), with the
+ * Sender (§9) and Test targeting (§10) values hardcoded, and writes it to
+ * ../submissions/. It does NOT download anything — the file is just saved.
  *
  * IMPORTANT: this is PHP — it must run on a PHP-capable host. GitHub Pages is
  * static and will NOT execute it. Deploy this file (and a writable
  * ../submissions/ folder) to your PHP server.
  * -----------------------------------------------------------------------------
  */
+
+/* --- hardcoded send config (§9, §10) — not editable in the form --- */
+const BRAZE_APP_ID = '575c10a7-11d8-4494-afdc-a01e5a420cf4';
+const BRAZE_FROM   = 'The Halo Team <thehaloteam@app.halocollar.com>';
+const TEST_SEGMENT = '31c76280-df2d-40c4-b566-e29117768163';
+
+/* --- documentation base (live docs site) --- */
+const DOCS = 'https://topdecileinc.github.io/halo-resources/README.html';
 
 function field($k) { return isset($_POST[$k]) ? trim((string) $_POST[$k]) : ''; }
 
@@ -22,10 +31,10 @@ function cell($s) {
     return str_replace('|', '\\|', $s);    // escape pipe so it doesn't break the table
 }
 
-$isPost     = (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST');
-$saveError  = null;
-$savedName  = null;
-$briefMd    = '';
+$isPost    = (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST');
+$saveError = null;
+$savedName = null;
+$briefMd   = '';
 
 if ($isPost) {
     // ---- filename: brief_<slug>_<YYYYMMDD>.md ----
@@ -38,7 +47,7 @@ if ($isPost) {
 
     $title = ($campaign !== '') ? $campaign : '[Campaign Name]';
 
-    // ---- build the filled brief (mirrors brief_sample.md) ----
+    // ---- build the filled brief (mirrors brief_sample.md); §9 + §10 hardcoded ----
     $briefMd =
 "---
 ---
@@ -112,17 +121,22 @@ if ($isPost) {
 
 | Field | Your input |
 |---|---|
-| Braze `app_id` | " . cell(field('braze_app_id')) . " |
-| `from` | " . cell(field('from_sender')) . " |
+| Braze `app_id` | " . BRAZE_APP_ID . " |
+| `from` | " . BRAZE_FROM . " |
+
+> These are **not secrets**. The API key and Braze REST URL live in env vars on the
+> runner's machine, not here — see the README's \"Sending via Braze (test sends)\" section.
 
 ## 10. Test targeting (segment)
 
+Test sends target a designated test segment in a non-production Braze workspace.
+
 | Field | Your input |
 |---|---|
-| Segment ID (UUID) | " . cell(field('segment_id')) . " |
+| Segment ID (UUID) | " . TEST_SEGMENT . " |
 ";
 
-    // ---- save to ../submissions/ ----
+    // ---- save to ../submissions/ (no download — just save) ----
     $dir = __DIR__ . '/../submissions';
     if (!is_dir($dir)) { @mkdir($dir, 0775, true); }
     if (is_dir($dir) && is_writable($dir)) {
@@ -134,9 +148,19 @@ if ($isPost) {
     }
 }
 
-/** Markdown content for safe embedding in a <script> (drives the client download). */
-$jsBrief = json_encode($briefMd, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES);
-$jsName  = json_encode($savedName, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+/**
+ * Render one labelled field: label + summary + a docs link + the control.
+ * Requiring $summary and $anchor here guarantees no field ships without both.
+ */
+function fld($label, $for, $summary, $anchor, $control) {
+    $doc = DOCS . '#' . $anchor;
+    echo '<div class="field">';
+    echo '<label for="' . $for . '">' . $label . '</label>';
+    echo '<span class="hint">' . $summary
+       . ' <a class="doc-link" href="' . $doc . '" target="_blank" rel="noopener">Docs &#8599;</a></span>';
+    echo $control;
+    echo '</div>';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -154,10 +178,8 @@ $jsName  = json_encode($savedName, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT 
     --halo-ink: #071826;
     --halo-gray-700: #354c5c;
     --halo-gray-600: #526777;
-    --halo-gray-400: #a7b3bd;
     --halo-gray-300: #d3dce3;
     --halo-gray-200: #e2e9ee;
-    --halo-gray-100: #f2f6f8;
     --halo-gray-50: #fbfcfd;
     --halo-white: #ffffff;
     --halo-yellow: #fcd62d;
@@ -191,7 +213,7 @@ $jsName  = json_encode($savedName, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT 
   .halo-header__tag { color: var(--halo-gray-600); font-weight: 800; letter-spacing: 0.04em; font-size: 0.9rem; }
 
   main { width: min(900px, calc(100% - 32px)); margin-inline: auto; padding: 40px 0 96px; }
-  .lede { max-width: 60ch; color: var(--halo-gray-700); }
+  .lede { max-width: 62ch; color: var(--halo-gray-700); }
   h1 { font-size: 2rem; letter-spacing: -0.02em; margin: 0 0 8px; }
 
   form { margin-top: 8px; }
@@ -199,17 +221,12 @@ $jsName  = json_encode($savedName, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT 
     border: 1px solid var(--halo-gray-200); border-radius: var(--halo-radius-lg);
     padding: 20px 22px 8px; margin: 0 0 22px; background: var(--halo-gray-50);
   }
-  legend {
-    font-weight: 800; font-size: 1.05rem; padding: 0 8px;
-    color: var(--halo-ink);
-  }
-  legend .num {
-    display: inline-block; min-width: 1.4em; margin-right: 6px;
-    color: var(--halo-blue); font-variant-numeric: tabular-nums;
-  }
+  legend { font-weight: 800; font-size: 1.05rem; padding: 0 8px; color: var(--halo-ink); }
+  legend .num { display: inline-block; min-width: 1.4em; margin-right: 6px; color: var(--halo-blue); font-variant-numeric: tabular-nums; }
   .field { margin: 0 0 16px; }
-  .field > label { display: block; font-weight: 650; font-size: 0.95rem; margin: 0 0 5px; }
+  .field > label { display: block; font-weight: 650; font-size: 0.95rem; margin: 0 0 4px; }
   .field .hint { display: block; font-size: 0.82rem; color: var(--halo-gray-600); margin: 0 0 7px; font-weight: 400; }
+  .field .doc-link { white-space: nowrap; font-weight: 600; }
   input[type=text], input[type=url], input[type=date], select, textarea {
     width: 100%; font: inherit; color: var(--halo-ink);
     padding: 10px 12px; background: var(--halo-white);
@@ -218,12 +235,11 @@ $jsName  = json_encode($savedName, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT 
   }
   textarea { min-height: 84px; resize: vertical; }
   input:focus, select:focus, textarea:focus {
-    outline: none; border-color: var(--halo-blue);
-    box-shadow: 0 0 0 3px rgba(47,147,243,0.18);
+    outline: none; border-color: var(--halo-blue); box-shadow: 0 0 0 3px rgba(47,147,243,0.18);
   }
   .req { color: #c0392b; }
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
-  .cta-row { display: grid; grid-template-columns: 1fr 1.4fr; gap: 0 18px; align-items: end; }
+  .cta-row { display: grid; grid-template-columns: 1fr 1.4fr; gap: 0 18px; }
   @media (max-width: 560px) { .grid2, .cta-row { grid-template-columns: 1fr; } }
 
   .actions { margin-top: 8px; }
@@ -236,13 +252,11 @@ $jsName  = json_encode($savedName, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT 
   .btn:hover { text-decoration: none; box-shadow: 0 6px 20px rgba(252,214,45,0.45); transform: translateY(-1px); }
   .btn--ghost { background: var(--halo-white); color: var(--halo-ink); border: 1px solid var(--halo-gray-300); }
 
-  .panel {
-    border: 1px solid var(--halo-gray-200); border-radius: var(--halo-radius-lg);
-    padding: 24px 26px; background: var(--halo-gray-50);
-  }
+  .panel { border: 1px solid var(--halo-gray-200); border-radius: var(--halo-radius-lg); padding: 24px 26px; background: var(--halo-gray-50); }
   .panel.ok { border-color: #b7e0c2; background: #f3fbf5; }
   .panel.warn { border-color: #f1d59a; background: #fdf7ea; }
   .panel h2 { margin: 0 0 8px; font-size: 1.25rem; }
+  .hardcoded { font-size: 0.85rem; color: var(--halo-gray-600); border-left: 3px solid var(--halo-gray-300); padding: 2px 0 2px 12px; margin: 4px 0 0; }
   pre.preview {
     margin-top: 18px; max-height: 320px; overflow: auto;
     background: var(--halo-white); border: 1px solid var(--halo-gray-200);
@@ -262,239 +276,193 @@ $jsName  = json_encode($savedName, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT 
   <main>
 <?php if ($isPost): ?>
     <div class="panel <?php echo $saveError ? 'warn' : 'ok'; ?>">
-      <h2><?php echo $saveError ? '&#9888; Brief built — but not saved on the server' : '&#10003; Brief submitted'; ?></h2>
+      <h2><?php echo $saveError ? '&#9888; Brief built — but not saved' : '&#10003; Brief saved'; ?></h2>
       <?php if ($saveError): ?>
-        <p>Your download will still start below, but the copy could <strong>not</strong> be saved to <code>submissions/</code>:</p>
+        <p>The brief could <strong>not</strong> be saved to <code>submissions/</code>:</p>
         <p><em><?php echo htmlspecialchars($saveError, ENT_QUOTES, 'UTF-8'); ?></em></p>
+        <p>Here is the brief so it isn't lost — copy it from below.</p>
       <?php else: ?>
-        <p>Saved to <code>submissions/<?php echo htmlspecialchars($savedName, ENT_QUOTES, 'UTF-8'); ?></code> and downloaded to your device.</p>
+        <p>Saved to <code>submissions/<?php echo htmlspecialchars($savedName, ENT_QUOTES, 'UTF-8'); ?></code>.</p>
       <?php endif; ?>
       <div class="actions" style="margin-top:16px;">
-        <button type="button" class="btn" id="dl">Download again</button>
         <a class="btn btn--ghost" href="form.php">Start a new brief</a>
       </div>
       <pre class="preview"><?php echo htmlspecialchars($briefMd, ENT_QUOTES, 'UTF-8'); ?></pre>
     </div>
-    <script>
-      (function () {
-        var data = <?php echo $jsBrief; ?>;
-        var name = <?php echo $jsName; ?>;
-        function download() {
-          var blob = new Blob([data], { type: 'text/markdown;charset=utf-8' });
-          var url = URL.createObjectURL(blob);
-          var a = document.createElement('a');
-          a.href = url; a.download = name;
-          document.body.appendChild(a); a.click(); a.remove();
-          setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
-        }
-        document.getElementById('dl').addEventListener('click', download);
-        download(); // auto-start
-      })();
-    </script>
 <?php else: ?>
     <h1>Email brief</h1>
     <p class="lede">Fill this in for one campaign. On submit it saves a copy to the team's
-       <code>submissions/</code> folder and downloads a <code>brief_&lt;campaign&gt;.md</code>
-       you can hand to the generator. Leave anything blank that doesn't apply — the generator
-       asks about or defaults the rest.</p>
+       <code>submissions/</code> folder. Leave anything blank that doesn't apply — the generator
+       asks about or defaults the rest. Every field links to its documentation.</p>
 
-    <form method="post" action="form.php" autocomplete="off">
+    <form method="post" action="" autocomplete="off">
 
       <fieldset>
         <legend><span class="num">1</span>Campaign basics</legend>
-        <div class="field">
-          <label for="campaign_name">Campaign name <span class="req">*</span></label>
-          <span class="hint">Used to name the file (e.g. "Mothers Day 2026").</span>
-          <input type="text" id="campaign_name" name="campaign_name" required>
-        </div>
-        <div class="field">
-          <label for="product_subject">Product / subject</label>
-          <span class="hint">What the email is about.</span>
-          <input type="text" id="product_subject" name="product_subject">
-        </div>
-        <div class="grid2">
-          <div class="field">
-            <label for="occasion">Occasion / theme</label>
-            <span class="hint">Holiday, awareness month, flash sale, evergreen…</span>
-            <input type="text" id="occasion" name="occasion">
-          </div>
-          <div class="field">
-            <label for="send_date">Send date</label>
-            <span class="hint">When it goes out.</span>
-            <input type="date" id="send_date" name="send_date">
-          </div>
-        </div>
-        <div class="field">
-          <label for="primary_goal">Primary goal</label>
-          <span class="hint">Drive purchase, re-engage, announce a feature…</span>
-          <input type="text" id="primary_goal" name="primary_goal">
-        </div>
+        <?php
+          fld('Campaign name <span class="req">*</span>', 'campaign_name',
+              'A short name for this send — used to name the saved file (e.g. "Mothers Day 2026").',
+              '1-campaign-basics',
+              '<input type="text" id="campaign_name" name="campaign_name" required>');
+          fld('Product / subject', 'product_subject',
+              'What the email is about — the product, feature, or topic at its center.',
+              '1-campaign-basics',
+              '<input type="text" id="product_subject" name="product_subject">');
+          fld('Occasion / theme', 'occasion',
+              'The hook or timing — holiday, awareness month, flash sale, or evergreen.',
+              '1-campaign-basics',
+              '<input type="text" id="occasion" name="occasion">');
+          fld('Send date', 'send_date',
+              'The date this email is scheduled to go out.',
+              '1-campaign-basics',
+              '<input type="date" id="send_date" name="send_date">');
+          fld('Primary goal', 'primary_goal',
+              'The one outcome this email is for — drive a purchase, re-engage, or announce a feature.',
+              '1-campaign-basics',
+              '<input type="text" id="primary_goal" name="primary_goal">');
+        ?>
       </fieldset>
 
       <fieldset>
         <legend><span class="num">2</span>Audience</legend>
-        <div class="field">
-          <label for="target_segment">Target segment</label>
-          <span class="hint">Which segment this email is for (see rules_segment_definition.md). The segment shapes tone and offer.</span>
-          <input type="text" id="target_segment" name="target_segment">
-        </div>
+        <?php
+          fld('Target segment', 'target_segment',
+              'Which audience segment this email targets. The segment shapes the angle, tone, and offer (see rules_segment_definition.md).',
+              '2-audience--segments',
+              '<input type="text" id="target_segment" name="target_segment">');
+        ?>
       </fieldset>
 
       <fieldset>
         <legend><span class="num">3</span>Content</legend>
-        <div class="grid2">
-          <div class="field">
-            <label for="headline">Headline</label>
-            <span class="hint">Provide, or write "suggest".</span>
-            <input type="text" id="headline" name="headline">
-          </div>
-          <div class="field">
-            <label for="subhead">Subhead</label>
-            <span class="hint">Provide, or write "suggest".</span>
-            <input type="text" id="subhead" name="subhead">
-          </div>
-        </div>
-        <div class="field">
-          <label for="key_message">Key message or offer</label>
-          <span class="hint">Body copy is AI-generated from this, the segment, and brand voice — there's no body field.</span>
-          <textarea id="key_message" name="key_message"></textarea>
-        </div>
+        <?php
+          fld('Headline', 'headline',
+              'The main headline. Provide your own, or write "suggest" to have one generated.',
+              '3-content',
+              '<input type="text" id="headline" name="headline">');
+          fld('Subhead', 'subhead',
+              'The supporting line under the headline. Provide one, or write "suggest".',
+              '3-content',
+              '<input type="text" id="subhead" name="subhead">');
+          fld('Key message or offer', 'key_message',
+              'The core thing to communicate. Body copy is generated from this, the segment, and brand voice — there is no separate body field.',
+              '3-content',
+              '<textarea id="key_message" name="key_message"></textarea>');
+        ?>
       </fieldset>
 
       <fieldset>
         <legend><span class="num">4</span>Hero image</legend>
-        <div class="field">
-          <label for="hero_url">Hosted hero URL</label>
-          <span class="hint">The live image URL the email links to.</span>
-          <input type="url" id="hero_url" name="hero_url" placeholder="https://…">
-        </div>
-        <div class="grid2">
-          <div class="field">
-            <label for="reference_attached">Reference image attached?</label>
-            <span class="hint">Attach the actual image separately so content can match the visual.</span>
-            <select id="reference_attached" name="reference_attached">
-              <option value="">—</option>
-              <option value="Yes — attached separately">Yes — attached separately</option>
-              <option value="No">No</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="alt_text">Alt text</label>
-            <span class="hint">Describe the image for accessibility + Outlook fallback.</span>
-            <input type="text" id="alt_text" name="alt_text">
-          </div>
-        </div>
+        <?php
+          fld('Hosted hero URL', 'hero_url',
+              'The live, hosted URL of the hero image the email links to (not an upload).',
+              '4-hero-image-hosted-url--reference-upload',
+              '<input type="url" id="hero_url" name="hero_url" placeholder="https://…">');
+          fld('Reference image attached?', 'reference_attached',
+              'Whether you are attaching the actual image separately so the build can match the visual.',
+              '4-hero-image-hosted-url--reference-upload',
+              '<select id="reference_attached" name="reference_attached"><option value="">—</option><option value="Yes — attached separately">Yes — attached separately</option><option value="No">No</option></select>');
+          fld('Alt text', 'alt_text',
+              'A short description of the hero image for accessibility and Outlook fallback.',
+              '4-hero-image-hosted-url--reference-upload',
+              '<input type="text" id="alt_text" name="alt_text">');
+        ?>
       </fieldset>
 
       <fieldset>
         <legend><span class="num">5</span>Pricing</legend>
-        <div class="field">
-          <label for="show_pricing">Show pricing?</label>
-          <select id="show_pricing" name="show_pricing">
-            <option value="">—</option>
-            <option value="yes">Yes</option>
-            <option value="no">No</option>
-          </select>
-        </div>
-        <div class="grid2">
-          <div class="field">
-            <label for="original_price">Original price</label>
-            <span class="hint">Pre-discount / list price, if shown.</span>
-            <input type="text" id="original_price" name="original_price">
-          </div>
-          <div class="field">
-            <label for="sale_price">Sale / final price</label>
-            <span class="hint">What the customer actually pays.</span>
-            <input type="text" id="sale_price" name="sale_price">
-          </div>
-        </div>
-        <div class="grid2">
-          <div class="field">
-            <label for="discount">Discount</label>
-            <span class="hint">e.g. "$50 off" or "20% off" — must reconcile with the prices.</span>
-            <input type="text" id="discount" name="discount">
-          </div>
-          <div class="field">
-            <label for="promo_code">Promo code</label>
-            <span class="hint">If any.</span>
-            <input type="text" id="promo_code" name="promo_code">
-          </div>
-        </div>
+        <?php
+          fld('Show pricing?', 'show_pricing',
+              'Whether this email displays pricing at all. Choose No to omit the price fields.',
+              '5-pricing',
+              '<select id="show_pricing" name="show_pricing"><option value="">—</option><option value="yes">Yes</option><option value="no">No</option></select>');
+          fld('Original price', 'original_price',
+              'The pre-discount / list price, if you are showing a strike-through.',
+              '5-pricing',
+              '<input type="text" id="original_price" name="original_price">');
+          fld('Sale / final price', 'sale_price',
+              'The price the customer actually pays.',
+              '5-pricing',
+              '<input type="text" id="sale_price" name="sale_price">');
+          fld('Discount', 'discount',
+              'How the discount reads (e.g. "$50 off" or "20% off") — must reconcile with the prices above.',
+              '5-pricing',
+              '<input type="text" id="discount" name="discount">');
+          fld('Promo code', 'promo_code',
+              'The promo code to display, if any.',
+              '5-pricing',
+              '<input type="text" id="promo_code" name="promo_code">');
+        ?>
       </fieldset>
 
       <fieldset>
         <legend><span class="num">6</span>Call to action</legend>
-        <span class="hint" style="margin-bottom:12px;">Up to three. Leave a row blank to omit that CTA.</span>
-        <div class="cta-row">
-          <div class="field"><label for="cta1_label">CTA 1 label</label><input type="text" id="cta1_label" name="cta1_label" placeholder="Shop now"></div>
-          <div class="field"><label for="cta1_dest">Destination</label><input type="text" id="cta1_dest" name="cta1_dest" placeholder="https://…"></div>
-        </div>
-        <div class="cta-row">
-          <div class="field"><label for="cta2_label">CTA 2 label</label><input type="text" id="cta2_label" name="cta2_label"></div>
-          <div class="field"><label for="cta2_dest">Destination</label><input type="text" id="cta2_dest" name="cta2_dest"></div>
-        </div>
-        <div class="cta-row">
-          <div class="field"><label for="cta3_label">CTA 3 label</label><input type="text" id="cta3_label" name="cta3_label"></div>
-          <div class="field"><label for="cta3_dest">Destination</label><input type="text" id="cta3_dest" name="cta3_dest"></div>
-        </div>
+        <?php
+          fld('CTA 1 label', 'cta1_label',
+              'The button text for the primary call to action (e.g. "Shop now").',
+              '6-call-to-action',
+              '<input type="text" id="cta1_label" name="cta1_label" placeholder="Shop now">');
+          fld('CTA 1 destination', 'cta1_dest',
+              'Where the primary button links — brand site, marketplace, or other URL.',
+              '6-call-to-action',
+              '<input type="text" id="cta1_dest" name="cta1_dest" placeholder="https://…">');
+          fld('CTA 2 label', 'cta2_label',
+              'Optional second CTA button text. Leave blank to omit this CTA.',
+              '6-call-to-action',
+              '<input type="text" id="cta2_label" name="cta2_label">');
+          fld('CTA 2 destination', 'cta2_dest',
+              'Where the second button links. Leave blank to omit this CTA.',
+              '6-call-to-action',
+              '<input type="text" id="cta2_dest" name="cta2_dest">');
+          fld('CTA 3 label', 'cta3_label',
+              'Optional third CTA button text. Leave blank to omit this CTA.',
+              '6-call-to-action',
+              '<input type="text" id="cta3_label" name="cta3_label">');
+          fld('CTA 3 destination', 'cta3_dest',
+              'Where the third button links. Leave blank to omit this CTA.',
+              '6-call-to-action',
+              '<input type="text" id="cta3_dest" name="cta3_dest">');
+        ?>
       </fieldset>
 
       <fieldset>
         <legend><span class="num">7</span>Structure &amp; starting point</legend>
-        <div class="field">
-          <label for="template">Start from a template?</label>
-          <select id="template" name="template">
-            <option value="">—</option>
-            <option value="newsletter">Newsletter</option>
-            <option value="promo">Promo</option>
-            <option value="none — build fresh">None — build fresh</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="sections_include">Sections to include</label>
-          <span class="hint">In order — see the section vocabulary in the README.</span>
-          <textarea id="sections_include" name="sections_include"></textarea>
-        </div>
-        <div class="field">
-          <label for="exclude">Anything to exclude</label>
-          <input type="text" id="exclude" name="exclude">
-        </div>
+        <?php
+          fld('Start from a template?', 'template',
+              'Whether to base this on an existing template (newsletter / promo) or build fresh.',
+              '7-structure--starting-point',
+              '<select id="template" name="template"><option value="">—</option><option value="newsletter">Newsletter</option><option value="promo">Promo</option><option value="none — build fresh">None — build fresh</option></select>');
+          fld('Sections to include', 'sections_include',
+              'The blocks to include, in order (e.g. hero, feature row, offer). See the section vocabulary in the docs.',
+              '7-structure--starting-point',
+              '<textarea id="sections_include" name="sections_include"></textarea>');
+          fld('Anything to exclude', 'exclude',
+              'Any blocks or elements to deliberately leave out.',
+              '7-structure--starting-point',
+              '<input type="text" id="exclude" name="exclude">');
+        ?>
       </fieldset>
 
       <fieldset>
         <legend><span class="num">8</span>Notes for the builder</legend>
-        <div class="field">
-          <label for="notes">Notes</label>
-          <span class="hint">Anything specific to this send — leave blank if none.</span>
-          <textarea id="notes" name="notes"></textarea>
-        </div>
+        <?php
+          fld('Notes', 'notes',
+              'Anything specific to this send the builder should know — constraints, must-include lines, tone notes. Leave blank if none.',
+              '8-notes-for-the-builder',
+              '<textarea id="notes" name="notes"></textarea>');
+        ?>
       </fieldset>
 
       <fieldset>
-        <legend><span class="num">9</span>Sender (for the Braze send)</legend>
-        <div class="field">
-          <label for="braze_app_id">Braze <code>app_id</code></label>
-          <span class="hint">App Identifier for the email app (Braze → Settings → APIs and Identifiers).</span>
-          <input type="text" id="braze_app_id" name="braze_app_id">
-        </div>
-        <div class="field">
-          <label for="from_sender"><code>from</code></label>
-          <span class="hint">Formatted exactly as <code>Display Name &lt;email@example.com&gt;</code>.</span>
-          <input type="text" id="from_sender" name="from_sender">
-        </div>
-      </fieldset>
-
-      <fieldset>
-        <legend><span class="num">10</span>Test targeting (segment)</legend>
-        <div class="field">
-          <label for="segment_id">Segment ID (UUID)</label>
-          <span class="hint">The designated test segment in your non-production Braze workspace.</span>
-          <input type="text" id="segment_id" name="segment_id">
-        </div>
+        <legend><span class="num">9 &amp; 10</span>Sender &amp; test targeting</legend>
+        <p class="hint" style="margin-bottom:10px;">These are fixed for every send and are added to the brief automatically — you don't fill them in.</p>
+        <p class="hardcoded">Braze <code>app_id</code>: <code><?php echo BRAZE_APP_ID; ?></code></p>
+        <p class="hardcoded"><code>from</code>: <code><?php echo htmlspecialchars(BRAZE_FROM, ENT_QUOTES, 'UTF-8'); ?></code></p>
+        <p class="hardcoded">Test segment ID: <code><?php echo TEST_SEGMENT; ?></code></p>
       </fieldset>
 
       <div class="actions">
-        <button type="submit" class="btn">Save &amp; download brief</button>
+        <button type="submit" class="btn">Save brief</button>
       </div>
     </form>
 <?php endif; ?>
