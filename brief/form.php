@@ -595,14 +595,6 @@ function fld($label, $for, $summary, $anchor, $control) {
         ?>
       </fieldset>
 
-      <fieldset>
-        <legend><span class="num">9 &amp; 10</span>Sender &amp; test targeting</legend>
-        <p class="hint" style="margin-bottom:10px;">These are fixed for every send and are added to the brief automatically — you don't fill them in.</p>
-        <p class="hardcoded">Braze <code>app_id</code>: <code><?php echo BRAZE_APP_ID; ?></code></p>
-        <p class="hardcoded"><code>from</code>: <code><?php echo htmlspecialchars(BRAZE_FROM, ENT_QUOTES, 'UTF-8'); ?></code></p>
-        <p class="hardcoded">Test segment ID: <code><?php echo TEST_SEGMENT; ?></code></p>
-      </fieldset>
-
       <div class="actions">
         <button type="submit" class="btn">Save brief</button>
       </div>

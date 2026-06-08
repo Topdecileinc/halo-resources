@@ -11,3 +11,5 @@ brief/config.php
 # Generated emails (runtime output)
 generated/*
 !generated/.gitkeep
+
+brief/.htaccess
