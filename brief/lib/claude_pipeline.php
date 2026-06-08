@@ -50,24 +50,51 @@ function hp_glob_rel($repoRoot, $pattern) {
     return $out;
 }
 
+/** Recursively find files whose basename matches $pattern under <repoRoot>/<subdir>.
+    Depth-agnostic, so nested sections/components/examples are always found. Returns
+    repo-relative paths. Falls back to a few glob depths if the iterator can't run. */
+function hp_find_rel($repoRoot, $subdir, $pattern) {
+    $base = $repoRoot . '/' . $subdir;
+    $out = [];
+    if (!is_dir($base)) return $out;
+    try {
+        $it = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($base, FilesystemIterator::SKIP_DOTS | FilesystemIterator::FOLLOW_SYMLINKS),
+            RecursiveIteratorIterator::LEAVES_ONLY
+        );
+        foreach ($it as $file) {
+            if ($file->isFile() && fnmatch($pattern, $file->getFilename())) {
+                $out[] = ltrim(str_replace($repoRoot, '', $file->getPathname()), '/');
+            }
+        }
+    } catch (Exception $e) {
+        foreach ([$subdir . '/' . $pattern, $subdir . '/*/' . $pattern, $subdir . '/*/*/' . $pattern] as $g) {
+            foreach (hp_glob_rel($repoRoot, $g) as $r) $out[] = $r;
+        }
+    }
+    sort($out);
+    return array_values(array_unique($out));
+}
+
 /**
  * Build the stable system prompt: a short framing preamble + the orchestrator +
- * every rule file + sections/components (+ examples). Read fresh each call.
+ * every rule file + sections/components/templates (+ examples). Files are discovered
+ * RECURSIVELY by prefix, so depth/nesting doesn't matter. Read fresh each call.
  */
 function hp_load_context(array $cfg) {
     $root = rtrim($cfg['repo_root'], '/');
 
     $rels = ['prompt_email_generation.md'];                       // orchestrator first
     foreach (['brand-brain', 'product-brain', 'email-design-system', 'braze-deployment'] as $d) {
-        foreach (hp_glob_rel($root, "$d/rules_*.md") as $r) $rels[] = $r;
+        foreach (hp_find_rel($root, $d, 'rules_*.md') as $r) $rels[] = $r;          // rules at any depth
     }
-    foreach (hp_glob_rel($root, 'email-design-system/sections/section_*.html') as $r) $rels[] = $r;
-    foreach (hp_glob_rel($root, 'email-design-system/components/component_*.html') as $r) $rels[] = $r;
+    foreach (hp_find_rel($root, 'email-design-system/sections', 'section_*.html') as $r) $rels[] = $r;
+    foreach (hp_find_rel($root, 'email-design-system/components', 'component_*.html') as $r) $rels[] = $r;
+    foreach (hp_find_rel($root, 'email-design-system/templates', 'template_*.html') as $r) $rels[] = $r;
     if (!empty($cfg['include_examples'])) {
-        // Examples live one folder deep: email-examples/<campaign>/sample_*.html
-        foreach (hp_glob_rel($root, 'email-examples/sample_*.html') as $r) $rels[] = $r;     // (direct, just in case)
-        foreach (hp_glob_rel($root, 'email-examples/*/sample_*.html') as $r) $rels[] = $r;   // nested (the real layout)
+        foreach (hp_find_rel($root, 'email-examples', 'sample_*.html') as $r) $rels[] = $r;  // examples at any depth
     }
+    $rels = array_values(array_unique($rels));
 
     $preamble =
         "You are the Halo email-building engine. The documents below are the orchestrator "
@@ -416,6 +443,7 @@ function hp_run_pipeline(array $cfg, $briefMarkdown, $slug) {
             'errors' => array_merge($derrors, $aviolations),
             'subject' => $gen['subject'],
             'preheader' => $gen['preheader'],
+            'loaded' => $gen['loaded'] ?? [],
             'html_file' => $base . '.html',
             'json_file' => $base . '.send.json',
             'send' => null,

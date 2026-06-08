@@ -466,6 +466,12 @@ function fld($label, $for, $summary, $anchor, $control) {
           <?php endif; ?>
         </div>
       <?php endif; ?>
+      <?php if (!empty($gen['loaded'])): ?>
+        <details style="margin-top:12px;">
+          <summary style="cursor:pointer; font-weight:650; font-size:0.9rem; color:var(--halo-gray-700);">Context loaded into Claude (<?php echo count($gen['loaded']); ?> files)</summary>
+          <pre class="preview"><?php echo htmlspecialchars(implode("\n", $gen['loaded']), ENT_QUOTES, 'UTF-8'); ?></pre>
+        </details>
+      <?php endif; ?>
     <?php elseif (!$saveError): ?>
       <p class="hardcoded" style="margin-top:14px;">Automated generation is not configured on this server (no <code>config.php</code>) — the brief was saved only.</p>
     <?php endif; ?>
