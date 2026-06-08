@@ -44,28 +44,14 @@ function sections_value() {
     caught here rather than producing placeholder/non-compliant output downstream. */
 function brief_problems() {
     $p = array();
-    if (field('campaign_name') === '')   $p[] = 'Campaign name is required (§1).';
-    if (field('product_subject') === '') $p[] = 'Product / subject is required (§1).';
-    if (field('target_segment') === '')  $p[] = 'Target segment is required (§2) — pick one from the list.';
-    if (field('headline') === '' && field('subhead') === '' && field('key_message') === '')
-        $p[] = 'Provide a headline, subhead, or key message (§3) — at least one.';
-
+    // Only block on genuinely un-generatable, broken input. Everything the generator
+    // can produce (headline, subhead, body, alt text, product framing, CTA label) is
+    // left blank-OK — Claude generates it. The one hard stop is a hero image format
+    // that won't render in Outlook, which no amount of generation can fix.
     $hero = field('hero_url');
-    if ($hero === '') {
-        $p[] = 'Hosted hero URL is required (§4).';
-    } elseif (preg_match('/\.(webp|avif)(\?|#|$)/i', $hero)) {
-        $p[] = 'Hero is a .webp/.avif image — it will not render in Outlook desktop. Use a PNG, JPG, or GIF.';
+    if ($hero !== '' && preg_match('/\.(webp|avif)(\?|#|$)/i', $hero)) {
+        $p[] = 'Hero image is a .webp/.avif (' . $hero . ') — it will not render in Outlook desktop. Use a PNG, JPG, or GIF.';
     }
-    if (field('alt_text') === '') $p[] = 'Hero alt text is required (§4) for accessibility / Outlook fallback.';
-
-    if (strtolower(field('show_pricing')) === 'yes') {
-        if (field('sale_price') === '') $p[] = 'Sale / final price is required (§5) when pricing is shown.';
-        if (field('discount') !== '' && field('original_price') === '')
-            $p[] = 'Original price is required (§5) when a discount is shown, so the math reconciles.';
-    }
-
-    if (field('cta1_label') === '') $p[] = 'CTA 1 label is required (§6).';
-    if (field('cta1_dest') === '')  $p[] = 'CTA 1 destination is required (§6).';
     return $p;
 }
 
@@ -590,7 +576,7 @@ function fld($label, $for, $summary, $anchor, $control) {
           fld('Hosted hero URL', 'hero_url',
               'The live, hosted URL of the hero image the email links to (not an upload).',
               '4-hero-image-hosted-url--reference-upload',
-              '<input type="url" id="hero_url" name="hero_url" placeholder="https://… (PNG / JPG / GIF — not .webp)" required>');
+              '<input type="url" id="hero_url" name="hero_url" placeholder="https://… (PNG / JPG / GIF — not .webp)">');
           fld('Alt text', 'alt_text',
               'A short description of the hero image for accessibility and Outlook fallback.',
               '4-hero-image-hosted-url--reference-upload',
@@ -630,11 +616,11 @@ function fld($label, $for, $summary, $anchor, $control) {
           fld('CTA 1 label', 'cta1_label',
               'The button text for the primary call to action (e.g. "Shop now").',
               '6-call-to-action',
-              '<input type="text" id="cta1_label" name="cta1_label" placeholder="Shop now" required>');
+              '<input type="text" id="cta1_label" name="cta1_label" placeholder="Shop now">');
           fld('CTA 1 destination', 'cta1_dest',
               'Where the primary button links — brand site, marketplace, or other URL.',
               '6-call-to-action',
-              '<input type="text" id="cta1_dest" name="cta1_dest" placeholder="https://…" required>');
+              '<input type="text" id="cta1_dest" name="cta1_dest" placeholder="https://…">');
           fld('CTA 2 label', 'cta2_label',
               'Optional second CTA button text. Leave blank to omit this CTA.',
               '6-call-to-action',
