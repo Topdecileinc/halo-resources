@@ -120,6 +120,8 @@ $savedName = null;
 $briefMd   = '';
 
 if ($isPost) {
+    @set_time_limit(0);              // generation + send can take a few minutes
+    $gen = null;                     // populated below if the pipeline runs
     // ---- filename: brief_<slug>_<YYYYMMDD>.md ----
     $campaign = field('campaign_name');
     $slug = strtolower($campaign !== '' ? $campaign : 'untitled');
@@ -228,6 +230,21 @@ Test sends target a designated test segment in a non-production Braze workspace.
         }
     } else {
         $saveError = 'The submissions/ folder is missing or not writable on this server.';
+    }
+
+    // ---- generate via Claude + send via Braze (only if config.php is set up) ----
+    $cfgFile = __DIR__ . '/config.php';
+    if (!$saveError && is_file($cfgFile)) {
+        $cfg = require $cfgFile;
+        if (is_array($cfg) && !empty($cfg['enabled']) && !empty($cfg['anthropic_api_key'])
+            && strpos($cfg['anthropic_api_key'], 'REPLACE') === false) {
+            require_once __DIR__ . '/lib/claude_pipeline.php';
+            try {
+                $gen = hp_run_pipeline($cfg, $briefMd, $slug);
+            } catch (Throwable $e) {
+                $gen = ['ok' => false, 'error' => $e->getMessage(), 'send' => null];
+            }
+        }
     }
 }
 
@@ -387,6 +404,33 @@ function fld($label, $for, $summary, $anchor, $control) {
       </div>
       <pre class="preview"><?php echo htmlspecialchars($briefMd, ENT_QUOTES, 'UTF-8'); ?></pre>
     </div>
+
+    <?php if ($gen !== null): ?>
+      <?php if (empty($gen['ok'])): ?>
+        <div class="panel warn">
+          <h2>&#9888; Email generation failed</h2>
+          <p>The brief was saved, but the email could not be generated:</p>
+          <p><em><?php echo htmlspecialchars($gen['error'] ?? 'Unknown error', ENT_QUOTES, 'UTF-8'); ?></em></p>
+        </div>
+      <?php else: $send = $gen['send'] ?? null; $sendOk = $send && !empty($send['ok']); ?>
+        <div class="panel <?php echo ($send && empty($send['ok'])) ? 'warn' : 'ok'; ?>">
+          <h2><?php echo $sendOk ? '&#10003; Email generated &amp; sent' : ($send ? '&#9888; Generated, but the send failed' : '&#10003; Email generated'); ?></h2>
+          <p><strong>Subject:</strong> <?php echo htmlspecialchars($gen['subject'], ENT_QUOTES, 'UTF-8'); ?></p>
+          <p><strong>Preheader:</strong> <?php echo htmlspecialchars($gen['preheader'], ENT_QUOTES, 'UTF-8'); ?></p>
+          <?php if (!empty($gen['truncated'])): ?>
+            <p class="hardcoded">&#9888; Output hit the token limit and may be truncated — raise <code>max_tokens</code> in config.php.</p>
+          <?php endif; ?>
+          <p>Saved to <code>generated/<?php echo htmlspecialchars($gen['html_file'], ENT_QUOTES, 'UTF-8'); ?></code> and <code>generated/<?php echo htmlspecialchars($gen['json_file'], ENT_QUOTES, 'UTF-8'); ?></code>.</p>
+          <?php if ($send): ?>
+            <p><strong>Braze /messages/send:</strong> HTTP <?php echo (int) $send['code']; ?><?php echo (isset($send['message']) && $send['message'] !== '') ? ' — ' . htmlspecialchars($send['message'], ENT_QUOTES, 'UTF-8') : ''; ?></p>
+          <?php else: ?>
+            <p class="hardcoded">Auto-send is off (<code>auto_send</code>) — the email was generated and saved but not sent.</p>
+          <?php endif; ?>
+        </div>
+      <?php endif; ?>
+    <?php elseif (!$saveError): ?>
+      <p class="hardcoded" style="margin-top:14px;">Automated generation is not configured on this server (no <code>config.php</code>) — the brief was saved only.</p>
+    <?php endif; ?>
 <?php else: ?>
     <h1>Email brief</h1>
     <p class="lede">Fill this in for one campaign. On submit it saves a copy to the team's

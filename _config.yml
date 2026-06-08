@@ -20,10 +20,13 @@ exclude:
   - "*.pyc"
   - "__pycache__"
   - ".gitignore"
-  # PHP form is hosted on a PHP-capable server, not GitHub Pages.
-  # Don't publish it (Pages would serve it as raw text).
+  # PHP form + pipeline are hosted on a PHP-capable server, not GitHub Pages.
+  # Don't publish them (Pages would serve PHP as raw text).
   - brief/form.php
+  - brief/lib
+  - brief/config.sample.php
   - submissions/
+  - generated/
 
 # Tell Jekyll to also process README files into pages.
 include:

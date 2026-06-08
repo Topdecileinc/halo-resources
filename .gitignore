@@ -4,3 +4,10 @@ send-email
 # Brief form submissions (runtime data, not source)
 submissions/*
 !submissions/.gitkeep
+
+# Pipeline config holds API keys — never commit it
+brief/config.php
+
+# Generated emails (runtime output)
+generated/*
+!generated/.gitkeep
