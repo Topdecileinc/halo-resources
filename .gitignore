@@ -1,2 +1,6 @@
 .DS_Store
 send-email
+
+# Brief form submissions (runtime data, not source)
+submissions/*
+!submissions/.gitkeep
