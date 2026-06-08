@@ -38,6 +38,82 @@ function sections_value() {
     return cell(implode(', ', $s));
 }
 
+/* --- dynamic option lists, read live from the repo's .md files ----------------
+   Apache's docroot may be the brief/ directory, but PHP still reads these sibling
+   files from the FILESYSTEM (they're not served over HTTP). If a file is missing
+   or unreadable (e.g. open_basedir limits it), we fall back to a hardcoded list
+   so the form never breaks. Editing the .md files updates the form on next load.
+   ----------------------------------------------------------------------------- */
+function repo_text($rel) {
+    $p = __DIR__ . '/' . $rel;
+    return (is_file($p) && is_readable($p)) ? @file_get_contents($p) : null;
+}
+
+/** Segment names — the `### ` headings under `## Segments` in rules_segment_definition.md. */
+function segment_list() {
+    $fallback = array('Acquisition', 'Warm leads', 'New customers', 'Active / existing customers', 'Lapsed', 'Gold / premium members');
+    $txt = repo_text('../brand-brain/rules_segment_definition.md');
+    if ($txt === null) return $fallback;
+    $names = array(); $inSeg = false;
+    foreach (preg_split('/\r?\n/', $txt) as $line) {
+        if (preg_match('/^##\s+Segments\s*$/i', $line)) { $inSeg = true; continue; }
+        if ($inSeg && preg_match('/^##\s+/', $line)) break;          // next H2 ends the section
+        if ($inSeg && preg_match('/^###\s+(.+?)\s*$/', $line, $m)) $names[] = trim($m[1]);
+    }
+    return $names ? $names : $fallback;
+}
+
+/** Nameable §7 sections: any section_*.html (minus the always-on header/footer)
+    plus the "Common recurring patterns" bullets in the README. Returns name => note. */
+function section_list() {
+    $fallback = array('hero' => 'image + headline + subhead', 'feature row' => 'icon + label + short copy', 'offer / pricing' => 'the deal: price, discount, code');
+    $out = array();
+    foreach ((glob(__DIR__ . '/../email-design-system/sections/section_*.html') ?: array()) as $f) {
+        $name = str_replace('_', ' ', preg_replace('/^section_|\.html$/', '', basename($f)));
+        if (in_array(strtolower($name), array('header', 'footer'), true)) continue;
+        $out[$name] = '';
+    }
+    $txt = repo_text('../README.md');
+    if ($txt !== null) {
+        $inPat = false;
+        foreach (preg_split('/\r?\n/', $txt) as $line) {
+            if (preg_match('/^###\s+Common recurring patterns/i', $line)) { $inPat = true; continue; }
+            if ($inPat && preg_match('/^#{2,3}\s+/', $line)) break;
+            if ($inPat && preg_match('/^-\s+`([^`]+)`\s*[\x{2014}-]\s*(.*)$/u', $line, $m)) {
+                $name = trim($m[1]);
+                $note = trim(preg_replace('/[`*]/', '', $m[2]));
+                $note = trim(preg_split('/[;.]/', $note)[0]);
+                if (!isset($out[$name]) || $out[$name] === '') $out[$name] = $note;
+            }
+        }
+    }
+    return $out ? $out : $fallback;
+}
+
+/** Build the segment <select> from the live list. */
+function segment_select() {
+    $opts = '<option value="">—</option>';
+    foreach (segment_list() as $s) {
+        $e = htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
+        $opts .= '<option value="' . $e . '">' . $e . '</option>';
+    }
+    return '<select id="target_segment" name="target_segment">' . $opts . '</select>';
+}
+
+/** Build the sections checkbox group from the live list. */
+function sections_checks() {
+    $html = '<div class="checks">'; $first = true;
+    foreach (section_list() as $name => $note) {
+        $eName = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
+        $disp  = htmlspecialchars(ucfirst($name), ENT_QUOTES, 'UTF-8');
+        $noteHtml = ($note !== '') ? ' <span class="opt-note">&mdash; ' . htmlspecialchars($note, ENT_QUOTES, 'UTF-8') . '</span>' : '';
+        $id = $first ? ' id="f_sections"' : '';
+        $html .= '<label class="check"><input type="checkbox"' . $id . ' name="sections[]" value="' . $eName . '"> ' . $disp . $noteHtml . '</label>';
+        $first = false;
+    }
+    return $html . '</div>';
+}
+
 $isPost    = (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST');
 $saveError = null;
 $savedName = null;
@@ -349,17 +425,9 @@ function fld($label, $for, $summary, $anchor, $control) {
         <legend><span class="num">2</span>Audience</legend>
         <?php
           fld('Target segment', 'target_segment',
-              'Which defined audience segment this email targets. The segment shapes the angle, tone, and offer. Options come from rules_segment_definition.md.',
+              'Which defined audience segment this email targets. The segment shapes the angle, tone, and offer. Options are read live from rules_segment_definition.md.',
               '2-audience--segments',
-              '<select id="target_segment" name="target_segment">'
-              . '<option value="">—</option>'
-              . '<option value="Acquisition">Acquisition</option>'
-              . '<option value="Warm leads">Warm leads</option>'
-              . '<option value="New customers">New customers</option>'
-              . '<option value="Active / existing customers">Active / existing customers</option>'
-              . '<option value="Lapsed">Lapsed</option>'
-              . '<option value="Gold / premium members">Gold / premium members</option>'
-              . '</select>');
+              segment_select());
         ?>
       </fieldset>
 
@@ -463,13 +531,9 @@ function fld($label, $for, $summary, $anchor, $control) {
               '7-structure--starting-point',
               '<select id="template" name="template"><option value="">—</option><option value="newsletter">Newsletter</option><option value="promo">Promo</option><option value="none — build fresh">None — build fresh</option></select>');
           fld('Sections to include', 'f_sections',
-              'The middle blocks to include — header and footer are always added automatically. Anything custom: describe it in Notes (§8).',
+              'The middle blocks to include — header and footer are always added automatically. Options are read live from the README section vocabulary; anything custom goes in Notes (§8).',
               '7-structure--starting-point',
-              '<div class="checks">'
-              . '<label class="check"><input type="checkbox" id="f_sections" name="sections[]" value="hero"> Hero <span class="opt-note">&mdash; image + headline + subhead</span></label>'
-              . '<label class="check"><input type="checkbox" name="sections[]" value="feature row"> Feature row <span class="opt-note">&mdash; icon + label + short copy</span></label>'
-              . '<label class="check"><input type="checkbox" name="sections[]" value="offer / pricing"> Offer / pricing <span class="opt-note">&mdash; the deal: price, discount, code</span></label>'
-              . '</div>');
+              sections_checks());
           fld('Anything to exclude', 'exclude',
               'Any blocks or elements to deliberately leave out.',
               '7-structure--starting-point',
