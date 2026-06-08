@@ -31,6 +31,13 @@ function cell($s) {
     return str_replace('|', '\\|', $s);    // escape pipe so it doesn't break the table
 }
 
+/** Selected section names (multi-select checkboxes) joined for the brief cell. */
+function sections_value() {
+    $s = (isset($_POST['sections']) && is_array($_POST['sections'])) ? $_POST['sections'] : array();
+    $s = array_filter(array_map('trim', $s), function ($x) { return $x !== ''; });
+    return cell(implode(', ', $s));
+}
+
 $isPost    = (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST');
 $saveError = null;
 $savedName = null;
@@ -108,7 +115,7 @@ if ($isPost) {
 | Field | Your input |
 |---|---|
 | Start from a template? | " . cell(field('template')) . " |
-| Sections to include | " . cell(field('sections_include')) . " |
+| Sections to include | " . sections_value() . " |
 | Anything to exclude | " . cell(field('exclude')) . " |
 
 ## 8. Notes for the builder
@@ -240,6 +247,15 @@ function fld($label, $for, $summary, $anchor, $control) {
   input:focus, select:focus, textarea:focus {
     outline: none; border-color: var(--halo-blue); box-shadow: 0 0 0 3px rgba(47,147,243,0.18);
   }
+  .checks { display: grid; gap: 8px; }
+  .check {
+    display: flex; align-items: center; gap: 10px; cursor: pointer;
+    font-weight: 500; font-size: 0.92rem; background: var(--halo-white);
+    border: 1px solid var(--halo-gray-300); border-radius: var(--halo-radius-md); padding: 9px 12px;
+  }
+  .check:hover { border-color: var(--halo-blue); }
+  .check input { width: 16px; height: 16px; flex: none; cursor: pointer; }
+  .check .opt-note { color: var(--halo-gray-600); font-weight: 400; }
   .req { color: #c0392b; }
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
   .cta-row { display: grid; grid-template-columns: 1fr 1.4fr; gap: 0 18px; }
@@ -333,9 +349,17 @@ function fld($label, $for, $summary, $anchor, $control) {
         <legend><span class="num">2</span>Audience</legend>
         <?php
           fld('Target segment', 'target_segment',
-              'Which audience segment this email targets. The segment shapes the angle, tone, and offer (see rules_segment_definition.md).',
+              'Which defined audience segment this email targets. The segment shapes the angle, tone, and offer. Options come from rules_segment_definition.md.',
               '2-audience--segments',
-              '<input type="text" id="target_segment" name="target_segment">');
+              '<select id="target_segment" name="target_segment">'
+              . '<option value="">—</option>'
+              . '<option value="Acquisition">Acquisition</option>'
+              . '<option value="Warm leads">Warm leads</option>'
+              . '<option value="New customers">New customers</option>'
+              . '<option value="Active / existing customers">Active / existing customers</option>'
+              . '<option value="Lapsed">Lapsed</option>'
+              . '<option value="Gold / premium members">Gold / premium members</option>'
+              . '</select>');
         ?>
       </fieldset>
 
@@ -438,10 +462,14 @@ function fld($label, $for, $summary, $anchor, $control) {
               'Whether to base this on an existing template (newsletter / promo) or build fresh.',
               '7-structure--starting-point',
               '<select id="template" name="template"><option value="">—</option><option value="newsletter">Newsletter</option><option value="promo">Promo</option><option value="none — build fresh">None — build fresh</option></select>');
-          fld('Sections to include', 'sections_include',
-              'The blocks to include, in order (e.g. hero, feature row, offer). See the section vocabulary in the docs.',
+          fld('Sections to include', 'f_sections',
+              'The middle blocks to include — header and footer are always added automatically. Anything custom: describe it in Notes (§8).',
               '7-structure--starting-point',
-              '<textarea id="sections_include" name="sections_include"></textarea>');
+              '<div class="checks">'
+              . '<label class="check"><input type="checkbox" id="f_sections" name="sections[]" value="hero"> Hero <span class="opt-note">&mdash; image + headline + subhead</span></label>'
+              . '<label class="check"><input type="checkbox" name="sections[]" value="feature row"> Feature row <span class="opt-note">&mdash; icon + label + short copy</span></label>'
+              . '<label class="check"><input type="checkbox" name="sections[]" value="offer / pricing"> Offer / pricing <span class="opt-note">&mdash; the deal: price, discount, code</span></label>'
+              . '</div>');
           fld('Anything to exclude', 'exclude',
               'Any blocks or elements to deliberately leave out.',
               '7-structure--starting-point',
