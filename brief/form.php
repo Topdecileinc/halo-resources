@@ -38,6 +38,37 @@ function sections_value() {
     return cell(implode(', ', $s));
 }
 
+/** Pre-flight: required-field and format checks run BEFORE any Claude call. Returns
+    a list of problems; empty means the brief is complete enough to generate from.
+    The automated pipeline has no human to ask, so an incomplete/invalid brief must be
+    caught here rather than producing placeholder/non-compliant output downstream. */
+function brief_problems() {
+    $p = array();
+    if (field('campaign_name') === '')   $p[] = 'Campaign name is required (§1).';
+    if (field('product_subject') === '') $p[] = 'Product / subject is required (§1).';
+    if (field('target_segment') === '')  $p[] = 'Target segment is required (§2) — pick one from the list.';
+    if (field('headline') === '' && field('subhead') === '' && field('key_message') === '')
+        $p[] = 'Provide a headline, subhead, or key message (§3) — at least one.';
+
+    $hero = field('hero_url');
+    if ($hero === '') {
+        $p[] = 'Hosted hero URL is required (§4).';
+    } elseif (preg_match('/\.(webp|avif)(\?|#|$)/i', $hero)) {
+        $p[] = 'Hero is a .webp/.avif image — it will not render in Outlook desktop. Use a PNG, JPG, or GIF.';
+    }
+    if (field('alt_text') === '') $p[] = 'Hero alt text is required (§4) for accessibility / Outlook fallback.';
+
+    if (strtolower(field('show_pricing')) === 'yes') {
+        if (field('sale_price') === '') $p[] = 'Sale / final price is required (§5) when pricing is shown.';
+        if (field('discount') !== '' && field('original_price') === '')
+            $p[] = 'Original price is required (§5) when a discount is shown, so the math reconciles.';
+    }
+
+    if (field('cta1_label') === '') $p[] = 'CTA 1 label is required (§6).';
+    if (field('cta1_dest') === '')  $p[] = 'CTA 1 destination is required (§6).';
+    return $p;
+}
+
 /* --- dynamic option lists, read live from the repo's .md files ----------------
    Apache's docroot may be the brief/ directory, but PHP still reads these sibling
    files from the FILESYSTEM (they're not served over HTTP). If a file is missing
@@ -97,7 +128,7 @@ function segment_select() {
         $e = htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
         $opts .= '<option value="' . $e . '">' . $e . '</option>';
     }
-    return '<select id="target_segment" name="target_segment">' . $opts . '</select>';
+    return '<select id="target_segment" name="target_segment" required>' . $opts . '</select>';
 }
 
 /** Build the sections checkbox group from the live list. */
@@ -231,9 +262,15 @@ Test sends target a designated test segment in a non-production Braze workspace.
         $saveError = 'The submissions/ folder is missing or not writable on this server.';
     }
 
+    // ---- pre-flight: refuse incomplete/invalid briefs before any Claude call ----
+    $preflight = $saveError ? array() : brief_problems();
+    if ($preflight) {
+        $gen = ['ok' => false, 'preflight' => true, 'errors' => $preflight];
+    }
+
     // ---- generate via Claude + send via Braze (only if config.php is set up) ----
     $cfgFile = __DIR__ . '/config.php';
-    if (!$saveError && is_file($cfgFile)) {
+    if (!$saveError && !$preflight && is_file($cfgFile)) {
         $cfg = require $cfgFile;
         if (is_array($cfg) && !empty($cfg['enabled']) && !empty($cfg['anthropic_api_key'])
             && strpos($cfg['anthropic_api_key'], 'REPLACE') === false) {
@@ -430,7 +467,17 @@ function fld($label, $for, $summary, $anchor, $control) {
     </div>
 
     <?php if ($gen !== null): ?>
-      <?php if (!empty($gen['validation_failed'])): ?>
+      <?php if (!empty($gen['preflight'])): ?>
+        <div class="panel warn">
+          <h2>&#9888; Brief incomplete — nothing generated</h2>
+          <p>The brief was saved, but it's missing required information, so it was <strong>not</strong> sent to the generator (no Claude call was made). Fix these and resubmit:</p>
+          <ul style="margin:0 0 4px 18px;">
+            <?php foreach (($gen['errors'] ?? []) as $erow): ?>
+              <li style="font-size:0.9rem;"><?php echo htmlspecialchars($erow, ENT_QUOTES, 'UTF-8'); ?></li>
+            <?php endforeach; ?>
+          </ul>
+        </div>
+      <?php elseif (!empty($gen['validation_failed'])): ?>
         <div class="panel warn">
           <h2>&#9888; Couldn&rsquo;t generate a compliant email &mdash; not sent</h2>
           <p>After <?php echo (int) ($gen['attempts'] ?? 2); ?> attempts the email still broke binding rules, so it was <strong>not sent</strong>. The brief is saved; the last attempt is in <code>generated/<?php echo htmlspecialchars($gen['html_file'] ?? '', ENT_QUOTES, 'UTF-8'); ?></code> for review.</p>
@@ -543,7 +590,7 @@ function fld($label, $for, $summary, $anchor, $control) {
           fld('Hosted hero URL', 'hero_url',
               'The live, hosted URL of the hero image the email links to (not an upload).',
               '4-hero-image-hosted-url--reference-upload',
-              '<input type="url" id="hero_url" name="hero_url" placeholder="https://…">');
+              '<input type="url" id="hero_url" name="hero_url" placeholder="https://… (PNG / JPG / GIF — not .webp)" required>');
           fld('Alt text', 'alt_text',
               'A short description of the hero image for accessibility and Outlook fallback.',
               '4-hero-image-hosted-url--reference-upload',
@@ -583,11 +630,11 @@ function fld($label, $for, $summary, $anchor, $control) {
           fld('CTA 1 label', 'cta1_label',
               'The button text for the primary call to action (e.g. "Shop now").',
               '6-call-to-action',
-              '<input type="text" id="cta1_label" name="cta1_label" placeholder="Shop now">');
+              '<input type="text" id="cta1_label" name="cta1_label" placeholder="Shop now" required>');
           fld('CTA 1 destination', 'cta1_dest',
               'Where the primary button links — brand site, marketplace, or other URL.',
               '6-call-to-action',
-              '<input type="text" id="cta1_dest" name="cta1_dest" placeholder="https://…">');
+              '<input type="text" id="cta1_dest" name="cta1_dest" placeholder="https://…" required>');
           fld('CTA 2 label', 'cta2_label',
               'Optional second CTA button text. Leave blank to omit this CTA.',
               '6-call-to-action',

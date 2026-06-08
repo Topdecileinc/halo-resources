@@ -116,8 +116,13 @@ function hp_load_context(array $cfg) {
         . "formatting and whitespace of the snippets; do not minify or collapse the HTML.\n\n"
         . "OUTPUT CONTRACT (overrides any output instruction in the orchestrator): return your result "
         . "ONLY as the structured object with keys `subject`, `preheader` (50-100 chars), and `html` "
-        . "(the complete, production-ready, cross-client email HTML document). Do not output the Braze "
-        . "send JSON or any commentary — the surrounding system assembles and sends it.\n";
+        . "(the complete, production-ready, cross-client email HTML document). The HTML must be FINAL and "
+        . "clean: no builder notes, no TODO / placeholder / 'to be confirmed' text, no internal comments "
+        . "about the brief or your process, and no raw escape sequences (e.g. \\uXXXX) — every character "
+        . "must be real, rendered content. If the brief does not supply a fact (pricing, an offer, a CTA "
+        . "destination, etc.), OMIT that block entirely rather than inserting placeholder text or inventing "
+        . "a value. Do not output the Braze send JSON or any commentary — the surrounding system assembles "
+        . "and sends it.\n";
 
     $context = $preamble;
     $loaded = [];
