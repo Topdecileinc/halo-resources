@@ -16,6 +16,7 @@
 
 - **Legal / company line:** *Protect Animals with Satellites LLC d/b/a Halo Collar | 55 S.E. 2nd Avenue #15R | Delray Beach, FL 33444*
 - **Unsubscribe line:** *No longer want to receive these emails? Unsubscribe.*
+  - The **Unsubscribe** word is a link, and its `href` MUST be Braze's unsubscribe variable {% raw %}`{{${set_user_to_unsubscribed_url}}}`{% endraw %} (Braze resolves it to a real, working unsubscribe URL at send time). Never use `#`, an empty value, or a placeholder — that is not functional.
 
 ## Social icons (hosted)
 
@@ -35,4 +36,4 @@ the hosted URLs below:
 - Footer sits at the bottom of every email, after the main content.
 - Order: social icons → legal/company line → unsubscribe link.
 - Use the fine-print text style from the style guide (`rules_email_style_guide.md`): small size, `#9D9D9D`.
-- The unsubscribe link must be present and functional in every send (compliance requirement).
+- The unsubscribe link must be present and functional in every send (compliance requirement): use the {% raw %}`{{${set_user_to_unsubscribed_url}}}`{% endraw %} href specified above — a `#` or placeholder is not functional and will be rejected.

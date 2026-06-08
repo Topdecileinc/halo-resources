@@ -37,6 +37,9 @@ function hp_file_block($repoRoot, $rel) {
     if (!is_file($p) || !is_readable($p)) return '';
     $body = @file_get_contents($p);
     if ($body === false) return '';
+    // Strip Jekyll {% raw %} / {% endraw %} wrappers (used in the md only to display
+    // literal Liquid like {{${...}}} on the docs site) so Claude sees the clean value.
+    $body = preg_replace('/\{%-?\s*(?:end)?raw\s*-?%\}/', '', $body);
     return "\n===== FILE: {$rel} =====\n" . $body . "\n";
 }
 
