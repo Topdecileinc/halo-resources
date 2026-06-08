@@ -363,6 +363,31 @@ function fld($label, $for, $summary, $anchor, $control) {
   }
   .btn:hover { text-decoration: none; box-shadow: 0 6px 20px rgba(252,214,45,0.45); transform: translateY(-1px); }
   .btn--ghost { background: var(--halo-white); color: var(--halo-ink); border: 1px solid var(--halo-gray-300); }
+  .btn:disabled { opacity: 0.65; cursor: progress; box-shadow: none; transform: none; }
+
+  /* full-screen processing overlay — blocks the form while generating + sending */
+  .pg-loading {
+    position: fixed; inset: 0; z-index: 100;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(7, 24, 38, 0.78);
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    padding: 24px;
+  }
+  .pg-loading.show { display: flex; }
+  .pg-loading__card {
+    background: var(--halo-white); border-radius: var(--halo-radius-lg);
+    padding: 36px 40px; max-width: 460px; width: 100%; text-align: center;
+    box-shadow: 0 24px 70px rgba(0,0,0,0.35);
+  }
+  .pg-loading__spinner {
+    width: 46px; height: 46px; margin: 0 auto 22px;
+    border: 4px solid var(--halo-gray-200); border-top-color: var(--halo-yellow);
+    border-radius: 50%; animation: pg-spin 0.9s linear infinite;
+  }
+  @keyframes pg-spin { to { transform: rotate(360deg); } }
+  .pg-loading__msg { margin: 0 0 8px; font-weight: 700; font-size: 1.12rem; color: var(--halo-ink); }
+  .pg-loading__sub { margin: 0; font-size: 0.88rem; color: var(--halo-gray-600); line-height: 1.5; }
+  @media (prefers-reduced-motion: reduce) { .pg-loading__spinner { animation-duration: 2.4s; } }
 
   .panel { border: 1px solid var(--halo-gray-200); border-radius: var(--halo-radius-lg); padding: 24px 26px; background: var(--halo-gray-50); }
   .panel.ok { border-color: #b7e0c2; background: #f3fbf5; }
@@ -599,7 +624,59 @@ function fld($label, $for, $summary, $anchor, $control) {
         <button type="submit" class="btn">Save brief</button>
       </div>
     </form>
+
+    <div class="pg-loading" id="pg-loading" aria-hidden="true" role="status" aria-live="polite">
+      <div class="pg-loading__card">
+        <div class="pg-loading__spinner"></div>
+        <p class="pg-loading__msg" id="pg-loading-msg">Saving your brief&hellip;</p>
+        <p class="pg-loading__sub">This takes a minute or two. Please don&rsquo;t refresh, hit back, or close this tab &mdash; your email is being generated and sent.</p>
+      </div>
+    </div>
 <?php endif; ?>
   </main>
+  <script>
+    (function () {
+      var form = document.querySelector('form[method="post"]');
+      var overlay = document.getElementById('pg-loading');
+      if (!form || !overlay) return;
+      var submitting = false;
+      var msgs = [
+        'Saving your brief…',
+        'Waking up the email engine…',
+        'Reading every rule (yes, all of them)…',
+        'Choosing words that don’t use em dashes…',
+        'Writing your email…',
+        'Wrestling Outlook into submission…',
+        'Making the button bulletproof…',
+        'Double-checking the pricing math…',
+        'Handing it to Braze…',
+        'Sending it to the test segment…',
+        'Doing stuff. Important stuff…',
+        'Almost there — hang tight…'
+      ];
+      form.addEventListener('submit', function (e) {
+        if (submitting) { e.preventDefault(); return; }   // block a second submit
+        submitting = true;
+        var btn = form.querySelector('button[type="submit"]');
+        if (btn) { btn.disabled = true; btn.textContent = 'Working…'; }
+        overlay.classList.add('show');
+        overlay.setAttribute('aria-hidden', 'false');
+        var el = document.getElementById('pg-loading-msg');
+        var i = 0;
+        setInterval(function () { i = (i + 1) % msgs.length; el.textContent = msgs[i]; }, 2600);
+        // native form submit proceeds; overlay stays until the result page replaces this one
+      });
+      // restore state if the user comes back via the bfcache (back button)
+      window.addEventListener('pageshow', function (ev) {
+        if (ev.persisted) {
+          submitting = false;
+          overlay.classList.remove('show');
+          overlay.setAttribute('aria-hidden', 'true');
+          var btn = form.querySelector('button[type="submit"]');
+          if (btn) { btn.disabled = false; btn.textContent = 'Save brief'; }
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
