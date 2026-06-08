@@ -1,0 +1,114 @@
+/* ============================================================================
+   Halo Email Resources — component/section playground
+   Shared styling for the interactive preview pages. Mirrors the docs-site chrome.
+   ============================================================================ */
+:root {
+  --halo-font-sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Arial, sans-serif;
+  --halo-font-mono: "SF Mono", Menlo, Consolas, monospace;
+  --halo-ink: #071826;
+  --halo-gray-700: #354c5c;
+  --halo-gray-600: #526777;
+  --halo-gray-400: #a7b3bd;
+  --halo-gray-300: #d3dce3;
+  --halo-gray-200: #e2e9ee;
+  --halo-gray-100: #f2f6f8;
+  --halo-gray-50: #fbfcfd;
+  --halo-white: #ffffff;
+  --halo-yellow: #fcd62d;
+  --halo-blue: #2f93f3;
+  --halo-radius-md: 8px;
+  --halo-radius-lg: 12px;
+  --halo-radius-pill: 999px;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--halo-white); color: var(--halo-ink);
+  font-family: var(--halo-font-sans); font-size: 16px; line-height: 1.6;
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+}
+a { color: var(--halo-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code { font-family: var(--halo-font-mono); font-size: 0.92em; }
+
+.halo-header {
+  position: sticky; top: 0; z-index: 30;
+  border-bottom: 1px solid var(--halo-gray-200);
+  background: rgba(255,255,255,0.94);
+  backdrop-filter: saturate(180%) blur(18px);
+  -webkit-backdrop-filter: saturate(180%) blur(18px);
+}
+.halo-header__inner {
+  width: min(1180px, calc(100% - 32px)); margin-inline: auto; min-height: 64px;
+  display: flex; align-items: center; gap: 16px;
+}
+.halo-header__inner img { width: 92px; height: auto; display: block; }
+.halo-header__tag { color: var(--halo-gray-600); font-weight: 800; letter-spacing: 0.04em; font-size: 0.9rem; }
+.halo-header__inner .spacer { flex: 1; }
+.halo-header__inner .home { font-weight: 650; font-size: 0.92rem; }
+
+main { width: min(1180px, calc(100% - 32px)); margin-inline: auto; padding: 32px 0 96px; }
+.back { display: inline-block; margin-bottom: 14px; font-weight: 600; font-size: 0.9rem; }
+h1 { font-size: 1.9rem; letter-spacing: -0.02em; margin: 0 0 6px; }
+.lede { max-width: 64ch; color: var(--halo-gray-700); margin: 0 0 26px; }
+.kind { color: var(--halo-blue); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; font-size: 0.72rem; }
+
+.pg-grid { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 32px; align-items: start; }
+@media (max-width: 820px) { .pg-grid { grid-template-columns: 1fr; } }
+
+/* ---- controls ---- */
+.pg-controls {
+  border: 1px solid var(--halo-gray-200); border-radius: var(--halo-radius-lg);
+  background: var(--halo-gray-50); padding: 18px 18px 6px;
+  position: sticky; top: 88px;
+}
+.pg-controls h2 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--halo-gray-600); margin: 0 0 14px; }
+.field { margin: 0 0 14px; }
+.field > label { display: block; font-weight: 650; font-size: 0.9rem; margin: 0 0 4px; }
+.field .hint { display: block; font-size: 0.78rem; color: var(--halo-gray-600); margin: 0 0 6px; font-weight: 400; }
+.field input[type=text], .field input[type=url], .field input[type=number], .field select, .field textarea {
+  width: 100%; font: inherit; font-size: 0.92rem; color: var(--halo-ink);
+  padding: 9px 11px; background: var(--halo-white);
+  border: 1px solid var(--halo-gray-300); border-radius: var(--halo-radius-md);
+  transition: border-color 140ms, box-shadow 140ms;
+}
+.field textarea { min-height: 64px; resize: vertical; }
+.field input:focus, .field select:focus, .field textarea:focus {
+  outline: none; border-color: var(--halo-blue); box-shadow: 0 0 0 3px rgba(47,147,243,0.18);
+}
+.field .color-row { display: flex; gap: 8px; align-items: center; }
+.field input[type=color] {
+  width: 44px; height: 38px; padding: 2px; border: 1px solid var(--halo-gray-300);
+  border-radius: var(--halo-radius-md); background: var(--halo-white); cursor: pointer; flex: none;
+}
+.field .color-row input[type=text] { flex: 1; font-family: var(--halo-font-mono); }
+
+/* ---- preview ---- */
+.pg-preview { border: 1px solid var(--halo-gray-200); border-radius: var(--halo-radius-lg); overflow: hidden; }
+.pg-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 14px; border-bottom: 1px solid var(--halo-gray-200); background: var(--halo-gray-50);
+  font-size: 0.82rem; color: var(--halo-gray-600);
+}
+.pg-bar .label { font-weight: 700; }
+.swatch {
+  width: 26px; height: 26px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.15);
+  cursor: pointer; padding: 0; outline-offset: 2px;
+}
+.swatch.is-active { outline: 2px solid var(--halo-blue); }
+iframe.pg-frame { width: 100%; height: 380px; border: 0; display: block; background: #fff; }
+.pg-source { border-top: 1px solid var(--halo-gray-200); }
+.pg-source summary {
+  cursor: pointer; padding: 10px 14px; font-size: 0.85rem; font-weight: 650; color: var(--halo-gray-700);
+  background: var(--halo-gray-50); user-select: none;
+}
+.pg-source pre {
+  margin: 0; max-height: 320px; overflow: auto; padding: 14px 16px;
+  font-family: var(--halo-font-mono); font-size: 0.78rem; line-height: 1.5; white-space: pre-wrap;
+  background: var(--halo-white);
+}
+.copy-btn {
+  font: inherit; font-size: 0.8rem; font-weight: 650; cursor: pointer;
+  border: 1px solid var(--halo-gray-300); background: var(--halo-white); color: var(--halo-ink);
+  border-radius: var(--halo-radius-pill); padding: 5px 14px; margin: 0 14px 12px;
+}
+.copy-btn:hover { border-color: var(--halo-blue); color: var(--halo-blue); }

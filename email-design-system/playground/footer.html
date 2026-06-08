@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Footer playground — Halo Email Resources</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="playground.css">
+</head>
+<body>
+  <header class="halo-header">
+    <div class="halo-header__inner">
+      <img src="https://topdecileinc.github.io/halo-resources/email-design-system/assets/shared-images/halo-logo-dark.svg" alt="Halo">
+      <span class="halo-header__tag">PLAYGROUND</span>
+      <span class="spacer"></span>
+      <a class="home" href="/halo-resources/">All resources</a>
+    </div>
+  </header>
+
+  <main>
+    <a class="back" href="/halo-resources/">&larr; Back to resources</a>
+    <p class="kind">Section</p>
+    <h1>Footer</h1>
+    <p class="lede">The footer that closes every email: social icons, the legal/address line,
+       and the unsubscribe link. Legal and unsubscribe wording should match
+       rules_email_footer.md exactly &mdash; the defaults here are placeholders.</p>
+
+    <div class="pg-grid">
+      <form class="pg-controls" id="pg-controls" autocomplete="off" onsubmit="return false;">
+        <h2>Controls</h2>
+      </form>
+
+      <div class="pg-preview">
+        <div class="pg-bar"><span class="label">Preview</span> &middot; 600px email width</div>
+        <iframe class="pg-frame" id="pg-frame" title="Footer preview"></iframe>
+        <details class="pg-source">
+          <summary>View &amp; copy HTML</summary>
+          <button type="button" class="copy-btn" id="pg-copy">Copy HTML</button>
+          <pre id="pg-src"></pre>
+        </details>
+      </div>
+    </div>
+  </main>
+
+  <script src="playground.js"></script>
+  <script>
+    initPlayground({
+      template:
+'<!-- Social icons -->\n' +
+'<tr class="section-footer">\n' +
+'  <td align="center" style="padding:8px 0 16px 0;">\n' +
+'    <table role="presentation" cellpadding="0" cellspacing="0" border="0">\n' +
+'      <tr>\n' +
+'        <td align="center" style="padding:0 8px;">\n' +
+'          <a href="[FACEBOOK_URL]" target="_blank" style="text-decoration:none; border:0;">\n' +
+'            <img src="[SOCIAL_FACEBOOK]" width="32" height="32" alt="Facebook" style="display:block; border:0; outline:none; width:32px; height:32px;">\n' +
+'          </a>\n' +
+'        </td>\n' +
+'        <td align="center" style="padding:0 8px;">\n' +
+'          <a href="[INSTAGRAM_URL]" target="_blank" style="text-decoration:none; border:0;">\n' +
+'            <img src="[SOCIAL_INSTAGRAM]" width="32" height="32" alt="Instagram" style="display:block; border:0; outline:none; width:32px; height:32px;">\n' +
+'          </a>\n' +
+'        </td>\n' +
+'        <td align="center" style="padding:0 8px;">\n' +
+'          <a href="[TIKTOK_URL]" target="_blank" style="text-decoration:none; border:0;">\n' +
+'            <img src="[SOCIAL_TIKTOK]" width="32" height="32" alt="TikTok" style="display:block; border:0; outline:none; width:32px; height:32px;">\n' +
+'          </a>\n' +
+'        </td>\n' +
+'        <td align="center" style="padding:0 8px;">\n' +
+'          <a href="[YOUTUBE_URL]" target="_blank" style="text-decoration:none; border:0;">\n' +
+'            <img src="[SOCIAL_YOUTUBE]" width="32" height="32" alt="YouTube" style="display:block; border:0; outline:none; width:32px; height:32px;">\n' +
+'          </a>\n' +
+'        </td>\n' +
+'      </tr>\n' +
+'    </table>\n' +
+'  </td>\n' +
+'</tr>\n' +
+'\n' +
+'<!-- Address + unsubscribe (wording from rules_email_footer.md) -->\n' +
+'<tr>\n' +
+'  <td align="center" class="px-mobile" style="padding:8px 24px 32px 24px;">\n' +
+'    <p style="margin:0 0 8px 0; font-family: Arial, Helvetica, sans-serif; font-size:11px; line-height:16px; color:#9d9d9d; letter-spacing:0.5px;">\n' +
+'      [LEGAL_COMPANY_LINE]\n' +
+'    </p>\n' +
+'    <p style="margin:0; font-family: Arial, Helvetica, sans-serif; font-size:11px; line-height:16px; color:#9d9d9d;">\n' +
+'      [UNSUBSCRIBE_TEXT] <a href="[UNSUBSCRIBE_URL]" target="_blank" class="footer-link" style="color:#9d9d9d; text-decoration:underline;">Unsubscribe</a>.\n' +
+'    </p>\n' +
+'  </td>\n' +
+'</tr>',
+      fields: [
+        { key: "SOCIAL_FACEBOOK", label: "Facebook icon URL", type: "url",
+          default: "https://topdecileinc.github.io/halo-resources/email-design-system/assets/social-icons/social_facebook.webp" },
+        { key: "FACEBOOK_URL", label: "Facebook profile link", type: "url", default: "#" },
+        { key: "SOCIAL_INSTAGRAM", label: "Instagram icon URL", type: "url",
+          default: "https://topdecileinc.github.io/halo-resources/email-design-system/assets/social-icons/social_instagram.webp" },
+        { key: "INSTAGRAM_URL", label: "Instagram profile link", type: "url", default: "#" },
+        { key: "SOCIAL_TIKTOK", label: "TikTok icon URL", type: "url",
+          default: "https://topdecileinc.github.io/halo-resources/email-design-system/assets/social-icons/social_tiktok.webp" },
+        { key: "TIKTOK_URL", label: "TikTok profile link", type: "url", default: "#" },
+        { key: "SOCIAL_YOUTUBE", label: "YouTube icon URL", type: "url",
+          default: "https://topdecileinc.github.io/halo-resources/email-design-system/assets/social-icons/social_youtube.webp" },
+        { key: "YOUTUBE_URL", label: "YouTube profile link", type: "url", default: "#" },
+        { key: "LEGAL_COMPANY_LINE", label: "Legal / address line", type: "textarea",
+          default: "[Company name, address — use the exact wording from rules_email_footer.md]",
+          hint: "Stable boilerplate. Match rules_email_footer.md." },
+        { key: "UNSUBSCRIBE_TEXT", label: "Unsubscribe lead-in text", type: "text", default: "No longer want these emails?" },
+        { key: "UNSUBSCRIBE_URL", label: "Unsubscribe URL", type: "url", default: "#" }
+      ],
+      wrap: function (html) {
+        return '<!DOCTYPE html><html><head><meta charset="utf-8">' +
+          '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">' +
+          '<style>html,body{margin:0}body{font-family:Inter,Arial,sans-serif;background:#e9edee;padding:24px 12px;}</style></head>' +
+          '<body><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" align="center" style="width:600px;max-width:100%;background:#ffffff;margin:0 auto;">' +
+          html + '</table></body></html>';
+      }
+    });
+  </script>
+</body>
+</html>

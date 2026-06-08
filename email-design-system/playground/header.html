@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Header playground — Halo Email Resources</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="playground.css">
+</head>
+<body>
+  <header class="halo-header">
+    <div class="halo-header__inner">
+      <img src="https://topdecileinc.github.io/halo-resources/email-design-system/assets/shared-images/halo-logo-dark.svg" alt="Halo">
+      <span class="halo-header__tag">PLAYGROUND</span>
+      <span class="spacer"></span>
+      <a class="home" href="/halo-resources/">All resources</a>
+    </div>
+  </header>
+
+  <main>
+    <a class="back" href="/halo-resources/">&larr; Back to resources</a>
+    <p class="kind">Section</p>
+    <h1>Header</h1>
+    <p class="lede">The logo header that sits at the top of every email, left-aligned. Set the
+       logo URL, where it links, and the alt text; the rendered HTML below is what drops into
+       the 600px email container.</p>
+
+    <div class="pg-grid">
+      <form class="pg-controls" id="pg-controls" autocomplete="off" onsubmit="return false;">
+        <h2>Controls</h2>
+      </form>
+
+      <div class="pg-preview">
+        <div class="pg-bar"><span class="label">Preview</span> &middot; 600px email width</div>
+        <iframe class="pg-frame" id="pg-frame" title="Header preview"></iframe>
+        <details class="pg-source">
+          <summary>View &amp; copy HTML</summary>
+          <button type="button" class="copy-btn" id="pg-copy">Copy HTML</button>
+          <pre id="pg-src"></pre>
+        </details>
+      </div>
+    </div>
+  </main>
+
+  <script src="playground.js"></script>
+  <script>
+    initPlayground({
+      template:
+'<tr class="section-header">\n' +
+'  <td align="left" style="padding:8px 24px 24px 24px;">\n' +
+'    <a href="[BRAND_URL]" target="_blank" style="text-decoration:none; border:0;">\n' +
+'      <img src="[IMG_LOGO]" width="140" height="40" alt="[BRAND_NAME]" style="display:block; border:0; outline:none; width:140px; height:40px;">\n' +
+'    </a>\n' +
+'  </td>\n' +
+'</tr>',
+      fields: [
+        { key: "IMG_LOGO", label: "Logo image URL", type: "url",
+          default: "https://braze-images.com/appboy/communication/assets/image_assets/images/6408dc0aee82fd0a9a02e8ca/original.png?1678302218",
+          hint: "Hosted logo URL (from rules_brand.md)." },
+        { key: "BRAND_URL", label: "Logo links to", type: "url", default: "#",
+          hint: "The brand site the logo links to." },
+        { key: "BRAND_NAME", label: "Alt text", type: "text", default: "Halo",
+          hint: "Logo alt text / Outlook fallback." }
+      ],
+      wrap: function (html) {
+        return '<!DOCTYPE html><html><head><meta charset="utf-8">' +
+          '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">' +
+          '<style>html,body{margin:0}body{font-family:Inter,Arial,sans-serif;background:#e9edee;padding:24px 12px;}</style></head>' +
+          '<body><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" align="center" style="width:600px;max-width:100%;background:#ffffff;margin:0 auto;">' +
+          html + '</table></body></html>';
+      }
+    });
+  </script>
+</body>
+</html>
