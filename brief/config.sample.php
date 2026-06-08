@@ -29,8 +29,10 @@ return [
     // ---- Validation gates ----
     'validate'          => true,                  // deterministic: validate every email against ALL rules (test/validate.py)
     'python_bin'        => 'python3',             // how Python is invoked on this host
-    'ai_review'         => true,                  // backstop: a second AI pass for judgment rules the static checks can't cover
-                                                  // (runs only after the deterministic gate passes; both must pass to send)
+    'ai_review'         => true,                  // backstop: a second AI pass for the judgment things the static checks can't cover
+    'ai_review_blocking'=> false,                 // false = ADVISORY: surfaces concerns on the result, does NOT block the send
+                                                  //         (the deterministic md-driven validator is the only hard gate)
+                                                  // true  = the AI pass also hard-blocks the send
 
     // What stable context to load into the (prompt-cached) system prompt.
     // These are read fresh from disk on every request, so editing a rule file

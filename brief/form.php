@@ -483,6 +483,19 @@ function fld($label, $for, $summary, $anchor, $control) {
           <?php if (!empty($gen['validated'])): ?>
             <p class="hardcoded">&#10003; Passed all validation checks<?php echo ((int) ($gen['attempts'] ?? 1) > 1) ? ' (on attempt ' . (int) $gen['attempts'] . ')' : ''; ?>.</p>
           <?php endif; ?>
+          <?php if (!empty($gen['advisories'])): ?>
+            <details style="margin-top:8px;">
+              <summary style="cursor:pointer; font-weight:650; font-size:0.9rem; color:var(--halo-gray-700);">AI review notes — advisory, did <strong>not</strong> block (<?php echo count($gen['advisories']); ?>)</summary>
+              <ul style="margin:8px 0 4px 18px;">
+                <?php foreach ($gen['advisories'] as $a): ?>
+                  <li style="font-size:0.88rem; color:var(--halo-gray-700);"><?php echo htmlspecialchars($a, ENT_QUOTES, 'UTF-8'); ?></li>
+                <?php endforeach; ?>
+              </ul>
+            </details>
+          <?php endif; ?>
+          <?php if (!empty($gen['ai_error'])): ?>
+            <p class="hardcoded">Note: the AI review pass couldn't run (advisory, didn't block): <?php echo htmlspecialchars($gen['ai_error'], ENT_QUOTES, 'UTF-8'); ?></p>
+          <?php endif; ?>
           <?php if (!empty($gen['truncated'])): ?>
             <p class="hardcoded">&#9888; Output hit the token limit and may be truncated — raise <code>max_tokens</code> in config.php.</p>
           <?php endif; ?>

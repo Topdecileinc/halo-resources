@@ -400,21 +400,24 @@ function hp_ai_review(array $cfg, array $email, $briefMarkdown) {
 }
 
 /**
- * Full pipeline. Each attempt: generate → deterministic validator (all rules) →
- * if that passes, the AI backstop review. The email must pass BOTH gates. On a
- * content failure from either gate it regenerates ONCE with the combined failures
- * fed back; a second failure does NOT send and returns the failures. An AI-review
- * infrastructure error fails closed (does not send) without retrying.
+ * Full pipeline. The HARD GATE is the deterministic validator only — it reads your
+ * md rule files and compares, no guessing. Each attempt: generate → validate →
+ * retry ONCE on failure (feeding the exact [ERR]s back) → a second failure does NOT
+ * send. The AI review is ADVISORY by default (ai_review_blocking=false): it runs once
+ * after the deterministic gate passes and its findings are surfaced for review, but
+ * they do NOT block the send. Set ai_review_blocking=true to make it a hard gate too.
  */
 function hp_run_pipeline(array $cfg, $briefMarkdown, $slug) {
-    $validate = !array_key_exists('validate', $cfg)  || !empty($cfg['validate']);
-    $aiReview = !array_key_exists('ai_review', $cfg) || !empty($cfg['ai_review']);
+    $validate   = !array_key_exists('validate', $cfg)  || !empty($cfg['validate']);
+    $aiReview   = !array_key_exists('ai_review', $cfg) || !empty($cfg['ai_review']);
+    $aiBlocking = !empty($cfg['ai_review_blocking']);   // default: AI is advisory, not a gate
     $maxAttempts = 2;          // first try + one retry
     $feedback = '';
     $attempts = 0;
     $gen = null;
     $derrors = [];
-    $aviolations = [];
+    $advisories = [];
+    $aiError = null;
 
     while ($attempts < $maxAttempts) {
         $attempts++;
@@ -425,43 +428,51 @@ function hp_run_pipeline(array $cfg, $briefMarkdown, $slug) {
         }
 
         $derrors = [];
-        $aviolations = [];
+        $advisories = [];
+        $aiError = null;
 
-        // Gate 1 — deterministic validator (every rule, md-driven values).
+        // HARD GATE — deterministic validator (every rule, md-driven values, no guessing).
         if ($validate) {
             $val = hp_validate($cfg, $gen, $briefMarkdown);
             if (empty($val['ok'])) $derrors = $val['errors'];
         }
 
-        // Gate 2 — AI backstop, only if the deterministic gate already passed.
+        // AI review — runs once the deterministic gate passes. Advisory unless ai_review_blocking.
         if (empty($derrors) && $aiReview) {
             $rev = hp_ai_review($cfg, $gen, $briefMarkdown);
-            if (!empty($rev['error'])) {                 // infra failure — fail closed, no retry
-                hp_save_generated($cfg, $gen, $slug);
-                $base = 'brief_' . $slug . '_' . date('Ymd');
-                return ['ok' => false, 'stage' => 'ai_review',
-                        'error' => 'AI review pass could not run — not sent: ' . $rev['error'],
-                        'attempts' => $attempts, 'html_file' => $base . '.html', 'json_file' => $base . '.send.json', 'send' => null];
-            }
-            $aviolations = $rev['violations'];
+            if (!empty($rev['error'])) $aiError = $rev['error'];   // infra issue (note it; only blocks if blocking-mode)
+            else $advisories = $rev['violations'];
         }
 
-        if (empty($derrors) && empty($aviolations)) break;   // passed both gates
+        // What actually blocks/triggers a retry:
+        $blocking = $derrors;
+        if ($aiBlocking) $blocking = array_merge($derrors, $advisories);
 
-        $feedback = '- ' . implode("\n- ", array_merge($derrors, $aviolations));
+        if (empty($blocking)) break;                              // passed the hard gate(s)
+        $feedback = '- ' . implode("\n- ", $blocking);
     }
 
     hp_save_generated($cfg, $gen, $slug);
     $base = 'brief_' . $slug . '_' . date('Ymd');
 
-    // Failed a gate on the final attempt → DO NOT send.
-    if (!empty($derrors) || !empty($aviolations)) {
+    // AI infra error only blocks in blocking mode.
+    if ($aiBlocking && $aiError) {
+        return ['ok' => false, 'stage' => 'ai_review',
+                'error' => 'AI review pass could not run — not sent: ' . $aiError,
+                'attempts' => $attempts, 'html_file' => $base . '.html', 'json_file' => $base . '.send.json', 'send' => null];
+    }
+
+    $blocking = $derrors;
+    if ($aiBlocking) $blocking = array_merge($derrors, $advisories);
+
+    // Hard-gate failure on the final attempt → DO NOT send.
+    if (!empty($blocking)) {
         return [
             'ok' => false,
             'stage' => 'validate',
             'validation_failed' => true,
             'attempts' => $attempts,
-            'errors' => array_merge($derrors, $aviolations),
+            'errors' => $blocking,
             'subject' => $gen['subject'],
             'preheader' => $gen['preheader'],
             'loaded' => $gen['loaded'] ?? [],
@@ -471,7 +482,7 @@ function hp_run_pipeline(array $cfg, $briefMarkdown, $slug) {
         ];
     }
 
-    // Passed both gates → optionally send.
+    // Passed the hard gate → optionally send.
     $send = null;
     if (!empty($cfg['auto_send'])) $send = hp_send_via_braze($cfg, $gen);
 
@@ -481,6 +492,8 @@ function hp_run_pipeline(array $cfg, $briefMarkdown, $slug) {
         'attempts' => $attempts,
         'validated' => $validate,
         'ai_reviewed' => $aiReview,
+        'advisories' => $aiBlocking ? [] : $advisories,   // AI notes (did not block the send)
+        'ai_error' => $aiBlocking ? null : $aiError,
         'subject' => $gen['subject'],
         'preheader' => $gen['preheader'],
         'truncated' => !empty($gen['truncated']),
