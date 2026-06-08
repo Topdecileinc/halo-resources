@@ -167,7 +167,6 @@ if ($isPost) {
 | Field | Your input |
 |---|---|
 | Hosted hero URL | " . cell(field('hero_url')) . " |
-| Reference image attached? | " . cell(field('reference_attached')) . " |
 | Alt text | " . cell(field('alt_text')) . " |
 
 ## 5. Pricing
@@ -525,10 +524,6 @@ function fld($label, $for, $summary, $anchor, $control) {
               'The live, hosted URL of the hero image the email links to (not an upload).',
               '4-hero-image-hosted-url--reference-upload',
               '<input type="url" id="hero_url" name="hero_url" placeholder="https://…">');
-          fld('Reference image attached?', 'reference_attached',
-              'Whether you are attaching the actual image separately so the build can match the visual.',
-              '4-hero-image-hosted-url--reference-upload',
-              '<select id="reference_attached" name="reference_attached"><option value="">—</option><option value="Yes — attached separately">Yes — attached separately</option><option value="No">No</option></select>');
           fld('Alt text', 'alt_text',
               'A short description of the hero image for accessibility and Outlook fallback.',
               '4-hero-image-hosted-url--reference-upload',
