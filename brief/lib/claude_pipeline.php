@@ -279,13 +279,94 @@ function hp_validate(array $cfg, array $email, $briefMarkdown) {
  * send only on a pass. After two failed attempts it does NOT send and returns the
  * validation errors. Saves the last attempt's output for review either way.
  */
+function hp_save_generated(array $cfg, array $gen, $slug) {
+    if (empty($cfg['repo_root'])) return;
+    $genDir = rtrim($cfg['repo_root'], '/') . '/generated';
+    if (!is_dir($genDir)) @mkdir($genDir, 0775, true);
+    $base = 'brief_' . $slug . '_' . date('Ymd');
+    @file_put_contents($genDir . '/' . $base . '.html', $gen['html']);
+    @file_put_contents($genDir . '/' . $base . '.send.json', json_encode(hp_braze_body($cfg, $gen), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+}
+
+/**
+ * AI backstop review: a second model pass over the generated email against the SAME
+ * rule context, catching the judgment/semantic things the deterministic validator
+ * can't (tone, segment fit, claim/price accuracy, offer treatment, snippet reuse).
+ * Returns ['ok'=>bool, 'violations'=>string[], 'error'=>?string]. A set 'error' is an
+ * infrastructure failure (caller fails closed); violations with no error are content failures.
+ */
+function hp_ai_review(array $cfg, array $email, $briefMarkdown) {
+    list($context, ) = hp_load_context($cfg);
+    $userText =
+        "You are a STRICT compliance reviewer — not the author. Above are the orchestrator and every "
+        . "binding rule file and example. Below is a generated email (HTML) and the brief it was built "
+        . "from. Check the email against EVERY rule, emphasizing what a mechanical checker cannot verify: "
+        . "voice/tone, segment fit, accuracy of any claim or price, the offer/discount treatment, and "
+        . "whether the structure reuses the provided sections/components and example patterns rather than "
+        . "inventing new ones. List EVERY rule it violates, each as one short specific line naming the rule "
+        . "and what is wrong. If it fully complies, return pass=true with an empty violations list. Do not "
+        . "invent violations or restate passing rules.\n\n"
+        . "===== BRIEF =====\n" . $briefMarkdown . "\n\n===== EMAIL HTML =====\n" . $email['html'];
+
+    $schema = ['type' => 'json_schema', 'schema' => [
+        'type' => 'object',
+        'properties' => [
+            'pass' => ['type' => 'boolean'],
+            'violations' => ['type' => 'array', 'items' => ['type' => 'string']],
+        ],
+        'required' => ['pass', 'violations'],
+        'additionalProperties' => false,
+    ]];
+
+    $payload = [
+        'model' => $cfg['anthropic_model'],
+        'max_tokens' => 8000,
+        'thinking' => ['type' => 'adaptive'],
+        'output_config' => ['effort' => $cfg['effort'], 'format' => $schema],
+        'system' => [['type' => 'text', 'text' => $context, 'cache_control' => ['type' => 'ephemeral', 'ttl' => '1h']]],
+        'messages' => [['role' => 'user', 'content' => $userText]],
+    ];
+    $headers = [
+        'content-type: application/json',
+        'x-api-key: ' . $cfg['anthropic_api_key'],
+        'anthropic-version: ' . ($cfg['anthropic_version'] ?? '2023-06-01'),
+    ];
+    $url = rtrim($cfg['anthropic_base_url'] ?? 'https://api.anthropic.com', '/') . '/v1/messages';
+
+    list($code, $resp, $raw, $err) = hp_post_json($url, $headers, $payload, (int) $cfg['request_timeout']);
+    if ($err !== '') return ['ok' => false, 'violations' => [], 'error' => "AI review network error: $err"];
+    if ($code !== 200) {
+        $msg = is_array($resp) && isset($resp['error']['message']) ? $resp['error']['message'] : substr((string) $raw, 0, 300);
+        return ['ok' => false, 'violations' => [], 'error' => "AI review API HTTP $code: $msg"];
+    }
+    $text = '';
+    foreach ($resp['content'] ?? [] as $b) {
+        if (($b['type'] ?? '') === 'text') $text .= $b['text'];
+    }
+    $data = json_decode($text, true);
+    if (!is_array($data) || !array_key_exists('violations', $data)) {
+        return ['ok' => false, 'violations' => [], 'error' => 'Could not parse the AI review result.'];
+    }
+    $violations = array_values(array_filter(array_map('strval', (array) $data['violations']), function ($v) { return trim($v) !== ''; }));
+    return ['ok' => empty($violations), 'violations' => $violations, 'error' => null];
+}
+
+/**
+ * Full pipeline. Each attempt: generate → deterministic validator (all rules) →
+ * if that passes, the AI backstop review. The email must pass BOTH gates. On a
+ * content failure from either gate it regenerates ONCE with the combined failures
+ * fed back; a second failure does NOT send and returns the failures. An AI-review
+ * infrastructure error fails closed (does not send) without retrying.
+ */
 function hp_run_pipeline(array $cfg, $briefMarkdown, $slug) {
-    $validate = !array_key_exists('validate', $cfg) || !empty($cfg['validate']);
+    $validate = !array_key_exists('validate', $cfg)  || !empty($cfg['validate']);
+    $aiReview = !array_key_exists('ai_review', $cfg) || !empty($cfg['ai_review']);
     $maxAttempts = 2;          // first try + one retry
     $feedback = '';
     $attempts = 0;
     $gen = null;
-    $val = ['ok' => true, 'ran' => false, 'errors' => []];
+    $derrors = [];
+    $aviolations = [];
 
     while ($attempts < $maxAttempts) {
         $attempts++;
@@ -294,29 +375,45 @@ function hp_run_pipeline(array $cfg, $briefMarkdown, $slug) {
             return ['ok' => false, 'stage' => 'generate', 'error' => $gen['error'] ?? 'Generation failed',
                     'attempts' => $attempts, 'send' => null];
         }
-        if (!$validate) { $val = ['ok' => true, 'ran' => false, 'errors' => []]; break; }
-        $val = hp_validate($cfg, $gen, $briefMarkdown);
-        if (!empty($val['ok'])) break;                              // passed the gate
-        $feedback = '- ' . implode("\n- ", $val['errors'] ?: ['(validation failed — see harness output)']);
+
+        $derrors = [];
+        $aviolations = [];
+
+        // Gate 1 — deterministic validator (every rule, md-driven values).
+        if ($validate) {
+            $val = hp_validate($cfg, $gen, $briefMarkdown);
+            if (empty($val['ok'])) $derrors = $val['errors'];
+        }
+
+        // Gate 2 — AI backstop, only if the deterministic gate already passed.
+        if (empty($derrors) && $aiReview) {
+            $rev = hp_ai_review($cfg, $gen, $briefMarkdown);
+            if (!empty($rev['error'])) {                 // infra failure — fail closed, no retry
+                hp_save_generated($cfg, $gen, $slug);
+                $base = 'brief_' . $slug . '_' . date('Ymd');
+                return ['ok' => false, 'stage' => 'ai_review',
+                        'error' => 'AI review pass could not run — not sent: ' . $rev['error'],
+                        'attempts' => $attempts, 'html_file' => $base . '.html', 'json_file' => $base . '.send.json', 'send' => null];
+            }
+            $aviolations = $rev['violations'];
+        }
+
+        if (empty($derrors) && empty($aviolations)) break;   // passed both gates
+
+        $feedback = '- ' . implode("\n- ", array_merge($derrors, $aviolations));
     }
 
-    // Save the last attempt either way (for review).
+    hp_save_generated($cfg, $gen, $slug);
     $base = 'brief_' . $slug . '_' . date('Ymd');
-    if (!empty($cfg['repo_root'])) {
-        $genDir = rtrim($cfg['repo_root'], '/') . '/generated';
-        if (!is_dir($genDir)) @mkdir($genDir, 0775, true);
-        @file_put_contents($genDir . '/' . $base . '.html', $gen['html']);
-        @file_put_contents($genDir . '/' . $base . '.send.json', json_encode(hp_braze_body($cfg, $gen), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
-    }
 
-    // Failed validation on the final attempt → DO NOT send.
-    if (empty($val['ok'])) {
+    // Failed a gate on the final attempt → DO NOT send.
+    if (!empty($derrors) || !empty($aviolations)) {
         return [
             'ok' => false,
             'stage' => 'validate',
             'validation_failed' => true,
             'attempts' => $attempts,
-            'errors' => $val['errors'] ?? [],
+            'errors' => array_merge($derrors, $aviolations),
             'subject' => $gen['subject'],
             'preheader' => $gen['preheader'],
             'html_file' => $base . '.html',
@@ -325,7 +422,7 @@ function hp_run_pipeline(array $cfg, $briefMarkdown, $slug) {
         ];
     }
 
-    // Passed (or validation disabled) → optionally send.
+    // Passed both gates → optionally send.
     $send = null;
     if (!empty($cfg['auto_send'])) $send = hp_send_via_braze($cfg, $gen);
 
@@ -333,7 +430,8 @@ function hp_run_pipeline(array $cfg, $briefMarkdown, $slug) {
         'ok' => true,
         'error' => null,
         'attempts' => $attempts,
-        'validated' => !empty($val['ran']),
+        'validated' => $validate,
+        'ai_reviewed' => $aiReview,
         'subject' => $gen['subject'],
         'preheader' => $gen['preheader'],
         'truncated' => !empty($gen['truncated']),

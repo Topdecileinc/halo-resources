@@ -135,8 +135,17 @@ def check(ctx):
             "no MSO conditional comments — Outlook-specific fixes may be missing",
         )
 
-    # Font fallback
-    if re.search(r"font-family\s*:[^;'\"]*\b(Arial|Helvetica|sans-serif)\b", html, re.I):
+    # Font fallback — the acceptable web-safe fonts are read from the style guide
+    # md (its "Email fallback stack"), not hardcoded, so this tracks the rule file.
+    sg = ctx.read_rule("rules_email_style_guide.md") or ""
+    m = re.search(r"[Ee]mail fallback stack[:\s]*`([^`]+)`", sg)
+    if m:
+        fallbacks = [p.strip().strip('"\'') for p in m.group(1).split(",")
+                     if p.strip() and p.strip().lower() != "inter"]
+    else:
+        fallbacks = ["Arial", "Helvetica", "sans-serif"]   # only if the md can't be parsed
+    pat = "|".join(re.escape(f) for f in fallbacks) or "Arial|Helvetica|sans-serif"
+    if re.search(r"font-family\s*:[^;'\"]*\b(" + pat + r")\b", html, re.I):
         ctx.ok("html.font_fallback")
     else:
-        ctx.warn("html.font_fallback", "no web-safe font fallback (Arial/Helvetica) detected")
+        ctx.warn("html.font_fallback", "no web-safe font fallback (" + ", ".join(fallbacks) + ") detected")

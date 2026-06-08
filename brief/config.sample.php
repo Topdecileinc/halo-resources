@@ -26,9 +26,11 @@ return [
     'max_tokens'        => 32000,                // room for adaptive thinking + the email HTML
     'request_timeout'   => 900,                  // seconds to wait on the Claude call
 
-    // ---- Validation gate (test/validate.py) ----
-    'validate'          => true,                  // validate every email against ALL rules; never send one that fails
+    // ---- Validation gates ----
+    'validate'          => true,                  // deterministic: validate every email against ALL rules (test/validate.py)
     'python_bin'        => 'python3',             // how Python is invoked on this host
+    'ai_review'         => true,                  // backstop: a second AI pass for judgment rules the static checks can't cover
+                                                  // (runs only after the deterministic gate passes; both must pass to send)
 
     // What stable context to load into the (prompt-cached) system prompt.
     // These are read fresh from disk on every request, so editing a rule file
