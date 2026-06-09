@@ -11,8 +11,7 @@
 > 2. "The most advanced tech available in a GPS dog collar" feature list
 > 3. "Halo Collar 5 GPS Dog Fence" product-page card
 >
-> Every fact below cites which of these it came from. Nothing here was pulled from the
-> website yet (see "Gaps" at the end).
+> Every fact below cites which of these it came from.
 
 ---
 
@@ -76,17 +75,3 @@
 > Battery wording across sources: image 1 and image 3 say "up to 48 hours"; image 2 says
 > "40+ hour." Use "up to 48 hours" for the Halo Collar 5 (the two product-specific sources
 > agree); "40+" appears to be conservative/general phrasing.
-
----
-
-## Gaps (not in the provided images)
-
-The above is the complete set of facts shown in the three images. The following are **not**
-covered and have **not** been added (no source yet): exact GPS/fence accuracy figures beyond
-"Precision+" and "20 updates/sec", subscription or plan requirements, detailed app
-capabilities, in-the-box contents, weight/dimensions, and pricing.
-
-If you want any of these filled in, say the word and I'll pull them from
-https://www.halocollar.com and cite the exact page/URL for each fact so you can check it.
-I deliberately did not browse the site for this pass; everything here traces to the images
-you provided.
