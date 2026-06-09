@@ -733,7 +733,7 @@ function fld($label, $for, $summary, $anchor, $control) {
               '7-structure--starting-point',
               '<select id="template" name="template"><option value="">—</option><option value="newsletter">Newsletter</option><option value="promo">Promo</option><option value="none — build fresh">None — build fresh</option></select>');
           fld('Sections to include', 'f_sections',
-              'The middle blocks to include — header and footer are always added automatically. Options are read live from the README section vocabulary; anything custom goes in Notes (§8).',
+              'Optional. Leave blank for a minimal email (hero, headline, body, CTA) — the build won\'t add feature/spec/review blocks on its own; tick the ones you want here. Header and footer are always included. Options are read live from the README section vocabulary; anything custom goes in Notes (§8).',
               '7-structure--starting-point',
               sections_checks());
           fld('Anything to exclude', 'exclude',
