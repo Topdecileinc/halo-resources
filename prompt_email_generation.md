@@ -72,9 +72,15 @@ repo grows.
 ```
 halo-resources/
 ├── prompt_email_generation.md          ← this file (entry point / orchestrator)
-├── brief_sample.md                     ← copy per campaign → brief_<name>.md
+├── brief/
+│   └── brief_sample.md                 ← copy per campaign → brief_<name>.md
 ├── brand-brain/
-│   └── rules_brand.md                  ← brand identity (name, site, voice)
+│   ├── rules_brand.md                  ← brand identity (name, site, voice)
+│   └── rules_segment_definition.md     ← audience segment definitions
+├── product-brain/
+│   ├── rules_technical_features.md     ← product specs & features
+│   ├── rules_social_proof.md           ← customer reviews & ratings
+│   └── rules_membership.md             ← membership / plan facts
 ├── email-design-system/
 │   ├── rules_email_style_guide.md      ← visual design standards
 │   ├── rules_email_copy.md             ← copy/voice + punctuation rules
@@ -87,7 +93,6 @@ halo-resources/
 │       ├── shared-images/              ← img_*.webp
 │       └── social-icons/               ← social_*.webp
 ├── braze-deployment/
-│   ├── rules_segment_definition.md     ← audience segment definitions
 │   └── rules_braze_send.md             ← Braze /messages/send schema + safety
 └── email-examples/                     ← sample_*.html
 ```

@@ -210,9 +210,18 @@ structure. The brief wins on what this specific send says. The orchestrator only
 ```
 halo-resources/
 ├── prompt_email_generation.md          ← entry point / orchestrator (the ONE prompt_)
-├── brief_sample.md                     ← copy per campaign → brief_<name>.md
+├── brief/
+│   ├── brief_sample.md                 ← copy per campaign → brief_<name>.md
+│   ├── form.php                        ← brief form + pipeline entry point
+│   ├── config.sample.php               ← copy to config.php (gitignored) with keys
+│   └── lib/claude_pipeline.php         ← Claude REST API → validate → preview → Braze
 ├── brand-brain/
-│   └── rules_brand.md                  ← brand identity (name, site, voice)
+│   ├── rules_brand.md                  ← brand identity (name, site, voice)
+│   └── rules_segment_definition.md     ← audience segment definitions
+├── product-brain/
+│   ├── rules_technical_features.md     ← product specs & features
+│   ├── rules_social_proof.md           ← customer reviews & ratings
+│   └── rules_membership.md             ← membership / plan facts
 ├── email-design-system/
 │   ├── rules_email_style_guide.md      ← visual standards (from Figma design system)
 │   ├── rules_email_copy.md             ← copy/voice + punctuation rules
@@ -225,7 +234,6 @@ halo-resources/
 │       ├── shared-images/              ← img_*.webp
 │       └── social-icons/               ← social_*.webp
 ├── braze-deployment/
-│   ├── rules_segment_definition.md     ← audience segment definitions
 │   └── rules_braze_send.md             ← Braze /messages/send schema + safety
 ├── email-examples/                     ← sample_*.html
 ├── test/                               ← validation harness (NOT synced; see "Testing" below)
@@ -346,7 +354,7 @@ register a new file.
 | Role + "start here" handoff | Initial prompt (tool settings, not this repo) |
 | Flow, prefix system, precedence | `prompt_email_generation.md` |
 | Brand identity (name, site, voice) | `brand-brain/rules_brand.md` |
-| Audience segment definitions | `braze-deployment/rules_segment_definition.md` |
+| Audience segment definitions | `brand-brain/rules_segment_definition.md` |
 | Colors, type, buttons, logos | `email-design-system/rules_email_style_guide.md` |
 | HTML structure, CSS, Outlook, image markup, checklist | `email-design-system/rules_email_build.md` |
 | Footer, legal line, unsubscribe text (stable across sends) | `email-design-system/rules_email_footer.md` |
@@ -380,7 +388,7 @@ provide the hero image, and attach it to the chat.
 The email's angle is driven by **which segment it targets**. Name the segment in the brief;
 its definition drives the message, tone, and offer emphasis.
 
-> Segment definitions live in `braze-deployment/rules_segment_definition.md` — that's the
+> Segment definitions live in `brand-brain/rules_segment_definition.md` — that's the
 > source of truth (and it's a synced `rules_` file, so the model reads it at build time).
 > Add or refine segments there, not here. Example: **Acquisition** = people we're targeting
 > to buy the product but who don't own one yet → email emphasizes core value, trust, and a
