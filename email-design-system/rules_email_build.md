@@ -15,12 +15,13 @@
 - **Width:** max 600px content width, centered. Apply full-width background colors via an outer wrapper table.
 - **Structure:** nested `<table role="presentation" cellpadding="0" cellspacing="0" border="0">`. No `<div>` layouts, no flexbox, no grid.
 
-## Subject line & preheader (output in chat, copyable)
+## Subject line & preheader
 
-Every build must produce a **subject line** and a **preheader** (preview text), and present
-them **in the chat reply** — not only inside the HTML — so they can be copied out quickly.
+Every build must produce a **subject line** and a **preheader** (preview text) as part of its
+output. The pipeline returns them as the `subject` and `preheader` fields alongside the
+`html`, so they can be read and copied without digging through the markup.
 
-- Print them at the top of the reply, before the file link, each on its own line, **bolded** and clearly labeled, distinct enough to spot and copy at a glance. For example:
+- Keep them clearly distinct and easy to copy. For example:
   - **Subject:** Give them both the gift they love
   - **Preheader:** Halo Collar 5, now $50 off for Father's Day
 - Also include the preheader in the HTML as hidden preview text (a visually-hidden span right after `<body>`), and keep the `<title>` aligned with the subject.
@@ -105,7 +106,7 @@ Call out any element that won't render reliably, for example:
 
 ## Pre-delivery checklist
 
-- [ ] Subject and preheader are output in the chat, bolded/labeled and copyable, and follow the copy rules.
+- [ ] Subject and preheader are produced as the `subject` and `preheader` output fields and follow the copy rules.
 - [ ] Logo is left-aligned in the header.
 
 - [ ] HTML is table-based, ≤600px, inline CSS, with MSO conditionals.

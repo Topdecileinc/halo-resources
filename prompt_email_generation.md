@@ -3,19 +3,22 @@
 # Email Generation — Main Prompt
 
 > **What this is:** The single entry point and orchestrator for generating a marketing
-> email from this repository. It is a **brand-neutral engine** — what the email is about
-> (brand, product, pricing, voice) comes from the brief, not from this file. It defines
-> how the repo is organized and the flow for using it. It is the **only** file with the
-> `prompt_` prefix — everything else is a rule, a reference, an input, an asset, or an
-> example that this file orchestrates.
+> email from this repository. The brand (Halo), its voice, product facts, reviews, and
+> membership terms live in the `rules_` files; the **brief** sets what is specific to each
+> send (segment, occasion, offer, hero, CTAs). This file defines how the repo is organized
+> and the flow for using it. It is the **only** file with the `prompt_` prefix — everything
+> else is a rule, a reference, an input, an asset, or an example that this file orchestrates.
 >
 > **Design principle:** This file references other files *by prefix and convention*, not
 > by hard-coded list. Adding a new rule, component, or example means dropping in a
 > correctly-prefixed file — **you should not need to edit this prompt to do it.**
 >
-> **How to run it:** Paste this file, attach a filled-in brief (a `brief_` file) with the
-> hero image, and produce the email. Hero images are **uploaded** via the brief — the
-> pipeline does not generate them.
+> **How to run it:** This file is the system prompt for the email pipeline. The brief form
+> (`brief/form.php`) sends it to the Claude API together with every `rules_` file, the
+> section/component HTML, and the example emails, plus the filled-in brief for this send. The
+> model returns the email; the pipeline validates it, shows a preview, and (on approval) sends
+> it through Braze. Hero images are supplied as a **hosted URL** in the brief — the engine
+> never generates or sources imagery.
 
 ---
 
@@ -28,7 +31,7 @@ characters. To work with the repo, resolve files **by prefix**, not by memorizin
 |---|---|---|
 | `prompt_` | **The entry point.** This file only. | Start here. Defines the flow. |
 | `rules_` | **Binding reference docs.** Design + build standards. | Obey all of them. Read every `rules_` file before building. |
-| `brief_` | **Per-campaign input** you fill in and attach. | Read the one attached to this run for what this email needs. |
+| `brief_` | **Per-campaign input** filled in via the brief form. | Read the one for this run for what this email needs. |
 | `template_` | **Full email skeletons** to start from. | If the brief names one, start from it. |
 | `section_` | **Composed blocks** that occupy a vertical slice of the email (header, footer, hero, feature row, etc.). | Brief §7 names these. Always include the header and footer sections; assemble the middle from the others. |
 | `component_` | **Reusable primitives** used *inside* sections (button, card, etc.). | Drop into sections where needed. Brief §7 does NOT name these directly. |
@@ -48,22 +51,22 @@ brief wins on what goes in this specific send. This prompt only orchestrates.
 Follow these steps every time. They reference file **types**, so they stay correct as the
 repo grows.
 
-1. **Read the brief.** Open the attached `brief_` file. Note the uploaded hero image, theme, audience, copy, pricing, and CTA. Ask about anything critical left blank.
+1. **Read the brief.** Open the `brief_` file for this run. Note the hosted hero URL, theme, target segment, copy direction, pricing/offer, and CTAs. Anything left blank is generated from context — the pipeline is automated, so there is no human to ask mid-run.
 
-2. **Load every rule.** Read all `rules_` files — they are binding. The style guide governs visual values (color, typography, buttons, logos); the copy rules govern voice and punctuation (e.g. no em dashes); the build rules govern HTML structure, inline CSS, Outlook handling, image markup, and the pre-delivery checklist. Never invent a value a `rules_` file already defines.
+2. **Load every rule.** Read all `rules_` files — they are binding. The style guide governs visual values (color, typography, buttons, logos); the copy rules govern voice and punctuation (e.g. no em dashes); the build rules govern HTML structure, inline CSS, Outlook handling, image markup, and the pre-delivery checklist. **Product facts — specs, customer reviews, and membership/plan details — come verbatim from the `product-brain/` rule files; relay them exactly, never invent them or pull them from the example emails.** Never invent a value a `rules_` file already defines.
 
-3. **Study the examples.** Review the `sample_` emails for tone, voice, and structural patterns that have actually shipped. Match their feel; don't copy their content.
+3. **Study the examples.** Review the `sample_` emails for tone, voice, and HTML structure that have actually shipped — for *feel and structure only*. Never use them as a source of product facts, specs, prices, or claims (those come from the rule files). Match their feel; don't copy their content.
 
 4. **Pick a starting point** — three cases, in order:
    - **Brief names a template** → start from the matching `template_` file.
    - **No template, but the brief specifies a layout / sections** → assemble those sections from `section_*.html` files (dropping in `component_*.html` primitives where the sections call for them).
-   - **No template and no layout given** → derive the structure by amalgamating the `sample_` emails: identify the *common skeleton* they share (header section → hero → headline/subhead → value or feature section → CTA → footer section) and their recurring patterns, then build a new layout that follows those proven patterns, assembled from `section_*.html` files (with `component_*.html` primitives inside them where needed). Synthesize the shared structure — do **not** Frankenstein disparate sections from different samples into something incoherent. Structure/tone come from the samples; all visual values still come from the style guide; all content still comes from the brief.
+   - **No template and no layout given** → derive the structure by amalgamating the `sample_` emails: identify the *common skeleton* they share (header section → hero → headline/subhead → value or feature section → CTA → footer section) and their recurring patterns, then build a new layout that follows those proven patterns, assembled from `section_*.html` files (with `component_*.html` primitives inside them where needed). Synthesize the shared structure — do **not** Frankenstein disparate sections from different samples into something incoherent. Structure/tone come from the samples; all visual values still come from the style guide; product facts come verbatim from the rule files; campaign specifics come from the brief.
 
-5. **Build.** Place the uploaded hero image from the brief. Pull the logo and icons from the `img_` and `social_` assets. Apply the style guide's design values and the build rules' code conventions throughout.
+5. **Build.** Place the hero image from the brief's hosted URL. Pull the logo URL from `rules_brand.md` and the social-icon URLs from `rules_email_footer.md` (the `img_`/`social_` files under `assets/` are reference copies — emails link to the hosted URLs). Apply the style guide's design values and the build rules' code conventions throughout. The only copy you write is the sales pitch; every factual claim is relayed from the rule files.
 
 6. **Check & flag.** Run the checklist at the end of the build rules. Flag any client-specific rendering risks (Outlook, Gmail, etc.).
 
-7. **Generate the test send body (if applicable).** If the brief's §9 (Sender) and §10 (Test targeting) are filled in, also produce a `send_test_body.json` alongside the HTML, following the schema in `rules_braze_send.md`. The JSON shape is `broadcast: true` + `segment_id` + the engine-generated `messages.email` block; never include `audience` or `campaign_id`. If §9 or §10 is missing or incomplete, skip this step and note it in the reply.
+7. **Return the email.** Output only the finished email as the structured result the pipeline expects: `subject`, `preheader`, and `html`. You do **not** assemble the Braze request — the pipeline takes your output, validates it against `test/validate.py`, shows a preview, and (on approval) builds the `/messages/send` body and sends it to the fixed test segment per `rules_braze_send.md`. Sender, app, and segment are set by the pipeline, not by you.
 
 ---
 
@@ -102,18 +105,26 @@ halo-resources/
 
 ---
 
-## Accuracy rule (the engine is faceless — the brief defines the brand)
+## Accuracy rule (facts come from the rule files; the brief sets the campaign)
 
-This prompt is a brand-neutral email-building engine. It does **not** hold product names,
-prices, brand voice, or legal text — those are campaign-specific and come from the brief
-(and any resource files the brief points to).
+This engine builds emails for one brand — Halo. Its identity, voice, product facts, social
+proof, and membership terms are defined in the `rules_` files and must be relayed **exactly
+as written** — never invented, never lifted from the example emails:
 
-- Never invent product names, prices, offers, claims, or brand details.
-- Use only the facts supplied by the attached `brief_` file and the prefixed resources.
-- If a needed fact (product name, price, legal/footer text, brand) is missing from the brief, ask for it — do not assume or carry one over from another campaign.
+- **Brand voice & identity** → `brand-brain/rules_brand.md`
+- **Product specs & features** → `product-brain/rules_technical_features.md`
+- **Customer reviews & ratings** → `product-brain/rules_social_proof.md`
+- **Membership / plan details** → `product-brain/rules_membership.md`
+- **Footer, legal line, unsubscribe** → `email-design-system/rules_email_footer.md`
 
-Everything about *how an email looks and is coded* lives in the `rules_` files; everything
-about *what this specific email says* lives in the brief.
+The **brief** sets what is specific to *this send*: the target segment, the campaign
+occasion, the offer/discount and promo code, the hero image URL, the CTAs, and any headline/
+subhead direction (or "suggest").
+
+The only copy you generate is the **sales pitch** — the persuasive framing and wording that
+ties the campaign together. Every factual claim inside it (a spec, a price, a review quote, a
+membership term) must trace verbatim to a rule file or the brief. If a fact you'd want isn't
+in either, leave it out — do not invent it or carry one over from an example email.
 
 ---
 

@@ -256,8 +256,8 @@ if ($isPost) {
 | Braze `app_id` | " . BRAZE_APP_ID . " |
 | `from` | " . BRAZE_FROM . " |
 
-> These are **not secrets**. The API key and Braze REST URL live in env vars on the
-> runner's machine, not here — see the README's \"Sending via Braze (test sends)\" section.
+> These are **not secrets**. The Braze API key and REST URL are **not** here — they live in
+> brief/config.php on the server (see the README's \"Setup — Configure keys\" section).
 
 ## 10. Test targeting (segment)
 

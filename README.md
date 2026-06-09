@@ -2,196 +2,119 @@
 ---
 # Halo Email Resources — Developer README
 
-This repository is a **brand-neutral email-building engine**. You give a model these
-resources plus a filled-in brief, and it produces production-ready, cross-client HTML
-marketing emails. This README explains how the system is put together and how to work in
-it. It's for the team — not for the model.
+This repository is Halo's **email-building engine**. A brief form (`brief/form.php`) feeds
+these resources plus a filled-in brief to the Claude API, which produces a production-ready,
+cross-client HTML marketing email; the pipeline then validates it, shows a preview, and (on
+approval) sends it through Braze. This README explains how the system is put together and how
+to work in it. It's for the team — not for the model.
 
 > **Not to be confused with `prompt_email_generation.md`.** That file is the instruction
-> *to the model* (the entry point it reads). This README is documentation *for us* about
+> *to the model* (the system prompt it reads). This README is documentation *for us* about
 > how the whole thing works.
 
 ---
 
 ## Mental model
 
-Think of it in three layers:
+Three layers:
 
-1. **Initial prompt** (lives in the tool's settings, not in this repo) — a thin signpost. It sets the role and tells the model to start by reading `prompt_email_generation.md`. It never holds build rules or brand facts.
-2. **`prompt_email_generation.md`** (this repo) — the orchestrator / entry point. It defines the flow, the prefix system, and the order to use everything. It points; it doesn't restate.
-3. **Everything else** (this repo) — the modular resources: rules, briefs, sections, components, templates, examples, assets. Each is prefixed by role and owned by exactly one concern.
+1. **The pipeline** (`brief/`) — the brief form and the PHP behind it. It loads the resources
+   below, calls the Claude API, validates the result, shows a preview, and sends via Braze.
+   This is the runner; it replaces the old "paste the resources into a chat" workflow.
+2. **`prompt_email_generation.md`** — the orchestrator / system prompt. It defines the flow,
+   the prefix system, and the order to use everything. It points; it doesn't restate.
+3. **Everything else** — the modular resources: rules, brief, sections, components, templates,
+   examples, assets. Each is prefixed by role and owned by exactly one concern.
 
-The guiding principle: **the engine is faceless.** What an email is *about* — brand,
-product, price, voice, legal text — comes from the **brief**. What an email *looks like*
-and *how it's coded* comes from the **`rules_` files**. The orchestrator just stitches
-them together.
+The guiding principle: **facts live in the rule files; the brief sets the campaign.** Brand
+voice, product specs, reviews, membership terms, and legal text come from the `rules_` files
+and are relayed verbatim. The brief sets what's specific to one send (segment, occasion,
+offer, hero, CTAs). The engine writes only the **sales pitch**; the orchestrator stitches it
+all together.
 
 ---
 
-## Setup — standing this project up from scratch
+## Setup — standing the pipeline up
 
-Follow these steps to (re)create the project in a tool that supports project resources
-(e.g. a Claude Project or similar). This is everything needed to go from an empty project
-to a working email engine.
+The engine runs as a small PHP app in `brief/`. To stand it up on a PHP-capable host:
 
-### 1. Create the project and connect this repo
+### 1. Deploy the repo to a PHP host
 
-1. Create a new project in the tool.
-2. Connect this GitHub repository as the project's resource source so its files are pulled in:
-   - In the project's settings, add a GitHub connection / integration.
-   - Authorize access to the org/account that owns this repo.
-   - Select this repository (and the branch you want — typically `main`).
-   - Confirm the files sync in. You should see the prefixed files (`prompt_`, `rules_`, `brief_`, `sample_`, `img_`, `social_`) appear as project resources.
-3. Re-sync whenever the repo changes. Adding or editing a file in GitHub means re-pulling so the project picks it up. (If the tool doesn't auto-sync, trigger a manual refresh.)
+GitHub Pages is static and **will not** run the form — it only serves the docs site. Put the
+repo on a PHP server (Apache/Nginx + PHP). Point the web root at `brief/`; the form reads its
+sibling resource files (rules, sections, examples) from the **filesystem**, not over HTTP.
+Make sure `submissions/` and `generated/` are writable by the web server.
 
-> **Why GitHub?** It keeps the resources versioned and editable by the team. The project
-> consumes a flattened copy; GitHub remains the source of truth.
-
-#### What to sync (and what not to)
-
-Sync **everything the model needs to build an email**, and leave out anything that's only
-for the team.
-
-| Sync into the project | Why |
-|---|---|
-| `prompt_email_generation.md` | The entry point the model reads first. |
-| All `rules_*` files (brand, segments, style guide, copy, build, footer, Braze) | Binding standards the model applies. |
-| All `section_*.html`, `component_*.html`, and `template_*` files | The blocks/skeletons emails are built from. |
-| All `sample_*.html` | Tone and structure reference. |
-| All `img_*` and `social_*` images | Brand assets the emails reference by name. |
-| `brief_sample.md` | The blank template the model copies/fills per campaign. |
-
-| Do **not** sync | Why |
-|---|---|
-| `README.md` (this file) | Team documentation. The model never reads it; it only adds noise to the resources. |
-| Anything under `.git`, editor configs, etc. | Not resources. |
-
-> **The brief:** sync the blank `brief_sample.md` so it's available as a template. For an
-> actual send, you'll either fill in a copy and **attach it to the chat**, or upload the
-> filled-in `brief_<campaign>.md` — either works. The model reads whichever brief is
-> present for that conversation.
->
-> **Images:** every image an email references must be in the project resources (see step 3
-> below). GitHub stores them, but the model resolves them from the synced resources.
-
-### 2. Paste the initial prompt
-
-The **initial prompt** lives in the project's custom-instructions / system-prompt field —
-**not** in the repo. It's the thin signpost that points the model at the entry file. Paste
-this verbatim:
-
-```
-You are an email-building engine. You generate production-ready,
-cross-client HTML marketing emails from a structured set of resource files.
-
-Before doing anything else, read prompt_email_generation.md. It is the
-entry point and README: it defines the full flow, the prefix system for
-all resource files, and the order in which to use them. Follow it.
-
-A few things always hold, regardless of what any file says:
-
-- This engine is brand-neutral. The brief defines who the email is for
-  and what it says. Never invent a brand, product name, price, offer,
-  claim, or legal text — use only what the brief and the prefixed
-  resource files provide. If something needed is missing, ask.
-
-- Hero and content images are uploaded by the user via the brief. Never
-  generate, source, or substitute images on your own.
-
-- Begin every email by reading the attached brief_ file. If no brief is
-  attached, ask for one before proceeding.
-
-Do not wander into other resource files first or improvise a process —
-prompt_email_generation.md is the single source of truth for how to work.
-```
-
-> Keep this copy in the README so it's recoverable. If you lose the project, you rebuild
-> it from: this repo + this prompt.
-
-### 3. Image hosting (hosted URLs, not uploads)
-
-Images are **hosted** and referenced by absolute URL, so they render in a recipient's
-inbox:
-
-- **Logo and social icons** are hosted on the CDN; their URLs live in `rules_brand.md` (logo) and `rules_email_footer.md` (the four social icons). These are stable — set once, reused every send.
-- **Hero** images are hosted per campaign; the brief carries the live hero URL. The brief *also* attaches a copy of the hero image so the build can see the visual and write matching content — but the email links to the hosted URL, not the upload.
-
-You do not need to upload brand assets into the project resources for them to appear in
-emails; the hosted URLs handle that. (Reference copies of the assets still live in the repo
-under `email-design-system/assets/` for preview and design reference.)
-
-### 4. Run an email (per-campaign workflow)
-
-Once setup is done, producing an email is repeatable:
-
-1. **Copy the brief.** Duplicate `brief_sample.md`, rename it `brief_<campaign>.md` (e.g. `brief_spring_sale.md`), and fill it in — product, copy, pricing, CTA, hosted hero URL, and (for a test send) §9 sender and §10 test segment.
-2. **Host the hero and paste its URL** into the brief (§4), and **attach the image** to the chat so content can match the visual.
-3. **Start a chat**, attach the filled-in brief, and ask for the email. The model reads the initial prompt → `prompt_email_generation.md` → the rules → your brief, and builds it.
-4. **Review the output** against the checklist in `rules_email_build.md` and the rendering-risk flags the model surfaces.
-5. **Send the test (optional)** — if the brief filled in §9 + §10, the build also produces `send_test_body.json` alongside the HTML targeting the test segment. See the next section.
-
-### 5. Sending via Braze (test sends)
-
-This sends an immediate test email through Braze's `/messages/send` endpoint. It targets
-a **designated test segment** in a test/non-production Braze workspace — never production.
-The schema and safety constraints are documented in `braze-deployment/rules_braze_send.md`.
-
-**One-time setup — set your env vars** (do this once per shell session, or add to your
-`~/.zshrc` / `~/.bashrc` to persist):
+### 2. Configure keys
 
 ```bash
-export BRAZE_API_KEY="your-restricted-messages-send-key"
-export BRAZE_REST_URL="https://rest.iad-XX.braze.com"   # your workspace's cluster URL
+cd brief
+cp config.sample.php config.php   # config.php is gitignored — secrets never land in the repo
+# then edit config.php
 ```
 
-**Important security notes:**
+Fill in `config.php`:
 
-- `BRAZE_API_KEY` should be a **dedicated key** with only the `messages.send` permission — not a shared key with broader scope. Create it in Braze under Settings → APIs and Identifiers → API Keys.
-- The key must **never** be pasted into files, briefs, chats, or commits. It lives only in your shell env.
-- `BRAZE_REST_URL` is your workspace's REST endpoint (the cluster). You'll find it in your Braze dashboard. Common values: `https://rest.iad-01.braze.com`, `https://rest.iad-03.braze.com`, `https://rest.fra-01.braze.com` (EU), etc.
+- `anthropic_api_key` — from platform.claude.com → API keys. Used to generate the email.
+- `braze_api_key` + `braze_rest_url` — a Braze key scoped to **`messages.send` only**, and
+  your workspace's cluster URL (e.g. `https://rest.iad-01.braze.com`).
+- The send identity is already set: `braze_app_id`, `braze_from`, and `braze_segment_id` (the
+  test segment). These match the values `brief/form.php` writes into every brief.
 
-**Per-test-send workflow:**
+Leave the model (`claude-opus-4-8`) and the gate toggles at their defaults unless you have a
+reason to change them. With no `config.php`, the form still works but only **saves the brief**
+to `submissions/` — it won't generate.
 
-The build produces `send_test_body.json` alongside the email HTML. The JSON has
-`broadcast: true`, the segment ID from brief §10, and the email object (subject,
-preheader, from, body). To run the test:
+### 3. Run an email
 
-```bash
-# Verify your env vars are set
-echo $BRAZE_REST_URL
-echo "Key is set: $([ -n "$BRAZE_API_KEY" ] && echo yes || echo NO)"
+1. Open `form.php` in a browser and fill in the brief. **Only the campaign name is required;**
+   everything else is optional and generated when left blank.
+2. Hit **Generate email.** The pipeline saves the brief, calls Claude with the orchestrator +
+   every rule + sections/components + examples, validates the result, and shows a **preview.**
+3. From the preview, **Redo** (regenerate from the same brief) or **Send.** Nothing goes out
+   until you click Send.
+4. **Send** posts the email to Braze `/messages/send` targeting the fixed test segment, and
+   shows the HTTP result.
 
-# Send the test (from the folder containing send_test_body.json)
-curl -X POST "$BRAZE_REST_URL/messages/send" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $BRAZE_API_KEY" \
-  --data @send_test_body.json
-```
+### How generation is gated
 
-Braze returns a JSON response with a `dispatch_id` on success. Check inboxes within a
-minute or two. Note: `"message": "success"` only means the request was accepted — it
-does not confirm delivery. If nothing arrives, the most common cause is that the
-segment is empty or contains users without email addresses.
+- **Deterministic validation** (`test/validate.py`) is the hard gate — the email is checked
+  against the rule files. On failure the pipeline retries once; a second failure means it is
+  **not sent**, and you're told it couldn't be generated cleanly.
+- **AI review** is a second, advisory pass. It surfaces concerns on the preview but does
+  **not** block the send — unless `ai_review_blocking` is turned on in `config.php`.
 
-**Safety reminders:**
+### Sending: scope & safety
 
-- The `send_test_body.json` produced by the engine **always** uses `broadcast: true` + `segment_id` for segment-based sends. It does not include `audience` or `campaign_id`. Do not edit those fields.
-- The segment must exist in the workspace the API key targets.
-- This pipeline handles **test sends only**. Production emails go through Braze **campaigns** — created and triggered in the Braze dashboard, not through hand-built JSON.
+- The pipeline does **test sends only** — always `broadcast: true` + the test `segment_id`,
+  never `audience` or `campaign_id`. Production emails go through Braze **campaigns**, created
+  and triggered in the Braze dashboard, not here.
+- The Braze key must be scoped to `messages.send` only, and lives in `config.php` (gitignored)
+  — never in a brief, the docs, or a commit.
+- `"message": "success"` from Braze only means the request was accepted, not delivered. If
+  nothing arrives, the segment is usually empty or has users without email addresses.
+
+### Images
+
+Images are **hosted** and referenced by absolute URL so they render in the inbox. The logo URL
+lives in `rules_brand.md` and the four social-icon URLs in `rules_email_footer.md` (set once,
+reused every send). The hero is per-campaign: the brief supplies its hosted URL and the email
+links to it. The engine never generates or sources imagery. (Reference copies of the brand
+assets live under `email-design-system/assets/` for design reference.)
 
 ---
 
 ## The prefix system
 
-Every file announces its role with a prefix — lowercase, underscores, no spaces or
-special characters. The model resolves files **by prefix, not by exact filename**, so the
-system grows by *adding correctly-prefixed files*, not by editing the prompt.
+Every file announces its role with a prefix — lowercase, underscores, no spaces or special
+characters. The pipeline resolves files **by prefix, not by exact filename**, so the system
+grows by *adding correctly-prefixed files*, not by editing the orchestrator.
 
 | Prefix | Role | Edit / add when… |
 |---|---|---|
 | `prompt_` | The single entry point (orchestrator). **Only one file.** | …you're changing the *flow itself*. Rarely. |
-| `rules_` | Binding standards — design and code. | …you add or change a standard (style, build, future image rules). |
-| `brief_` | Per-campaign input, filled in per email. | …you start a new campaign (copy `brief_sample.md`). |
+| `rules_` | Binding standards — brand, product facts, design, code, send. | …you add or change a standard or a product fact. |
+| `brief_` | Per-campaign input, filled in per email. | …you start a new campaign (the form writes one). |
 | `template_` | Full email skeletons to start from. | …you have a new repeatable email shape. |
 | `section_` | Composed blocks that occupy a vertical slice of the email (header, footer, hero, feature row, etc.). **This is what brief §7 names.** | …you formalize a recurring middle-of-email pattern. |
 | `component_` | Reusable primitives used *inside* sections (button, card, etc.). | …you build a new reusable primitive (not a section). |
@@ -199,9 +122,13 @@ system grows by *adding correctly-prefixed files*, not by editing the prompt.
 | `img_` | Shared brand images (logo, header). | …you add a shared brand image. |
 | `social_` | Footer social icons. | …you add/replace a social icon. |
 
-**Rule of precedence** (when two files overlap): the most specific owner wins. The style
-guide wins on visual values (hex, font size, button shape). The build rules win on code
-structure. The brief wins on what this specific send says. The orchestrator only routes.
+`rules_` files live across the layer folders (`brand-brain/`, `product-brain/`,
+`email-design-system/`, `braze-deployment/`); the loader finds them by prefix at any depth.
+
+**Rule of precedence** (when two files overlap): the most specific owner wins. The style guide
+wins on visual values (hex, font size, button shape). The build rules win on code structure.
+The product-brain files win on product facts. The brief wins on what this specific send says.
+The orchestrator only routes.
 
 ---
 
@@ -236,18 +163,17 @@ halo-resources/
 ├── braze-deployment/
 │   └── rules_braze_send.md             ← Braze /messages/send schema + safety
 ├── email-examples/                     ← sample_*.html
-├── test/                               ← validation harness (NOT synced; see "Testing" below)
+├── test/                               ← validation harness (local tooling, not loaded)
 │   ├── validate.py                     ← Python 3 entry point
 │   ├── config.ini                      ← paths and toggles
 │   ├── validators/                     ← one module per concern
 │   └── emails/                         ← campaign packages, gitignored
-└── README.md                           ← this file (NOT synced — team docs)
+└── README.md                           ← this file (team docs, not loaded)
 ```
 
-> **Folders are for humans, not the engine.** On import, the resources are flattened —
-> the model sees files by name/prefix, not by folder. So folder placement is purely about
-> making the repo easy for *us* to navigate and edit. A file's **prefix** defines its
-> role, wherever it physically sits.
+> **Folders are for humans.** The pipeline discovers files by prefix, recursively — folder
+> depth doesn't matter. So folder placement is purely about making the repo easy for *us* to
+> navigate and edit. A file's **prefix** defines its role, wherever it physically sits.
 
 ---
 
@@ -255,24 +181,23 @@ halo-resources/
 
 This mirrors the flow inside `prompt_email_generation.md`:
 
-1. **Brief.** Copy `brief_sample.md` → `brief_<campaign>.md`, fill it in, attach it along with the uploaded hero image.
-2. **Rules.** The model reads all `rules_` files — binding. Style guide governs look; build rules govern code.
-3. **Examples.** It reviews `sample_` emails for tone and structure.
+1. **Brief.** Fill in the brief form (`brief/form.php`); it's saved to `submissions/` and passed to the pipeline.
+2. **Rules.** The pipeline loads all `rules_` files — binding. Style guide governs look; build rules govern code; the `product-brain/` files supply product facts, relayed verbatim.
+3. **Examples.** It reviews `sample_` emails for tone and HTML structure **only** — never for facts.
 4. **Start point.** If the brief names a template, it starts from a `template_` file; otherwise it assembles from `section_*.html` files (with `component_*.html` primitives inside where needed).
-5. **Build.** It places the uploaded image, pulls logo/icons from the `img_`/`social_` assets, and applies the rules throughout.
-6. **Check.** It runs the checklist in `rules_email_build.md` and flags client-specific rendering risks.
+5. **Build.** It places the hero from the brief's hosted URL, pulls the logo/icon URLs from `rules_brand.md` / `rules_email_footer.md`, and applies the rules throughout. The only copy it writes is the sales pitch.
+6. **Check.** The deterministic validator is the hard gate; an advisory AI pass adds notes. You see a preview, then Redo or Send.
 
 ---
 
 ## Testing (validating builds before you send)
 
-A zero-dependency Python validation harness lives in `test/`. It catches the
-things the build can get wrong before any email goes out — malformed JSON,
-masked-email leaks, HTML that won't render, brief-to-output divergence,
-pricing math that doesn't reconcile.
+A zero-dependency Python validation harness lives in `test/`. It's the deterministic hard
+gate the pipeline runs on every generated email, and you can also run it by hand. It catches
+the things the build can get wrong before any email goes out — malformed JSON, masked-email
+leaks, HTML that won't render, brief-to-output divergence, pricing math that doesn't reconcile.
 
-**The `test/` folder does not sync to the project resources** (same as this
-README). It's tooling for your local runner, not source material for the engine.
+**`test/` is local tooling**, not a resource the engine loads (same as this README).
 
 ### What it checks
 
@@ -300,12 +225,8 @@ don't matter — found by extension). Then run:
 python3 test/validate.py
 ```
 
-Exits 0 if no errors, 1 if any campaign failed. Use it as a gate before
-running the `/messages/send` curl:
-
-```bash
-python3 test/validate.py && curl -X POST "$BRAZE_REST_URL/messages/send" ...
-```
+Exits 0 if no errors, 1 if any campaign failed. (The pipeline runs this same check
+automatically on each generated email; running it by hand is for validating a saved package.)
 
 ### Config
 
@@ -328,7 +249,7 @@ lands. Human review still required.
 The whole point of the design is that **you rarely touch the orchestrator.** To add
 capability, drop in a correctly-prefixed file:
 
-- **New standard** (e.g. copy/voice rules, or image-generation rules if that ever returns) → add a `rules_` file in the matching layer folder (`brand-brain/`, `email-design-system/`, or `braze-deployment/`). The flow already says "read all `rules_` files."
+- **New standard or product fact** → add a `rules_` file in the matching layer folder (`brand-brain/`, `product-brain/`, `email-design-system/`, or `braze-deployment/`). The flow already says "read all `rules_` files."
 - **New section** (composed block like hero, feature row) → add a `section_*.html` file. The flow already assembles from `section_*.html`.
 - **New component** (primitive like button, card, used inside sections) → add a `component_*.html` file.
 - **New email shape** → add a `template_` file. The flow already starts from `template_`.
@@ -342,8 +263,8 @@ register a new file.
 
 - Match the prefix to the role (see the table above).
 - Lowercase, underscores, no spaces or special characters.
-- Keep each `rules_` file scoped to **one domain** (build, style, copy…). Avoid a catch-all `rules_everything.md`.
-- Put binding standards in the matching layer folder (`brand-brain/`, `email-design-system/`, `braze-deployment/`). If something is reference-but-not-binding, it isn't a `rules_` file — give it its own prefix and home.
+- Keep each `rules_` file scoped to **one domain** (build, style, copy, a product-fact area…). Avoid a catch-all `rules_everything.md`.
+- Put binding standards in the matching layer folder. If something is reference-but-not-binding, it isn't a `rules_` file — give it its own prefix and home.
 
 ---
 
@@ -351,15 +272,19 @@ register a new file.
 
 | Concern | Home |
 |---|---|
-| Role + "start here" handoff | Initial prompt (tool settings, not this repo) |
+| Run the pipeline (form, generate, preview, send) | `brief/form.php` + `brief/lib/claude_pipeline.php` |
+| Keys + send identity (gitignored) | `brief/config.php` (copied from `config.sample.php`) |
 | Flow, prefix system, precedence | `prompt_email_generation.md` |
 | Brand identity (name, site, voice) | `brand-brain/rules_brand.md` |
 | Audience segment definitions | `brand-brain/rules_segment_definition.md` |
+| Product specs & features | `product-brain/rules_technical_features.md` |
+| Customer reviews & ratings | `product-brain/rules_social_proof.md` |
+| Membership / plan details | `product-brain/rules_membership.md` |
 | Colors, type, buttons, logos | `email-design-system/rules_email_style_guide.md` |
 | HTML structure, CSS, Outlook, image markup, checklist | `email-design-system/rules_email_build.md` |
 | Footer, legal line, unsubscribe text (stable across sends) | `email-design-system/rules_email_footer.md` |
 | Braze `/messages/send` schema + safety constraints | `braze-deployment/rules_braze_send.md` |
-| Product, price, copy, CTA, hero image (per campaign) | the active `brief_` file |
+| Campaign offer, CTAs, hero URL, segment (per send) | the active `brief_` file |
 | Composed blocks (header, footer, hero, feature row, ...) | `email-design-system/sections/` |
 | Reusable primitives (button, card, ...) used inside sections | `email-design-system/components/` |
 | Email skeletons | `email-design-system/templates/` |
@@ -371,14 +296,13 @@ register a new file.
 
 ## Brief reference
 
-Everything in `brief_sample.md`, explained — so anyone filling one in knows what each
-field does and how it's used. Copy `brief_sample.md` → `brief_<campaign>.md`, fill it in,
-provide the hero image, and attach it to the chat.
+Everything in `brief_sample.md`, explained — so anyone filling one in (or filling the form,
+which mirrors it) knows what each field does and how it's used.
 
 ### 1. Campaign basics
 
-- **Product / subject** — what the email is about. Products vary per send, so this lives in the brief (brand does not — it's fixed in `rules_brand.md`).
-- **Campaign name** — your internal label for the send.
+- **Product / subject** — what the email is about. The campaign angle lives in the brief; the brand is fixed in `rules_brand.md` and the product facts in `product-brain/`.
+- **Campaign name** — your internal label for the send. **Required** — it names the saved file.
 - **Occasion / theme** — the hook (holiday, awareness month, flash sale, evergreen).
 - **Send date** — when it goes out.
 - **Primary goal** — the one action the email is built around (drive purchase, re-engage, announce).
@@ -389,28 +313,27 @@ The email's angle is driven by **which segment it targets**. Name the segment in
 its definition drives the message, tone, and offer emphasis.
 
 > Segment definitions live in `brand-brain/rules_segment_definition.md` — that's the
-> source of truth (and it's a synced `rules_` file, so the model reads it at build time).
-> Add or refine segments there, not here. Example: **Acquisition** = people we're targeting
-> to buy the product but who don't own one yet → email emphasizes core value, trust, and a
-> low-pressure CTA.
+> source of truth, and the pipeline reads it at build time (the form even reads the segment
+> dropdown live from it). Add or refine segments there, not here. Example: **Acquisition** =
+> people we're targeting to buy the product but who don't own one yet → email emphasizes core
+> value, trust, and a low-pressure CTA.
 
 ### 3. Content
 
 - **Headline** — the largest piece of text in the email body. Sits below the hero, usually one short line, sentence case. Provide it, or write `suggest` and the build drafts one to match the campaign and segment.
 - **Subhead** — the smaller line directly under the headline. Adds context or specifics ("for Dad and pup", "$50 off through Sunday"). Optional; write `suggest` or leave blank.
-- **Key message or offer** — the single thing the email is trying to communicate. Drives the body copy and what gets emphasized. If there's an offer, state it here in plain terms (e.g. "$50 off the Halo Collar 5"). The build won't invent an offer that isn't stated.
-- **Body** — there is no body field. Body copy is **AI-generated** from the subhead, key message, segment, and brand voice. To constrain the generated body, leave a note in §8 (Notes for the builder).
+- **Key message or offer** — the single thing the email is trying to communicate. Drives the sales pitch and what gets emphasized. If there's an offer, state it here in plain terms (e.g. "$50 off the Halo Collar 5"). The build won't invent an offer that isn't stated.
+- **Body** — there is no body field. The sales-pitch copy is **AI-generated** from the subhead, key message, segment, and brand voice — but every factual claim in it is relayed from the rule files. To constrain the generated copy, leave a note in §8 (Notes for the builder).
 
 > Tone is **not** a brief field — it's fixed (warm and inviting) and defined in
 > `rules_brand.md`. Every email uses it.
 
-### 4. Hero image (hosted URL + reference upload)
+### 4. Hero image
 
 The hero is **hosted** — the brief supplies its live URL and the email links to that URL
-directly. The brief **also attaches the actual image** so content can be written to match
-the visual (subject, mood, what's pictured). The engine never generates or sources hero
-imagery. Fields: hosted hero URL, reference image attached, and alt text (for accessibility
-and the Outlook image-off fallback).
+directly. The engine never generates or sources hero imagery. Fields: hosted hero URL and alt
+text (for accessibility and the Outlook image-off fallback). Use a normally-rendering format
+(PNG / JPG / GIF), not `.webp`, which some clients won't display.
 
 ### 5. Pricing
 
@@ -425,6 +348,8 @@ unambiguous**:
 
 > Example: Original $529, Sale $479, Discount "$50 off" → shown as ~~$529~~ $479, $50 off.
 > Never imply a discount stacks on an already-discounted price unless that's explicitly stated.
+> (This is the campaign offer — distinct from standing facts like membership pricing, which
+> come from `product-brain/rules_membership.md`.)
 
 ### 6. Call to action
 
@@ -435,7 +360,7 @@ dilute a promo; reserve multiple links for content-roundup layouts.)
 ### 7. Structure & starting point
 
 - **Start from a template?** — `newsletter`, `promo`, or `none` (build fresh). If a template is named, the build starts from that `template_` file. If none and no sections are specified, the build amalgamates the structure of the `sample_` emails (see "How an email gets made").
-- **Sections to include** — the building blocks to assemble, in order. Free-text, but use the names from the **Section vocabulary** appendix at the bottom of this README so the build maps them cleanly. The header and footer sections are always included automatically; this field governs the campaign-specific middle. Leave blank to let the build choose a sensible order from the sample patterns.
+- **Sections to include** — the building blocks to assemble, in order. The form reads the options live from the section vocabulary; the header and footer sections are always included automatically, so this field governs the campaign-specific middle. Leave blank to let the build choose a sensible order from the sample patterns.
 - **Anything to exclude** — call out anything to leave off.
 
 ### 8. Notes for the builder
@@ -443,7 +368,7 @@ dilute a promo; reserve multiple links for content-roundup layouts.)
 Free-form text the build will read alongside the rest of the brief. Useful for things
 that don't fit anywhere else, including:
 
-- Constraints on the generated body copy ("don't mention training time," "keep it under 100 words").
+- Constraints on the generated copy ("don't mention training time," "keep it under 100 words").
 - References to a past email to match in tone or structure ("similar to last year's Black Friday").
 - One-off exceptions to standard rules ("for this send only, swap the footer for the holiday version").
 - Anything you'd tell a human teammate verbally that affects how the email gets built.
@@ -452,18 +377,21 @@ Leave blank if there's nothing campaign-specific to say.
 
 ### 9. Sender (for the Braze send)
 
-Two fields that travel with the send request, not the email design:
+The sender travels with the send request, not the email design — and it's **set by the
+pipeline, not filled in per brief.** `brief/form.php` writes the fixed `app_id` and `from`
+(from `config.php`) into every brief automatically:
 
-- **Braze `app_id`** — the App Identifier for the email app you're sending from (from Braze → Settings → APIs and Identifiers → App Identifiers). Stable across most campaigns; may vary if you have multiple apps.
-- **`from`** — the sender, in Braze's required format: `Display Name <[email protected]>`.
+- **Braze `app_id`** — the App Identifier for the email app.
+- **`from`** — the sender, in Braze's format: `Display Name <sender@example.com>`.
 
-Neither is a secret — both live safely in the brief. The API key and Braze REST URL do
-**not** live here; they're env vars on the runner's machine (see "Sending via Braze").
+Neither is a secret. The Braze API key and REST URL are **not** here — they live in
+`config.php` on the server (see "Setup — Configure keys").
 
 ### 10. Test targeting (segment)
 
-Test sends target a designated test segment in a non-production Braze workspace. The
-brief provides the segment **UUID**, and that's all the build needs.
+Also **set by the pipeline, not per brief.** Test sends target a designated test segment in a
+non-production Braze workspace; its UUID is the `braze_segment_id` in `config.php`, written
+into every brief automatically.
 
 > **Production sends are not done through this pipeline.** Production emails go through
 > Braze **campaigns** — created in the Braze dashboard and triggered there. The
@@ -515,8 +443,10 @@ that doesn't fit any pattern here, describe it in your own words and add detail 
 
 ## Notes & open items
 
-- **Style guide is the one brand-specific file.** Its tokens are named from the source Figma design system (e.g. "Halo Yellow"). That's intentional — it documents a real design system. If the engine ever runs multiple brands, each brand supplies its own `rules_email_style_guide.md`; the *engine* stays faceless.
+- **This is Halo's engine.** Brand-specific content is defined on purpose: identity and voice in `rules_brand.md`, product facts in the `product-brain/` files, and visual tokens (named from the source Figma design system, e.g. "Halo Yellow") in `rules_email_style_guide.md`.
+- **Facts come from the rule files, relayed verbatim.** Product specs, reviews, and membership terms live in `product-brain/`; the engine must state them exactly and must **not** invent facts or pull them from the example emails. The campaign-specific offer/pricing still comes from the brief. The only copy the engine writes is the sales pitch.
 - **Templates aren't built yet.** The orchestrator references `template_*.html` files by convention so they work the moment they're added.
 - **Sections are sparse on purpose.** Only `section_header.html` and `section_footer.html` are formalized today. Common patterns like hero, feature row, and offer block are assembled fresh from the sample emails and the rules; promote them to `section_*.html` when the shape stabilizes across campaigns.
-- **Product facts are not hard-coded anywhere.** Product name, pricing, and claims must come from the brief. If you find a brand or price baked into a `prompt_` or `rules_` file, that's a bug — move it to the brief.
-- **Images are hosted, not generated.** The hero comes as a hosted URL in the brief (with a reference upload so content can match the visual); the logo and social icons are hosted URLs in `rules_brand.md` / `rules_email_footer.md`. The engine never sources or generates imagery on its own.
+- **Images are hosted, not generated.** The hero comes as a hosted URL in the brief; the logo and social icons are hosted URLs in `rules_brand.md` / `rules_email_footer.md`. The engine never sources or generates imagery on its own.
+</content>
+</invoke>

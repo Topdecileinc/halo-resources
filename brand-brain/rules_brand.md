@@ -3,9 +3,9 @@
 # Brand Identity
 
 > Binding reference (prefix: `rules_`): the standing brand identity for this setup. The
-> brand does not change between campaigns, so it lives here rather than in the brief.
-> This keeps the engine itself faceless — a different brand would supply its own
-> `rules_brand.md`; this file is the one place that names the brand for this project.
+> brand does not change between campaigns, so it lives here rather than in the brief. It is
+> defined in this one place — so the brief never restates the brand, and the rest of the
+> engine reads it from here.
 
 ---
 

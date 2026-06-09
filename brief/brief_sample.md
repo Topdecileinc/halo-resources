@@ -2,9 +2,10 @@
 ---
 # Email Brief — [Campaign Name]
 
-> Copy this file for each new email, rename it (e.g. `brief_mothers_day_2026.md`), and
-> fill it in. The main prompt reads this brief plus the linked resources to build the
-> email. Anything left blank, the generator will ask about or fill with a sensible default.
+> This is the shape of a brief; the brief form (`brief/form.php`) mirrors it and fills it in
+> for you. The pipeline reads the brief plus the linked resources to build the email. Anything
+> left blank, the generator fills with a sensible default — the pipeline is automated, so
+> there is no human to ask mid-run.
 
 ---
 
@@ -48,19 +49,17 @@
 > there's no body field to fill. Tone is fixed (warm and inviting) and lives in `rules_brand.md`.
 > If you need to constrain the generated body, note it in §8 (Notes for the builder).
 
-## 4. Hero image (hosted URL + reference upload)
+## 4. Hero image
 
 > Confused about what to put here? See **README → Brief reference → §4**.
 
-The hero image is **hosted** — provide its URL below; the email links to that URL directly.
-**Also attach the actual image with this brief** so the build can see what it looks like and
-write email content that matches it (subject, mood, what's pictured). The system does not
-generate or source hero imagery.
+The hero image is **hosted** — provide its URL below and the email links to it directly. The
+engine does not generate or source hero imagery. Use a normally-rendering format (PNG / JPG /
+GIF), not `.webp`, which some clients won't display.
 
 | Field | Your input |
 |---|---|
 | Hosted hero URL | (the live image URL the email will link to) |
-| Reference image attached? | (attach the file so content can match the visual) |
 | Alt text | (describe the image for accessibility + Outlook fallback) |
 
 ## 5. Pricing
@@ -121,24 +120,25 @@ CTA** — a blank CTA renders nothing.
 
 > Confused about what to put here? See **README → Brief reference → §9**.
 
-These travel with the send request, not the email design. Both are required for any
-send through `/messages/send`.
+**Set by the pipeline — you don't fill this in.** `brief/form.php` writes the fixed `app_id`
+and `from` (from `config.php`) into every brief automatically.
 
-| Field | Your input |
+| Field | Value |
 |---|---|
-| Braze `app_id` | (the App Identifier for the email app you're sending from — found in Braze under Settings → APIs and Identifiers → App Identifiers) |
-| `from` | (the sender, formatted exactly as `Display Name <[email protected]>`) |
+| Braze `app_id` | (set from config.php) |
+| `from` | (set from config.php, e.g. `Display Name <sender@example.com>`) |
 
-> These are **not secrets**. The API key and Braze REST URL live in env vars on the
-> runner's machine, not here — see the README's "Sending via Braze (test sends)" section.
+> These are **not secrets**. The Braze API key and REST URL are **not** here — they live in
+> `brief/config.php` on the server (see the README's "Setup — Configure keys").
 
 ## 10. Test targeting (segment)
 
 > Confused about what to put here? See **README → Brief reference → §10**.
 
-Test sends target a designated test segment in a non-production Braze workspace. Only
-the segment ID is required.
+**Set by the pipeline — you don't fill this in.** Test sends target a designated test segment
+in a non-production Braze workspace; its UUID is `braze_segment_id` in `config.php`, written
+into every brief automatically.
 
-| Field | Your input |
+| Field | Value |
 |---|---|
-| Segment ID (UUID) | |
+| Segment ID (UUID) | (set from config.php) |
