@@ -1,0 +1,32 @@
+<!-- section-desc: Membership plan details in a highlighted panel. -->
+<!--
+  section_membership.html  (root class="section-membership")
+  Membership / plan-details block. Opt-in via brief §7 ("membership").
+  A panel: eyebrow + headline + what the plan is required for + a price highlight + fine print.
+
+  FACTS: membership requirements, pricing, and timing MUST come verbatim from
+  product-brain/rules_membership.md. Do not invent plan names, tiers, prices, or
+  benefits. If a detail is not in that file, omit it.
+
+  STYLE (rules_email_style_guide.md): panel #F2F4F4, 24px radius; eyebrow 12px bold
+  uppercase blue; headline Inter bold #333; body 16px #333; price 20px bold Halo Blue
+  #2F93F3; fine print 12px #9D9D9D. No em dashes. This block is informational, not a
+  CTA; if you need a button, add component_button.html separately.
+
+  Drop in as a middle row inside the 600px container table.
+-->
+<tr class="section-membership">
+  <td class="px-mobile" style="padding:12px 24px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f2f4f4; border-radius:24px;">
+      <tr>
+        <td style="padding:28px; font-family:'Inter',Arial,Helvetica,sans-serif;">
+          <p style="margin:0 0 6px 0; font-size:12px; line-height:16px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#2f93f3;">[MEMBERSHIP_EYEBROW]</p>
+          <h2 style="margin:0 0 12px 0; font-size:24px; line-height:30px; font-weight:700; color:#333333;">[MEMBERSHIP_HEADLINE]</h2>
+          <p style="margin:0 0 16px 0; font-size:16px; line-height:24px; color:#333333;">[MEMBERSHIP_BODY]</p>
+          <p style="margin:0 0 4px 0; font-size:20px; line-height:26px; font-weight:700; color:#2f93f3;">[MEMBERSHIP_PRICE]</p>
+          <p style="margin:0; font-size:12px; line-height:18px; color:#9d9d9d;">[MEMBERSHIP_NOTE]</p>
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>

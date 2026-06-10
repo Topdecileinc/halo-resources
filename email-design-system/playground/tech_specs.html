@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tech specs playground — Halo Email Resources</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="playground.css">
+</head>
+<body>
+  <header class="halo-header">
+    <div class="halo-header__inner">
+      <img src="https://topdecileinc.github.io/halo-resources/email-design-system/assets/shared-images/halo-logo-dark.svg" alt="Halo">
+      <span class="halo-header__tag">PLAYGROUND</span>
+      <span class="spacer"></span>
+      <a class="home" href="/halo-resources/">All resources</a>
+    </div>
+  </header>
+
+  <main>
+    <a class="back" href="/halo-resources/">&larr; Back to resources</a>
+    <p class="kind">Section</p>
+    <h1>Tech specs</h1>
+    <p class="lede">A light stats panel of key product specs. Opt-in via brief &sect;7 (&ldquo;tech
+       specs&rdquo;). Every value and label must come verbatim from
+       <code>product-brain/rules_technical_features.md</code> &mdash; the defaults below are real
+       facts from that file. Drop any cell you don't have a fact for.</p>
+
+    <div class="pg-grid">
+      <form class="pg-controls" id="pg-controls" autocomplete="off" onsubmit="return false;">
+        <h2>Controls</h2>
+      </form>
+
+      <div class="pg-preview">
+        <div class="pg-bar"><span class="label">Preview</span> &middot; 600px email width</div>
+        <iframe class="pg-frame" id="pg-frame" title="Tech specs preview"></iframe>
+        <details class="pg-source">
+          <summary>View &amp; copy HTML</summary>
+          <button type="button" class="copy-btn" id="pg-copy">Copy HTML</button>
+          <pre id="pg-src"></pre>
+        </details>
+      </div>
+    </div>
+  </main>
+
+  <script src="playground.js"></script>
+  <script>
+    initPlayground({
+      template:
+'<tr class="section-tech-specs">\n' +
+'  <td class="px-mobile" style="padding:12px 24px;">\n' +
+'    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f2f4f4; border-radius:24px;">\n' +
+'      <tr>\n' +
+'        <td style="padding:28px 28px 4px 28px;">\n' +
+'          <p style="margin:0 0 6px 0; font-family:\'Inter\',Arial,Helvetica,sans-serif; font-size:12px; line-height:16px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#2f93f3;">[SPECS_EYEBROW]</p>\n' +
+'          <h2 style="margin:0; font-family:\'Inter\',Arial,Helvetica,sans-serif; font-size:24px; line-height:30px; font-weight:700; color:#333333;">[SPECS_HEADLINE]</h2>\n' +
+'        </td>\n' +
+'      </tr>\n' +
+'      <tr>\n' +
+'        <td style="padding:8px 28px 28px 28px;">\n' +
+'          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">\n' +
+'            <tr>\n' +
+'              <td width="50%" valign="top" style="padding:14px 0; font-family:\'Inter\',Arial,Helvetica,sans-serif;">\n' +
+'                <p style="margin:0; font-size:20px; line-height:24px; font-weight:700; color:#333333;">[SPEC1_VALUE]</p>\n' +
+'                <p style="margin:3px 0 0 0; font-size:14px; line-height:20px; color:#9d9d9d;">[SPEC1_LABEL]</p>\n' +
+'              </td>\n' +
+'              <td width="50%" valign="top" style="padding:14px 0; font-family:\'Inter\',Arial,Helvetica,sans-serif;">\n' +
+'                <p style="margin:0; font-size:20px; line-height:24px; font-weight:700; color:#333333;">[SPEC2_VALUE]</p>\n' +
+'                <p style="margin:3px 0 0 0; font-size:14px; line-height:20px; color:#9d9d9d;">[SPEC2_LABEL]</p>\n' +
+'              </td>\n' +
+'            </tr>\n' +
+'            <tr>\n' +
+'              <td width="50%" valign="top" style="padding:14px 0; font-family:\'Inter\',Arial,Helvetica,sans-serif;">\n' +
+'                <p style="margin:0; font-size:20px; line-height:24px; font-weight:700; color:#333333;">[SPEC3_VALUE]</p>\n' +
+'                <p style="margin:3px 0 0 0; font-size:14px; line-height:20px; color:#9d9d9d;">[SPEC3_LABEL]</p>\n' +
+'              </td>\n' +
+'              <td width="50%" valign="top" style="padding:14px 0; font-family:\'Inter\',Arial,Helvetica,sans-serif;">\n' +
+'                <p style="margin:0; font-size:20px; line-height:24px; font-weight:700; color:#333333;">[SPEC4_VALUE]</p>\n' +
+'                <p style="margin:3px 0 0 0; font-size:14px; line-height:20px; color:#9d9d9d;">[SPEC4_LABEL]</p>\n' +
+'              </td>\n' +
+'            </tr>\n' +
+'            <tr>\n' +
+'              <td width="50%" valign="top" style="padding:14px 0; font-family:\'Inter\',Arial,Helvetica,sans-serif;">\n' +
+'                <p style="margin:0; font-size:20px; line-height:24px; font-weight:700; color:#333333;">[SPEC5_VALUE]</p>\n' +
+'                <p style="margin:3px 0 0 0; font-size:14px; line-height:20px; color:#9d9d9d;">[SPEC5_LABEL]</p>\n' +
+'              </td>\n' +
+'              <td width="50%" valign="top" style="padding:14px 0; font-family:\'Inter\',Arial,Helvetica,sans-serif;">\n' +
+'                <p style="margin:0; font-size:20px; line-height:24px; font-weight:700; color:#333333;">[SPEC6_VALUE]</p>\n' +
+'                <p style="margin:3px 0 0 0; font-size:14px; line-height:20px; color:#9d9d9d;">[SPEC6_LABEL]</p>\n' +
+'              </td>\n' +
+'            </tr>\n' +
+'          </table>\n' +
+'        </td>\n' +
+'      </tr>\n' +
+'    </table>\n' +
+'  </td>\n' +
+'</tr>',
+      fields: [
+        { key: "SPECS_EYEBROW", label: "Eyebrow", type: "text", default: "THE TECH" },
+        { key: "SPECS_HEADLINE", label: "Headline", type: "text", default: "The most advanced tech in a GPS dog collar",
+          hint: "Sentence case. The sales pitch; the spec values below are the facts." },
+        { key: "SPEC1_VALUE", label: "Spec 1 value", type: "text", default: "20 / sec" },
+        { key: "SPEC1_LABEL", label: "Spec 1 label", type: "text", default: "Location updates" },
+        { key: "SPEC2_VALUE", label: "Spec 2 value", type: "text", default: "Up to 48 hrs" },
+        { key: "SPEC2_LABEL", label: "Spec 2 label", type: "text", default: "Battery life" },
+        { key: "SPEC3_VALUE", label: "Spec 3 value", type: "text", default: "IP67" },
+        { key: "SPEC3_LABEL", label: "Spec 3 label", type: "text", default: "Waterproof rating" },
+        { key: "SPEC4_VALUE", label: "Spec 4 value", type: "text", default: "Dual-frequency" },
+        { key: "SPEC4_LABEL", label: "Spec 4 label", type: "text", default: "GPS" },
+        { key: "SPEC5_VALUE", label: "Spec 5 value", type: "text", default: "150+" },
+        { key: "SPEC5_LABEL", label: "Spec 5 label", type: "text", default: "Satellites" },
+        { key: "SPEC6_VALUE", label: "Spec 6 value", type: "text", default: "1 year" },
+        { key: "SPEC6_LABEL", label: "Spec 6 label", type: "text", default: "Warranty" }
+      ],
+      wrap: function (html) {
+        return '<!DOCTYPE html><html><head><meta charset="utf-8">' +
+          '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">' +
+          '<style>html,body{margin:0}body{font-family:Inter,Arial,sans-serif;background:#e9edee;padding:24px 12px;}</style></head>' +
+          '<body><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" align="center" style="width:600px;max-width:100%;background:#ffffff;margin:0 auto;">' +
+          html + '</table></body></html>';
+      }
+    });
+  </script>
+</body>
+</html>

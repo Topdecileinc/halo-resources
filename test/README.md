@@ -256,7 +256,7 @@ which were built fresh.
 *Position and uniqueness checks (sections only):*
 - `section-header` must appear exactly once and be the first labeled section.
 - `section-footer` must appear exactly once and be the last labeled section.
-- Other sections (when they exist) have no count restriction — a feature row can repeat.
+- Other sections (when they exist) have no count restriction — e.g. a reviews block can repeat.
 
 *Unknown blocks:*
 - If the HTML has `class="section-hero"` but no `section_hero.html` source file exists, that's a warning — the build invented a class for a section that isn't formalized.

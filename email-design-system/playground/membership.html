@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Membership playground — Halo Email Resources</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="playground.css">
+</head>
+<body>
+  <header class="halo-header">
+    <div class="halo-header__inner">
+      <img src="https://topdecileinc.github.io/halo-resources/email-design-system/assets/shared-images/halo-logo-dark.svg" alt="Halo">
+      <span class="halo-header__tag">PLAYGROUND</span>
+      <span class="spacer"></span>
+      <a class="home" href="/halo-resources/">All resources</a>
+    </div>
+  </header>
+
+  <main>
+    <a class="back" href="/halo-resources/">&larr; Back to resources</a>
+    <p class="kind">Section</p>
+    <h1>Membership</h1>
+    <p class="lede">Pack Membership Plan details in a highlighted panel. Opt-in via brief &sect;7
+       (&ldquo;membership&rdquo;). Requirements, pricing, and timing must come verbatim from
+       <code>product-brain/rules_membership.md</code> &mdash; the defaults below are real facts
+       from that file.</p>
+
+    <div class="pg-grid">
+      <form class="pg-controls" id="pg-controls" autocomplete="off" onsubmit="return false;">
+        <h2>Controls</h2>
+      </form>
+
+      <div class="pg-preview">
+        <div class="pg-bar"><span class="label">Preview</span> &middot; 600px email width</div>
+        <iframe class="pg-frame" id="pg-frame" title="Membership preview"></iframe>
+        <details class="pg-source">
+          <summary>View &amp; copy HTML</summary>
+          <button type="button" class="copy-btn" id="pg-copy">Copy HTML</button>
+          <pre id="pg-src"></pre>
+        </details>
+      </div>
+    </div>
+  </main>
+
+  <script src="playground.js"></script>
+  <script>
+    initPlayground({
+      template:
+'<tr class="section-membership">\n' +
+'  <td class="px-mobile" style="padding:12px 24px;">\n' +
+'    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f2f4f4; border-radius:24px;">\n' +
+'      <tr>\n' +
+'        <td style="padding:28px; font-family:\'Inter\',Arial,Helvetica,sans-serif;">\n' +
+'          <p style="margin:0 0 6px 0; font-size:12px; line-height:16px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#2f93f3;">[MEMBERSHIP_EYEBROW]</p>\n' +
+'          <h2 style="margin:0 0 12px 0; font-size:24px; line-height:30px; font-weight:700; color:#333333;">[MEMBERSHIP_HEADLINE]</h2>\n' +
+'          <p style="margin:0 0 16px 0; font-size:16px; line-height:24px; color:#333333;">[MEMBERSHIP_BODY]</p>\n' +
+'          <p style="margin:0 0 4px 0; font-size:20px; line-height:26px; font-weight:700; color:#2f93f3;">[MEMBERSHIP_PRICE]</p>\n' +
+'          <p style="margin:0; font-size:12px; line-height:18px; color:#9d9d9d;">[MEMBERSHIP_NOTE]</p>\n' +
+'        </td>\n' +
+'      </tr>\n' +
+'    </table>\n' +
+'  </td>\n' +
+'</tr>',
+      fields: [
+        { key: "MEMBERSHIP_EYEBROW", label: "Eyebrow", type: "text", default: "MEMBERSHIP" },
+        { key: "MEMBERSHIP_HEADLINE", label: "Headline", type: "text", default: "Pack Membership Plan" },
+        { key: "MEMBERSHIP_BODY", label: "Body (what it's required for)", type: "textarea",
+          default: "A Pack Membership Plan is required to activate and maintain GPS services, cellular data (just like your cell phone), and create, edit, and use wireless dog fences." },
+        { key: "MEMBERSHIP_PRICE", label: "Price line", type: "text", default: "Plans start at $9.99/mo" },
+        { key: "MEMBERSHIP_NOTE", label: "Fine print", type: "text", default: "Select your Pack Membership Plan after purchase." }
+      ],
+      wrap: function (html) {
+        return '<!DOCTYPE html><html><head><meta charset="utf-8">' +
+          '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">' +
+          '<style>html,body{margin:0}body{font-family:Inter,Arial,sans-serif;background:#e9edee;padding:24px 12px;}</style></head>' +
+          '<body><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" align="center" style="width:600px;max-width:100%;background:#ffffff;margin:0 auto;">' +
+          html + '</table></body></html>';
+      }
+    });
+  </script>
+</body>
+</html>

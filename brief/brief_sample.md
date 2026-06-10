@@ -101,7 +101,7 @@ CTA** — a blank CTA renders nothing.
 | Field | Your input |
 |---|---|
 | Start from a template? | (newsletter / promo / none — build fresh) |
-| Sections to include | (optional — blank = minimal email; name e.g. `feature row` to add one. See the section vocabulary in the README) |
+| Sections to include | (optional — blank = minimal email; name `tech specs`, `reviews`, or `membership` to add one. See the section vocabulary in the README) |
 | Anything to exclude | |
 
 ## 8. Notes for the builder

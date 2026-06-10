@@ -33,7 +33,7 @@ characters. To work with the repo, resolve files **by prefix**, not by memorizin
 | `rules_` | **Binding reference docs.** Design + build standards. | Obey all of them. Read every `rules_` file before building. |
 | `brief_` | **Per-campaign input** filled in via the brief form. | Read the one for this run for what this email needs. |
 | `template_` | **Full email skeletons** to start from. | If the brief names one, start from it. |
-| `section_` | **Composed blocks** that occupy a vertical slice of the email (header, footer, hero, feature row, etc.). | Brief §7 names these. Always include the header and footer sections; assemble the middle from the others. |
+| `section_` | **Composed blocks** that occupy a vertical slice of the email (header, footer, tech specs, reviews, membership, etc.). | Header and footer are always included; the opt-in middle sections are what brief §7 names. |
 | `component_` | **Reusable primitives** used *inside* sections (button, card, etc.). | Drop into sections where needed. Brief §7 does NOT name these directly. |
 | `sample_` | **Example emails** (real, shipped). | Review for tone, structure, and proven patterns. |
 | `img_` | **Shared brand images** (e.g. logo/header). | Place directly; never recreate. |

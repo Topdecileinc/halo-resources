@@ -116,7 +116,7 @@ grows by *adding correctly-prefixed files*, not by editing the orchestrator.
 | `rules_` | Binding standards — brand, product facts, design, code, send. | …you add or change a standard or a product fact. |
 | `brief_` | Per-campaign input, filled in per email. | …you start a new campaign (the form writes one). |
 | `template_` | Full email skeletons to start from. | …you have a new repeatable email shape. |
-| `section_` | Composed blocks that occupy a vertical slice of the email (header, footer, hero, feature row, etc.). **This is what brief §7 names.** | …you formalize a recurring middle-of-email pattern. |
+| `section_` | Composed blocks that occupy a vertical slice of the email (header, footer, tech specs, reviews, membership, etc.). **The opt-in ones are what brief §7 names.** | …you formalize a recurring middle-of-email pattern. |
 | `component_` | Reusable primitives used *inside* sections (button, card, etc.). | …you build a new reusable primitive (not a section). |
 | `sample_` | Real, shipped example emails for tone/structure reference. | …you want to add a proven email as reference. |
 | `img_` | Shared brand images (logo, header). | …you add a shared brand image. |
@@ -184,7 +184,7 @@ This mirrors the flow inside `prompt_email_generation.md`:
 1. **Brief.** Fill in the brief form (`brief/form.php`); it's saved to `submissions/` and passed to the pipeline.
 2. **Rules.** The pipeline loads all `rules_` files — binding. Style guide governs look; build rules govern code; the `product-brain/` files supply product facts, relayed verbatim.
 3. **Examples.** It reviews `sample_` emails for tone and HTML structure **only** — never for facts.
-4. **Start point.** If the brief names a template, it starts from a `template_` file; if it names sections, it assembles those. With neither, it builds a **minimal email** — header, hero (if a hero URL is given), headline/subhead, body, CTA, footer — and nothing more. Extra blocks (feature row, spec grid, reviews, membership) are opt-in via §7.
+4. **Start point.** If the brief names a template, it starts from a `template_` file; if it names sections, it assembles those. With neither, it builds a **minimal email** — header, hero (if a hero URL is given), headline/subhead, body, CTA, footer — and nothing more. Extra blocks (tech specs, reviews, membership) are opt-in via §7.
 5. **Build.** It places the hero from the brief's hosted URL, pulls the logo/icon URLs from `rules_brand.md` / `rules_email_footer.md`, and applies the rules throughout. The only copy it writes is the sales pitch.
 6. **Check.** The deterministic validator is the hard gate; an advisory AI pass adds notes. You see a preview, then Redo or Send.
 
@@ -250,7 +250,7 @@ The whole point of the design is that **you rarely touch the orchestrator.** To 
 capability, drop in a correctly-prefixed file:
 
 - **New standard or product fact** → add a `rules_` file in the matching layer folder (`brand-brain/`, `product-brain/`, `email-design-system/`, or `braze-deployment/`). The flow already says "read all `rules_` files."
-- **New section** (composed block like hero, feature row) → add a `section_*.html` file. The flow already assembles from `section_*.html`.
+- **New section** (composed block like tech specs, reviews) → add a `section_*.html` file (with a `<!-- section-desc: … -->` marker so the form lists it). The flow already assembles from `section_*.html`.
 - **New component** (primitive like button, card, used inside sections) → add a `component_*.html` file.
 - **New email shape** → add a `template_` file. The flow already starts from `template_`.
 - **New reference email** → add a `sample_` file. The flow already reviews all `sample_`.
@@ -285,7 +285,7 @@ register a new file.
 | Footer, legal line, unsubscribe text (stable across sends) | `email-design-system/rules_email_footer.md` |
 | Braze `/messages/send` schema + safety constraints | `braze-deployment/rules_braze_send.md` |
 | Campaign offer, CTAs, hero URL, segment (per send) | the active `brief_` file |
-| Composed blocks (header, footer, hero, feature row, ...) | `email-design-system/sections/` |
+| Composed blocks (header, footer, tech specs, reviews, membership, ...) | `email-design-system/sections/` |
 | Reusable primitives (button, card, ...) used inside sections | `email-design-system/components/` |
 | Email skeletons | `email-design-system/templates/` |
 | Tone / pattern reference | `email-examples/` |
@@ -360,7 +360,7 @@ dilute a promo; reserve multiple links for content-roundup layouts.)
 ### 7. Structure & starting point
 
 - **Start from a template?** — `newsletter`, `promo`, or `none` (build fresh). If a template is named, the build starts from that `template_` file. If none and no sections are specified, the build produces a **minimal email** — header, hero, headline/subhead, body, CTA, footer (see "How an email gets made").
-- **Sections to include** — the building blocks to assemble, in order. The form reads the options live from the section vocabulary; the header and footer sections are always included automatically, so this field governs the campaign-specific middle. **Leave blank for the minimal email**; name a section like `feature row` here to add it. Extra sections are opt-in — the build won't add a feature/spec/review/membership block on its own.
+- **Sections to include** — the building blocks to assemble, in order. The form reads the options live from the section vocabulary; the header and footer sections are always included automatically, so this field governs the campaign-specific middle. **Leave blank for the minimal email**; name a section like `tech specs`, `reviews`, or `membership` here to add it. Extra sections are opt-in — the build won't add a specs/review/membership block on its own.
 - **Anything to exclude** — call out anything to leave off.
 
 ### 8. Notes for the builder
@@ -412,20 +412,21 @@ The source of truth for what sections exist is **`email-design-system/sections/`
 
 ### Currently formalized
 
-| Section | What it is |
-|---|---|
-| `header` | Logo at top of the email, left-aligned. **Always included** — you don't need to name it in §7. |
-| `footer` | Social icons, legal/address line, unsubscribe link. **Always included** — you don't need to name it in §7. |
+Each has a `section_*.html` file in `email-design-system/sections/` and an interactive
+preview under `email-design-system/playground/`:
 
-### Common recurring patterns (not yet formalized as section files)
+| Section | What it is | Named in §7? |
+|---|---|---|
+| `header` | Logo at top of the email, left-aligned. | No — **always included** (part of the frame). |
+| `footer` | Social icons, legal/address line, unsubscribe link. | No — **always included** (part of the frame). |
+| `tech specs` | Key product specs in a light stats panel. Facts from `rules_technical_features.md`. | **Yes** — opt-in. |
+| `reviews` | Customer reviews as quote cards. Quotes from `rules_social_proof.md`. | **Yes** — opt-in. |
+| `membership` | Pack Membership Plan details panel. Facts from `rules_membership.md`. | **Yes** — opt-in. |
 
-These appear in the `sample_` emails repeatedly. The build will assemble them fresh from
-the sample patterns and the rules when you name them in §7. Promote any of them to a
-`section_*.html` file when the shape stabilizes:
+### Not chosen in §7 (driven by other fields)
 
-- `hero` — top image + headline + subhead; the visual anchor below the header.
-- `feature row` — a row of icon + label + short copy, usually 2-3 columns; describes product features or benefits.
-- `offer / pricing` — the deal: price, discount, promo code. **Bold text, not a pill** (pills are reserved for CTAs — see `rules_email_style_guide.md`).
+- `hero` — top image + headline + subhead. Driven by the **hero URL in §4**, not named in §7; it appears whenever a hero URL is given.
+- `offer / pricing` — the deal: price, discount, promo code. Driven by **§5 Pricing**. **Bold text, not a pill** (pills are reserved for CTAs — see `rules_email_style_guide.md`).
 
 ### How the system grows
 
@@ -446,7 +447,7 @@ that doesn't fit any pattern here, describe it in your own words and add detail 
 - **This is Halo's engine.** Brand-specific content is defined on purpose: identity and voice in `rules_brand.md`, product facts in the `product-brain/` files, and visual tokens (named from the source Figma design system, e.g. "Halo Yellow") in `rules_email_style_guide.md`.
 - **Facts come from the rule files, relayed verbatim.** Product specs, reviews, and membership terms live in `product-brain/`; the engine must state them exactly and must **not** invent facts or pull them from the example emails. The campaign-specific offer/pricing still comes from the brief. The only copy the engine writes is the sales pitch.
 - **Templates aren't built yet.** The orchestrator references `template_*.html` files by convention so they work the moment they're added.
-- **Sections are sparse on purpose.** Only `section_header.html` and `section_footer.html` are formalized today. Common patterns like hero, feature row, and offer block are assembled fresh from the sample emails and the rules; promote them to `section_*.html` when the shape stabilizes across campaigns.
+- **Formalized sections:** header and footer (always-on frame) plus the three opt-in blocks — `tech specs`, `reviews`, `membership`. The hero and offer/pricing are driven by §4 and §5, not §7. New recurring patterns can be promoted to a `section_*.html` file when the shape stabilizes.
 - **Images are hosted, not generated.** The hero comes as a hosted URL in the brief; the logo and social icons are hosted URLs in `rules_brand.md` / `rules_email_footer.md`. The engine never sources or generates imagery on its own.
 </content>
 </invoke>

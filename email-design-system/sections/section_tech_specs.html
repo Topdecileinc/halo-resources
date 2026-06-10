@@ -1,0 +1,65 @@
+<!-- section-desc: Key product specs in a light stats panel. -->
+<!--
+  section_tech_specs.html  (root class="section-tech-specs")
+  Tech-specs block. Opt-in via brief §7 ("tech specs").
+  A light gray rounded panel: eyebrow + headline + a 2-column grid of specs.
+
+  FACTS: every spec value and label MUST come verbatim from
+  product-brain/rules_technical_features.md. Do not invent, round, or pull specs
+  from example emails. Drop any spec cell you don't have a fact for (and its row
+  if both cells are empty); keep up to 6.
+
+  STYLE (rules_email_style_guide.md): panel #F2F4F4, 24px radius; eyebrow 12px bold
+  uppercase Halo Blue #2F93F3; headline Inter bold #333; spec value 20px bold #333;
+  spec label 14px #9D9D9D. Sentence-case headline, no em dashes.
+
+  Drop in as a middle row inside the 600px container table.
+-->
+<tr class="section-tech-specs">
+  <td class="px-mobile" style="padding:12px 24px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f2f4f4; border-radius:24px;">
+      <tr>
+        <td style="padding:28px 28px 4px 28px;">
+          <p style="margin:0 0 6px 0; font-family:'Inter',Arial,Helvetica,sans-serif; font-size:12px; line-height:16px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#2f93f3;">[SPECS_EYEBROW]</p>
+          <h2 style="margin:0; font-family:'Inter',Arial,Helvetica,sans-serif; font-size:24px; line-height:30px; font-weight:700; color:#333333;">[SPECS_HEADLINE]</h2>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:8px 28px 28px 28px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td width="50%" valign="top" style="padding:14px 0; font-family:'Inter',Arial,Helvetica,sans-serif;">
+                <p style="margin:0; font-size:20px; line-height:24px; font-weight:700; color:#333333;">[SPEC1_VALUE]</p>
+                <p style="margin:3px 0 0 0; font-size:14px; line-height:20px; color:#9d9d9d;">[SPEC1_LABEL]</p>
+              </td>
+              <td width="50%" valign="top" style="padding:14px 0; font-family:'Inter',Arial,Helvetica,sans-serif;">
+                <p style="margin:0; font-size:20px; line-height:24px; font-weight:700; color:#333333;">[SPEC2_VALUE]</p>
+                <p style="margin:3px 0 0 0; font-size:14px; line-height:20px; color:#9d9d9d;">[SPEC2_LABEL]</p>
+              </td>
+            </tr>
+            <tr>
+              <td width="50%" valign="top" style="padding:14px 0; font-family:'Inter',Arial,Helvetica,sans-serif;">
+                <p style="margin:0; font-size:20px; line-height:24px; font-weight:700; color:#333333;">[SPEC3_VALUE]</p>
+                <p style="margin:3px 0 0 0; font-size:14px; line-height:20px; color:#9d9d9d;">[SPEC3_LABEL]</p>
+              </td>
+              <td width="50%" valign="top" style="padding:14px 0; font-family:'Inter',Arial,Helvetica,sans-serif;">
+                <p style="margin:0; font-size:20px; line-height:24px; font-weight:700; color:#333333;">[SPEC4_VALUE]</p>
+                <p style="margin:3px 0 0 0; font-size:14px; line-height:20px; color:#9d9d9d;">[SPEC4_LABEL]</p>
+              </td>
+            </tr>
+            <tr>
+              <td width="50%" valign="top" style="padding:14px 0; font-family:'Inter',Arial,Helvetica,sans-serif;">
+                <p style="margin:0; font-size:20px; line-height:24px; font-weight:700; color:#333333;">[SPEC5_VALUE]</p>
+                <p style="margin:3px 0 0 0; font-size:14px; line-height:20px; color:#9d9d9d;">[SPEC5_LABEL]</p>
+              </td>
+              <td width="50%" valign="top" style="padding:14px 0; font-family:'Inter',Arial,Helvetica,sans-serif;">
+                <p style="margin:0; font-size:20px; line-height:24px; font-weight:700; color:#333333;">[SPEC6_VALUE]</p>
+                <p style="margin:3px 0 0 0; font-size:14px; line-height:20px; color:#9d9d9d;">[SPEC6_LABEL]</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>

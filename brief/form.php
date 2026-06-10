@@ -75,30 +75,29 @@ function segment_list() {
     return $names ? $names : $fallback;
 }
 
-/** Nameable §7 sections: any section_*.html (minus the always-on header/footer)
-    plus the "Common recurring patterns" bullets in the README. Returns name => note. */
+/** Nameable §7 sections: every section_*.html (minus the always-on header/footer),
+    each self-described by the `<!-- section-desc: ... -->` marker at the top of the file.
+    The folder is the source of truth — drop a new section_*.html in and it shows up here,
+    with its own description. (hero is driven by the §4 image; offer/pricing by §5 — those
+    are NOT chosen here.) */
 function section_list() {
-    $fallback = array('hero' => 'image + headline + subhead', 'feature row' => 'icon + label + short copy', 'offer / pricing' => 'the deal: price, discount, code');
+    $fallback = array(
+        'tech specs' => 'Key product specs in a stats panel.',
+        'reviews'    => 'Customer reviews as quote cards.',
+        'membership' => 'Membership / plan details.',
+    );
     $out = array();
     foreach ((glob(__DIR__ . '/../email-design-system/sections/section_*.html') ?: array()) as $f) {
         $name = str_replace('_', ' ', preg_replace('/^section_|\.html$/', '', basename($f)));
-        if (in_array(strtolower($name), array('header', 'footer'), true)) continue;
-        $out[$name] = '';
-    }
-    $txt = repo_text('../README.md');
-    if ($txt !== null) {
-        $inPat = false;
-        foreach (preg_split('/\r?\n/', $txt) as $line) {
-            if (preg_match('/^###\s+Common recurring patterns/i', $line)) { $inPat = true; continue; }
-            if ($inPat && preg_match('/^#{2,3}\s+/', $line)) break;
-            if ($inPat && preg_match('/^-\s+`([^`]+)`\s*[\x{2014}-]\s*(.*)$/u', $line, $m)) {
-                $name = trim($m[1]);
-                $note = trim(preg_replace('/[`*]/', '', $m[2]));
-                $note = trim(preg_split('/[;.]/', $note)[0]);
-                if (!isset($out[$name]) || $out[$name] === '') $out[$name] = $note;
-            }
+        if (in_array(strtolower($name), array('header', 'footer'), true)) continue;   // always-on frame
+        $desc = '';
+        $txt = @file_get_contents($f);
+        if ($txt !== false && preg_match('/section-desc:\s*(.+?)\s*-->/', $txt, $m)) {
+            $desc = trim($m[1]);
         }
+        $out[$name] = $desc;
     }
+    ksort($out);
     return $out ? $out : $fallback;
 }
 
