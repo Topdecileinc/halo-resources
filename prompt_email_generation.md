@@ -126,6 +126,11 @@ ties the campaign together. Every factual claim inside it (a spec, a price, a re
 membership term) must trace verbatim to a rule file or the brief. If a fact you'd want isn't
 in either, leave it out — do not invent it or carry one over from an example email.
 
+When a rule file offers **more than a section can hold** (multiple membership tiers, many
+specs, several reviews), **freely choose the few that best fit this campaign and segment** and
+relay those verbatim — curate, don't dump the whole file. Selecting *which* items to feature is
+your call; what each one *says* is fixed by the file.
+
 ---
 
 ## Extending the system (no edit to this file required)
