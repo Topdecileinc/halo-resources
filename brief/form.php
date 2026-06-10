@@ -50,11 +50,14 @@ function brief_problems() {
     return array();
 }
 
-/* --- dynamic option lists, read live from the repo's .md files ----------------
-   Apache's docroot may be the brief/ directory, but PHP still reads these sibling
-   files from the FILESYSTEM (they're not served over HTTP). If a file is missing
-   or unreadable (e.g. open_basedir limits it), we fall back to a hardcoded list
-   so the form never breaks. Editing the .md files updates the form on next load.
+/* --- dynamic option lists, read live from the repo ----------------------------
+   Segments come from brand-brain/rules_segment_definition.md; §7 section options
+   come from the section_*.html files in email-design-system/sections/ (each with
+   its own <!-- section-desc: ... --> note). Apache's docroot may be the brief/
+   directory, but PHP still reads these sibling files from the FILESYSTEM (they're
+   not served over HTTP). If a file is missing or unreadable (e.g. open_basedir
+   limits it), we fall back to a hardcoded list so the form never breaks. Editing
+   those files updates the form on next load.
    ----------------------------------------------------------------------------- */
 function repo_text($rel) {
     $p = __DIR__ . '/' . $rel;
@@ -732,7 +735,7 @@ function fld($label, $for, $summary, $anchor, $control) {
               '7-structure--starting-point',
               '<select id="template" name="template"><option value="">—</option><option value="newsletter">Newsletter</option><option value="promo">Promo</option><option value="none — build fresh">None — build fresh</option></select>');
           fld('Sections to include', 'f_sections',
-              'Optional. Leave blank for a minimal email (hero, headline, body, CTA) — the build won\'t add feature/spec/review blocks on its own; tick the ones you want here. Header and footer are always included. Options are read live from the README section vocabulary; anything custom goes in Notes (§8).',
+              'Optional. Leave blank for a minimal email (hero, headline, body, CTA) — the build won\'t add tech-specs/review/membership blocks on its own; tick the ones you want here. Header and footer are always included. Options are read live from the section files in email-design-system/sections/; anything custom goes in Notes (§8).',
               '7-structure--starting-point',
               sections_checks());
           fld('Anything to exclude', 'exclude',
