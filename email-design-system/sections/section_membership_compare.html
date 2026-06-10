@@ -1,0 +1,66 @@
+<!-- section-desc: Membership tiers side by side (price comparison). -->
+<!--
+  section_membership_compare.html  (root class="section-membership-compare")
+  Side-by-side membership tiers. Opt-in via brief §7 ("membership compare").
+  Use this when the email shows MULTIPLE plans next to each other (e.g. Gold / Silver /
+  Bronze). For a single plan, use section_membership.html instead.
+
+  WHAT TO SHOW IS THE BUILD'S CALL: whether to show all tiers or promote one is steered by
+  the brief's key offer (§3), the §8 notes, and the target segment. This file only fixes the
+  LAYOUT (three cards across). Drop a column you don't have a tier for; it holds up to 3.
+
+  FACTS: tier names, prices, and what each includes MUST come verbatim from
+  product-brain/rules_membership.md (give that file one heading per tier so the tiers are
+  distinguishable). Do not invent tiers, prices, or inclusions.
+
+  STYLE (rules_email_style_guide.md): each tier is a #F2F4F4 card, 24px radius; tier name
+  Inter bold #333; price 20px bold Halo Blue #2F93F3; the "/mo" and includes line 13px #333;
+  eyebrow 12px bold uppercase blue. No pills (not a CTA). No em dashes. Cards sit side by side;
+  the build may add a mobile media query to stack the `tier-col` columns if they get tight.
+
+  Drop in as a middle row inside the 600px container table.
+-->
+<tr class="section-membership-compare">
+  <td class="px-mobile" style="padding:12px 24px; font-family:'Inter',Arial,Helvetica,sans-serif;">
+    <p style="margin:0 0 6px 0; font-size:12px; line-height:16px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:#2f93f3;">[COMPARE_EYEBROW]</p>
+    <h2 style="margin:0 0 16px 0; font-size:24px; line-height:30px; font-weight:700; color:#333333;">[COMPARE_HEADLINE]</h2>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td class="tier-col" width="33.33%" valign="top" style="padding:0 4px 0 0;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f2f4f4; border-radius:24px;">
+            <tr>
+              <td align="center" style="padding:22px 14px;">
+                <p style="margin:0 0 8px 0; font-size:16px; line-height:20px; font-weight:700; color:#333333;">[TIER1_NAME]</p>
+                <p style="margin:0 0 10px 0; font-size:20px; line-height:24px; font-weight:700; color:#2f93f3;">[TIER1_PRICE]</p>
+                <p style="margin:0; font-size:13px; line-height:19px; color:#333333;">[TIER1_INCLUDES]</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+        <td class="tier-col" width="33.33%" valign="top" style="padding:0 2px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f2f4f4; border-radius:24px;">
+            <tr>
+              <td align="center" style="padding:22px 14px;">
+                <p style="margin:0 0 8px 0; font-size:16px; line-height:20px; font-weight:700; color:#333333;">[TIER2_NAME]</p>
+                <p style="margin:0 0 10px 0; font-size:20px; line-height:24px; font-weight:700; color:#2f93f3;">[TIER2_PRICE]</p>
+                <p style="margin:0; font-size:13px; line-height:19px; color:#333333;">[TIER2_INCLUDES]</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+        <td class="tier-col" width="33.33%" valign="top" style="padding:0 0 0 4px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f2f4f4; border-radius:24px;">
+            <tr>
+              <td align="center" style="padding:22px 14px;">
+                <p style="margin:0 0 8px 0; font-size:16px; line-height:20px; font-weight:700; color:#333333;">[TIER3_NAME]</p>
+                <p style="margin:0 0 10px 0; font-size:20px; line-height:24px; font-weight:700; color:#2f93f3;">[TIER3_PRICE]</p>
+                <p style="margin:0; font-size:13px; line-height:19px; color:#333333;">[TIER3_INCLUDES]</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
