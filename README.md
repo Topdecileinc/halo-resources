@@ -184,7 +184,7 @@ This mirrors the flow inside `prompt_email_generation.md`:
 1. **Brief.** Fill in the brief form (`brief/form.php`); it's saved to `submissions/` and passed to the pipeline.
 2. **Rules.** The pipeline loads all `rules_` files — binding. Style guide governs look; build rules govern code; the `product-brain/` files supply product facts, relayed verbatim.
 3. **Examples.** It reviews `sample_` emails for tone and HTML structure **only** — never for facts.
-4. **Start point.** If the brief names a template, it starts from a `template_` file; if it names sections, it assembles those. With neither, it builds a **minimal email** — header, hero (if a hero URL is given), headline/subhead, body, CTA, footer — and nothing more. Extra blocks (tech specs, reviews, membership) are opt-in via §7.
+4. **Start point.** If the brief names a template, it starts from a `template_` file; if it names sections, it assembles those. With neither, it builds a **minimal email** — header, hero (if a hero URL is given), headline/subhead, body, CTA, footer — and nothing more. The build arranges the middle (and the CTA placement) however reads best; only header-first and footer-last are fixed. Extra blocks (tech specs, reviews, membership) are opt-in via §7.
 5. **Build.** It places the hero from the brief's hosted URL, pulls the logo/icon URLs from `rules_brand.md` / `rules_email_footer.md`, and applies the rules throughout. The only copy it writes is the sales pitch.
 6. **Check.** The deterministic validator is the hard gate; an advisory AI pass adds notes. You see a preview, then Redo or Send.
 
@@ -360,7 +360,7 @@ dilute a promo; reserve multiple links for content-roundup layouts.)
 ### 7. Structure & starting point
 
 - **Start from a template?** — `newsletter`, `promo`, or `none` (build fresh). If a template is named, the build starts from that `template_` file. If none and no sections are specified, the build produces a **minimal email** — header, hero, headline/subhead, body, CTA, footer (see "How an email gets made").
-- **Sections to include** — the building blocks to assemble, in order. The form reads the options live from the section vocabulary; the header and footer sections are always included automatically, so this field governs the campaign-specific middle. **Leave blank for the minimal email**; name a section like `tech specs`, `reviews`, or `membership` here to add it. Extra sections are opt-in — the build won't add a specs/review/membership block on its own.
+- **Sections to include** — which extra blocks to include. The form reads the options live from the section files; the header and footer are always included, so this field governs the campaign-specific middle. It picks the *set*, not the order — **the build arranges the layout itself** (where the CTA, hero, and sections sit), with the header always first and the footer always last. **Leave blank for the minimal email**; name a section like `tech specs`, `reviews`, or `membership` here to add it. Extra sections are opt-in — the build won't add a specs/review/membership block on its own.
 - **Anything to exclude** — call out anything to leave off.
 
 ### 8. Notes for the builder
