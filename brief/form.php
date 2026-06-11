@@ -382,12 +382,27 @@ function brief_to_fields($md) {
     return $out;
 }
 
-/** Saved briefs in ../submissions/, newest first — for the "Load a saved brief" picker. */
+/** Saved briefs in ../submissions/, newest first (capped at 100), each with its campaign
+    title and a readable date — for the "Load a saved brief" search picker. */
 function brief_files() {
     $dir = __DIR__ . '/../submissions';
     $files = glob($dir . '/brief_*.md') ?: array();
-    rsort($files);   // filenames carry the timestamp, so reverse-alpha = newest first
-    return array_map('basename', $files);
+    rsort($files);                          // timestamped names → reverse-alpha = newest first
+    $files = array_slice($files, 0, 100);
+    $out = array();
+    foreach ($files as $path) {
+        $f = basename($path);
+        $txt = (string) @file_get_contents($path);
+        $title = '';
+        if (preg_match('/^\|\s*Campaign name\s*\|\s*(.*?)\s*\|\s*$/m', $txt, $m)) $title = brief_uncell($m[1]);
+        if ($title === '' || $title === '[Campaign Name]') $title = '(untitled)';
+        $when = '';
+        if (preg_match('/_(\d{4})(\d{2})(\d{2})(?:_(\d{2})(\d{2})(\d{2}))?\.md$/', $f, $d)) {
+            $when = $d[1] . '-' . $d[2] . '-' . $d[3] . (isset($d[4]) ? ' ' . $d[4] . ':' . $d[5] : '');
+        }
+        $out[] = array('file' => $f, 'title' => $title, 'when' => $when);
+    }
+    return $out;
 }
 ?>
 <!DOCTYPE html>
@@ -533,10 +548,21 @@ function brief_files() {
     font-family: var(--halo-font-mono); font-size: 0.82rem; line-height: 1.5; white-space: pre-wrap;
   }
 
-  /* load-a-saved-brief picker + loaded banner */
-  .loadbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 4px 0 14px; }
-  .loadbar label { font-weight: 650; font-size: 0.9rem; color: var(--halo-gray-700); }
-  .loadbar select { width: auto; min-width: 320px; max-width: 100%; }
+  /* load-a-saved-brief search picker + loaded banner */
+  .loadbar { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin: 4px 0 14px; }
+  .loadbar label { font-weight: 650; font-size: 0.9rem; color: var(--halo-gray-700); padding-top: 10px; }
+  .combo { position: relative; min-width: 340px; max-width: 100%; flex: 1; }
+  .combo input { width: 100%; font: inherit; color: var(--halo-ink); padding: 10px 12px; background: var(--halo-white); border: 1px solid var(--halo-gray-300); border-radius: var(--halo-radius-md); }
+  .combo input:focus { outline: none; border-color: var(--halo-blue); box-shadow: 0 0 0 3px rgba(47,147,243,0.18); }
+  .combo-list { list-style: none; margin: 6px 0 0; padding: 4px; max-height: 260px; overflow: auto; background: var(--halo-white); border: 1px solid var(--halo-gray-200); border-radius: var(--halo-radius-md); }
+  /* JS upgrades the list to a focus-to-open dropdown; without JS it stays visible + scrollable */
+  .combo.js-combo .combo-list { display: none; position: absolute; left: 0; right: 0; z-index: 40; box-shadow: 0 12px 30px rgba(0,0,0,0.12); }
+  .combo.js-combo.open .combo-list { display: block; }
+  .combo-list li a { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 8px 10px; border-radius: 6px; color: var(--halo-ink); text-decoration: none; }
+  .combo-list li a:hover, .combo-list li a.active { background: var(--halo-gray-50); text-decoration: none; }
+  .combo-list li a .t { font-weight: 600; font-size: 0.92rem; }
+  .combo-list li a .d { font-size: 0.78rem; color: var(--halo-gray-600); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .combo-empty { padding: 8px 10px; font-size: 0.88rem; color: var(--halo-gray-600); }
   .loaded-note { font-size: 0.88rem; color: var(--halo-gray-700); background: #f3fbf5; border: 1px solid #b7e0c2; border-radius: var(--halo-radius-md); padding: 8px 12px; margin: 0 0 18px; }
 
   /* AI edit-with-a-prompt box on the preview */
@@ -692,16 +718,23 @@ function brief_files() {
        defaults the rest. Every field links to its documentation.</p>
 
     <?php $saved = brief_files(); if ($saved): ?>
-      <form method="get" action="form.php" class="loadbar">
-        <label for="load">Load a saved brief</label>
-        <select id="load" name="load" onchange="this.form.submit()">
-          <option value="">— start fresh —</option>
-          <?php foreach ($saved as $bf): $sel = ($bf === $loadedName) ? ' selected' : ''; ?>
-            <option value="<?php echo htmlspecialchars($bf, ENT_QUOTES, 'UTF-8'); ?>"<?php echo $sel; ?>><?php echo htmlspecialchars($bf, ENT_QUOTES, 'UTF-8'); ?></option>
-          <?php endforeach; ?>
-        </select>
-        <noscript><button type="submit" class="btn btn--ghost">Load</button></noscript>
-      </form>
+      <div class="loadbar">
+        <label for="brief-search">Load a saved brief</label>
+        <div class="combo" id="brief-combo">
+          <input type="text" id="brief-search" placeholder="Search by campaign title…" autocomplete="off" aria-expanded="false" aria-controls="brief-list">
+          <ul class="combo-list" id="brief-list" role="listbox">
+            <?php foreach ($saved as $b): $hay = strtolower($b['title'] . ' ' . $b['file']); ?>
+              <li role="option" data-search="<?php echo htmlspecialchars($hay, ENT_QUOTES, 'UTF-8'); ?>">
+                <a href="form.php?load=<?php echo htmlspecialchars(urlencode($b['file']), ENT_QUOTES, 'UTF-8'); ?>">
+                  <span class="t"><?php echo htmlspecialchars($b['title'], ENT_QUOTES, 'UTF-8'); ?></span>
+                  <span class="d"><?php echo htmlspecialchars($b['when'], ENT_QUOTES, 'UTF-8'); ?></span>
+                </a>
+              </li>
+            <?php endforeach; ?>
+            <li class="combo-empty" hidden>No matching briefs.</li>
+          </ul>
+        </div>
+      </div>
     <?php endif; ?>
     <?php if ($loadedName !== ''): ?>
       <p class="loaded-note">Loaded <code><?php echo htmlspecialchars($loadedName, ENT_QUOTES, 'UTF-8'); ?></code> — adjust anything and submit to generate a new version. <a href="form.php">Start fresh</a>.</p>
@@ -937,6 +970,45 @@ function brief_files() {
           });
         }
       });
+    })();
+
+    /* searchable "load a saved brief" picker: filter by campaign title, keyboard-navigable */
+    (function () {
+      var combo = document.getElementById('brief-combo');
+      if (!combo) return;
+      var input = document.getElementById('brief-search');
+      var list  = document.getElementById('brief-list');
+      var items = Array.prototype.slice.call(list.querySelectorAll('li[role="option"]'));
+      var empty = list.querySelector('.combo-empty');
+      combo.classList.add('js-combo');                 // turn the visible list into a dropdown
+
+      function open()  { combo.classList.add('open'); input.setAttribute('aria-expanded', 'true'); }
+      function clear() { var a = list.querySelector('a.active'); if (a) a.classList.remove('active'); }
+      function close() { combo.classList.remove('open'); input.setAttribute('aria-expanded', 'false'); clear(); }
+      function visibleLinks() {
+        return items.filter(function (li) { return !li.hidden; }).map(function (li) { return li.querySelector('a'); });
+      }
+      function filter() {
+        var q = input.value.trim().toLowerCase(), shown = 0;
+        items.forEach(function (li) {
+          var ok = q === '' || li.getAttribute('data-search').indexOf(q) !== -1;
+          li.hidden = !ok; if (ok) shown++;
+        });
+        if (empty) empty.hidden = shown !== 0;
+        clear();
+      }
+
+      input.addEventListener('focus', open);
+      input.addEventListener('input', function () { filter(); open(); });
+      input.addEventListener('keydown', function (e) {
+        var links = visibleLinks(), cur = list.querySelector('a.active'), idx = cur ? links.indexOf(cur) : -1;
+        if (e.key === 'ArrowDown') { e.preventDefault(); open(); if (links.length) { clear(); idx = (idx + 1) % links.length; links[idx].classList.add('active'); links[idx].scrollIntoView({ block: 'nearest' }); } }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); if (links.length) { clear(); idx = (idx <= 0 ? links.length - 1 : idx - 1); links[idx].classList.add('active'); links[idx].scrollIntoView({ block: 'nearest' }); } }
+        else if (e.key === 'Enter') { var go = cur || links[0]; if (go) { e.preventDefault(); window.location.href = go.href; } }
+        else if (e.key === 'Escape') { close(); }
+      });
+      document.addEventListener('click', function (e) { if (!combo.contains(e.target)) close(); });
+      filter();
     })();
   </script>
 </body>
