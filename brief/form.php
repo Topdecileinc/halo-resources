@@ -608,6 +608,15 @@ function brief_files() {
     <!-- PREVIEW: generated, ready to review → redo or send -->
     <div class="panel ok">
       <h2>&#10003; Email generated &mdash; review &amp; send</h2>
+      <?php
+        $previewTitle = '';
+        if (!empty($savedName) && is_file(__DIR__ . '/../submissions/' . $savedName)) {
+            $pf2 = brief_to_fields((string) @file_get_contents(__DIR__ . '/../submissions/' . $savedName));
+            if (isset($pf2['campaign_name'])) $previewTitle = $pf2['campaign_name'];
+        }
+        if ($previewTitle === '' || $previewTitle === '[Campaign Name]') $previewTitle = '(untitled)';
+      ?>
+      <p><strong>Campaign:</strong> <?php echo htmlspecialchars($previewTitle, ENT_QUOTES, 'UTF-8'); ?></p>
       <p><strong>Subject:</strong> <?php echo htmlspecialchars($gen['subject'], ENT_QUOTES, 'UTF-8'); ?></p>
       <p><strong>Preheader:</strong> <?php echo htmlspecialchars($gen['preheader'], ENT_QUOTES, 'UTF-8'); ?></p>
       <?php if (!empty($gen['validated'])): ?>
@@ -736,8 +745,9 @@ function brief_files() {
         </div>
       </div>
     <?php endif; ?>
-    <?php if ($loadedName !== ''): ?>
-      <p class="loaded-note">Loaded <code><?php echo htmlspecialchars($loadedName, ENT_QUOTES, 'UTF-8'); ?></code> — adjust anything and submit to generate a new version. <a href="form.php">Start fresh</a>.</p>
+    <?php if ($loadedName !== ''):
+        $lt = (isset($prefill['campaign_name']) && $prefill['campaign_name'] !== '' && $prefill['campaign_name'] !== '[Campaign Name]') ? $prefill['campaign_name'] : '(untitled)'; ?>
+      <p class="loaded-note">Loaded <strong><?php echo htmlspecialchars($lt, ENT_QUOTES, 'UTF-8'); ?></strong> — adjust anything and submit to generate a new version. <a href="form.php">Start fresh</a>.</p>
     <?php endif; ?>
 
     <form method="post" action="" autocomplete="off">
