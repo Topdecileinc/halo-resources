@@ -301,7 +301,7 @@ function hp_send_via_braze(array $cfg, array $email) {
 /** Send a previously-generated email by its base id — reads generated/<base>.send.json. */
 function hp_send_saved(array $cfg, $base) {
     $base = basename((string) $base);
-    if (!preg_match('/^brief_[a-z0-9_]+_\d{8}$/', $base)) {
+    if (!preg_match('/^brief_[a-z0-9_]+_\d{8}(?:_\d{6})?$/', $base)) {
         return ['attempted' => false, 'ok' => false, 'code' => 0, 'message' => 'Invalid email id.'];
     }
     $jsonPath = rtrim($cfg['repo_root'], '/') . '/generated/' . $base . '.send.json';
@@ -318,7 +318,7 @@ function hp_send_saved(array $cfg, $base) {
 /** Load a generated email (subject/preheader/html) from generated/<base>.send.json, for preview. */
 function hp_load_send_email(array $cfg, $base) {
     $base = basename((string) $base);
-    if (!preg_match('/^brief_[a-z0-9_]+_\d{8}$/', $base)) return null;
+    if (!preg_match('/^brief_[a-z0-9_]+_\d{8}(?:_\d{6})?$/', $base)) return null;
     $jsonPath = rtrim($cfg['repo_root'], '/') . '/generated/' . $base . '.send.json';
     if (!is_file($jsonPath)) return null;
     $body = json_decode(@file_get_contents($jsonPath), true);
@@ -392,11 +392,10 @@ function hp_validate(array $cfg, array $email, $briefMarkdown) {
  * send only on a pass. After two failed attempts it does NOT send and returns the
  * validation errors. Saves the last attempt's output for review either way.
  */
-function hp_save_generated(array $cfg, array $gen, $slug) {
+function hp_save_generated(array $cfg, array $gen, $base) {
     if (empty($cfg['repo_root'])) return;
     $genDir = rtrim($cfg['repo_root'], '/') . '/generated';
     if (!is_dir($genDir)) @mkdir($genDir, 0775, true);
-    $base = 'brief_' . $slug . '_' . date('Ymd');
     @file_put_contents($genDir . '/' . $base . '.html', $gen['html']);
     @file_put_contents($genDir . '/' . $base . '.send.json', json_encode(hp_braze_body($cfg, $gen), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 }
@@ -476,7 +475,7 @@ function hp_ai_review(array $cfg, array $email, $briefMarkdown) {
  * after the deterministic gate passes and its findings are surfaced for review, but
  * they do NOT block the send. Set ai_review_blocking=true to make it a hard gate too.
  */
-function hp_run_pipeline(array $cfg, $briefMarkdown, $slug) {
+function hp_run_pipeline(array $cfg, $briefMarkdown, $base) {
     $validate   = !array_key_exists('validate', $cfg)  || !empty($cfg['validate']);
     $aiReview   = !array_key_exists('ai_review', $cfg) || !empty($cfg['ai_review']);
     $aiBlocking = !empty($cfg['ai_review_blocking']);   // default: AI is advisory, not a gate
@@ -521,8 +520,7 @@ function hp_run_pipeline(array $cfg, $briefMarkdown, $slug) {
         $feedback = '- ' . implode("\n- ", $blocking);
     }
 
-    hp_save_generated($cfg, $gen, $slug);
-    $base = 'brief_' . $slug . '_' . date('Ymd');
+    hp_save_generated($cfg, $gen, $base);
 
     // AI infra error only blocks in blocking mode.
     if ($aiBlocking && $aiError) {
@@ -570,5 +568,139 @@ function hp_run_pipeline(array $cfg, $briefMarkdown, $slug) {
         'loaded' => $gen['loaded'],
         'html_file' => $base . '.html',
         'json_file' => $base . '.send.json',
+    ];
+}
+
+/**
+ * Revise an existing email per a free-text instruction (e.g. "make the CTA green",
+ * "shorten the intro"). Same return shape as hp_generate_email. The model gets the
+ * current email + the change request (+ the original brief for grounding) and returns
+ * the COMPLETE revised email, still bound by every rule.
+ */
+function hp_edit_email(array $cfg, array $current, $instruction, $briefMarkdown = '', $feedback = '') {
+    list($context, $loaded) = hp_load_context($cfg);
+
+    $userText =
+        "You are REVISING an existing Halo email. Apply the requested change and return the COMPLETE "
+        . "revised email as the structured object (subject, preheader, html). Change only what the request "
+        . "asks for (plus whatever that change requires to keep the email correct and consistent); keep "
+        . "everything else as-is. Keep following every rule: product facts verbatim from the rule files, no "
+        . "em dashes, table-based Outlook-safe HTML, CTA-only pill styling, and the existing section/component "
+        . "structures.\n\n===== REQUESTED CHANGE =====\n" . $instruction
+        . "\n\n===== CURRENT EMAIL =====\nSubject: " . $current['subject'] . "\nPreheader: " . $current['preheader']
+        . "\nHTML:\n" . $current['html'];
+    if ($briefMarkdown !== '') $userText .= "\n\n===== ORIGINAL BRIEF (for grounding) =====\n" . $briefMarkdown;
+    if ($feedback !== '') {
+        $userText .= "\n\n===== REQUIRED FIXES =====\nYour previous revision FAILED these binding checks; "
+            . "fix EVERY one without introducing new violations:\n" . $feedback;
+    }
+
+    $payload = [
+        'model' => $cfg['anthropic_model'],
+        'max_tokens' => (int) $cfg['max_tokens'],
+        'thinking' => ['type' => 'adaptive'],
+        'output_config' => ['effort' => $cfg['effort'], 'format' => hp_output_schema()],
+        'system' => [['type' => 'text', 'text' => $context, 'cache_control' => ['type' => 'ephemeral', 'ttl' => '1h']]],
+        'messages' => [['role' => 'user', 'content' => $userText]],
+    ];
+    $headers = [
+        'content-type: application/json',
+        'x-api-key: ' . $cfg['anthropic_api_key'],
+        'anthropic-version: ' . ($cfg['anthropic_version'] ?? '2023-06-01'),
+    ];
+    $url = rtrim($cfg['anthropic_base_url'] ?? 'https://api.anthropic.com', '/') . '/v1/messages';
+
+    list($code, $resp, $raw, $err) = hp_post_json($url, $headers, $payload, (int) $cfg['request_timeout']);
+    if ($err !== '') return ['ok' => false, 'error' => "Network error calling Claude: $err"];
+    if ($code !== 200) {
+        $msg = is_array($resp) && isset($resp['error']['message']) ? $resp['error']['message'] : substr((string) $raw, 0, 500);
+        return ['ok' => false, 'error' => "Claude API returned HTTP $code: $msg"];
+    }
+    $text = '';
+    foreach ($resp['content'] ?? [] as $b) {
+        if (($b['type'] ?? '') === 'text') $text .= $b['text'];
+    }
+    $data = json_decode($text, true);
+    if (!is_array($data) || !isset($data['html'])) {
+        return ['ok' => false, 'error' => 'Could not parse the revised email from Claude.', 'raw' => substr($text, 0, 500)];
+    }
+    return [
+        'ok' => true, 'error' => null,
+        'subject' => (string) ($data['subject'] ?? ''),
+        'preheader' => (string) ($data['preheader'] ?? ''),
+        'html' => (string) $data['html'],
+        'truncated' => (($resp['stop_reason'] ?? '') === 'max_tokens'),
+        'usage' => $resp['usage'] ?? [],
+        'loaded' => $loaded,
+    ];
+}
+
+/**
+ * Apply an AI edit to a previously-generated email (chosen on the preview) and re-validate.
+ * Loads generated/<base>.* and submissions/<base>.md, revises, runs the SAME hard gate as
+ * generation (retry once), and OVERWRITES the same base in place (refine, not a new copy).
+ * Returns the same shape as hp_run_pipeline so the preview view renders it identically.
+ */
+function hp_edit_pipeline(array $cfg, $base, $instruction) {
+    $base = basename((string) $base);
+    if (!preg_match('/^brief_[a-z0-9_]+_\d{8}(?:_\d{6})?$/', $base)) {
+        return ['ok' => false, 'error' => 'Invalid email id to edit.'];
+    }
+    $instruction = trim((string) $instruction);
+    if ($instruction === '') return ['ok' => false, 'error' => 'No edit instruction was given.'];
+
+    $cur = hp_load_send_email($cfg, $base);
+    if (!$cur || ($cur['html'] ?? '') === '') {
+        return ['ok' => false, 'error' => 'Could not load the email to edit (is it still in generated/?).'];
+    }
+    $briefPath = rtrim($cfg['repo_root'], '/') . '/submissions/' . $base . '.md';
+    $briefMd = is_file($briefPath) ? (string) @file_get_contents($briefPath) : '';
+
+    $validate   = !array_key_exists('validate', $cfg)  || !empty($cfg['validate']);
+    $aiReview   = !array_key_exists('ai_review', $cfg) || !empty($cfg['ai_review']);
+    $aiBlocking = !empty($cfg['ai_review_blocking']);
+    $maxAttempts = 2; $feedback = ''; $attempts = 0; $gen = null; $derrors = []; $advisories = []; $aiError = null;
+
+    while ($attempts < $maxAttempts) {
+        $attempts++;
+        $gen = hp_edit_email($cfg, $cur, $instruction, $briefMd, $feedback);
+        if (empty($gen['ok'])) {
+            return ['ok' => false, 'stage' => 'generate', 'error' => $gen['error'] ?? 'Edit failed', 'attempts' => $attempts, 'send' => null];
+        }
+        $derrors = []; $advisories = []; $aiError = null;
+        if ($validate) {
+            $val = hp_validate($cfg, $gen, $briefMd);
+            if (empty($val['ok'])) $derrors = $val['errors'];
+        }
+        if (empty($derrors) && $aiReview) {
+            $rev = hp_ai_review($cfg, $gen, $briefMd);
+            if (!empty($rev['error'])) $aiError = $rev['error'];
+            else $advisories = $rev['violations'];
+        }
+        $blocking = $derrors;
+        if ($aiBlocking) $blocking = array_merge($derrors, $advisories);
+        if (empty($blocking)) break;
+        $feedback = '- ' . implode("\n- ", $blocking);
+    }
+
+    hp_save_generated($cfg, $gen, $base);   // overwrite the same base — refine in place
+
+    if ($aiBlocking && $aiError) {
+        return ['ok' => false, 'stage' => 'ai_review', 'error' => 'AI review could not run — edit not finalized: ' . $aiError,
+                'attempts' => $attempts, 'html_file' => $base . '.html', 'json_file' => $base . '.send.json', 'send' => null];
+    }
+    $blocking = $derrors;
+    if ($aiBlocking) $blocking = array_merge($derrors, $advisories);
+    if (!empty($blocking)) {
+        return ['ok' => false, 'stage' => 'validate', 'validation_failed' => true, 'attempts' => $attempts, 'errors' => $blocking,
+                'subject' => $gen['subject'], 'preheader' => $gen['preheader'], 'loaded' => $gen['loaded'] ?? [],
+                'html_file' => $base . '.html', 'json_file' => $base . '.send.json', 'send' => null];
+    }
+    return [
+        'ok' => true, 'error' => null, 'attempts' => $attempts, 'validated' => $validate, 'ai_reviewed' => $aiReview,
+        'advisories' => $aiBlocking ? [] : $advisories, 'ai_error' => $aiBlocking ? null : $aiError,
+        'subject' => $gen['subject'], 'preheader' => $gen['preheader'], 'html' => $gen['html'], 'base' => $base,
+        'truncated' => !empty($gen['truncated']), 'usage' => $gen['usage'], 'loaded' => $gen['loaded'],
+        'edited' => true, 'html_file' => $base . '.html', 'json_file' => $base . '.send.json',
     ];
 }

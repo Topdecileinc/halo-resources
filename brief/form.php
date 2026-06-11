@@ -109,7 +109,7 @@ function segment_select() {
     $opts = '<option value="">—</option>';
     foreach (segment_list() as $s) {
         $e = htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
-        $opts .= '<option value="' . $e . '">' . $e . '</option>';
+        $opts .= '<option value="' . $e . '"' . pv_sel('target_segment', $s) . '>' . $e . '</option>';
     }
     return '<select id="target_segment" name="target_segment">' . $opts . '</select>';
 }
@@ -122,7 +122,8 @@ function sections_checks() {
         $disp  = htmlspecialchars(ucfirst($name), ENT_QUOTES, 'UTF-8');
         $noteHtml = ($note !== '') ? ' <span class="opt-note">&mdash; ' . htmlspecialchars($note, ENT_QUOTES, 'UTF-8') . '</span>' : '';
         $id = $first ? ' id="f_sections"' : '';
-        $html .= '<label class="check"><input type="checkbox"' . $id . ' name="sections[]" value="' . $eName . '"> ' . $disp . $noteHtml . '</label>';
+        $checked = in_array($name, pv_sections(), true) ? ' checked' : '';
+        $html .= '<label class="check"><input type="checkbox"' . $id . ' name="sections[]" value="' . $eName . '"' . $checked . '> ' . $disp . $noteHtml . '</label>';
         $first = false;
     }
     return $html . '</div>';
@@ -132,6 +133,18 @@ $isPost    = (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST');
 $saveError = null;
 $savedName = null;
 $briefMd   = '';
+
+// ---- pre-fill support: load a saved brief back into the form (via ?load=, incl. the
+//      preview's "Retry" link) so the team can adjust the values and resubmit. ----
+$prefill    = array();   // field => value, consumed by the control helpers below
+$loadedName = '';
+if (!$isPost && isset($_GET['load'])) {
+    $ln = basename((string) $_GET['load']);
+    if (preg_match('/^brief_[a-z0-9_]+_\d{8}(?:_\d{6})?\.md$/', $ln) && is_file(__DIR__ . '/../submissions/' . $ln)) {
+        $prefill = brief_to_fields((string) @file_get_contents(__DIR__ . '/../submissions/' . $ln));
+        $loadedName = $ln;
+    }
+}
 
 if ($isPost) {
     @set_time_limit(0);              // generation + send can take a few minutes
@@ -153,32 +166,28 @@ if ($isPost) {
         } else {
             $sent = ['attempted' => false, 'ok' => false, 'code' => 0, 'message' => 'Generation is not configured (config.php).'];
         }
-    } elseif ($action === 'redo') {
-        // ---- REDO: regenerate from the saved brief, then preview again ----
+    } elseif ($action === 'ai_edit') {
+        // ---- AI EDIT: revise the previewed email per a free-text instruction, then re-preview ----
         if ($cfgReady) {
             require_once __DIR__ . '/lib/claude_pipeline.php';
-            $savedName = basename((string) ($_POST['brief'] ?? ''));
-            $bm = ($savedName !== '' && is_file(__DIR__ . '/../submissions/' . $savedName))
-                ? (string) @file_get_contents(__DIR__ . '/../submissions/' . $savedName) : '';
-            $slug = preg_replace('/^brief_/', '', preg_replace('/_\d{8}\.md$/', '', $savedName));
-            if ($slug === '') $slug = 'untitled';
-            if ($bm !== '') {
-                try { $gen = hp_run_pipeline($cfg, $bm, $slug); }
-                catch (Throwable $e) { $gen = ['ok' => false, 'error' => $e->getMessage()]; }
-            } else {
-                $gen = ['ok' => false, 'error' => 'Could not find the saved brief to redo.'];
-            }
+            $base = preg_replace('/[^a-z0-9_]/', '', basename((string) ($_POST['base'] ?? '')));
+            $instruction = trim((string) ($_POST['instruction'] ?? ''));
+            try { $gen = hp_edit_pipeline($cfg, $base, $instruction); }
+            catch (Throwable $e) { $gen = ['ok' => false, 'error' => $e->getMessage()]; }
+            $savedName = (!empty($gen['base']) ? $gen['base'] : $base) . '.md';   // for the "Retry — edit the brief" link
         } else {
             $gen = ['ok' => false, 'error' => 'Generation is not configured (config.php).'];
         }
     } else {
-        // ---- filename: brief_<slug>_<YYYYMMDD>.md ----
+        // ---- filename: brief_<slug>_<YYYYMMDD_HHMMSS>.md (time avoids same-day collisions) ----
         $campaign = field('campaign_name');
     $slug = strtolower($campaign !== '' ? $campaign : 'untitled');
     $slug = preg_replace('/[^a-z0-9]+/', '_', $slug);
     $slug = trim($slug, '_');
     if ($slug === '') $slug = 'untitled';
-    $savedName = 'brief_' . $slug . '_' . date('Ymd') . '.md';
+    $stamp = date('Ymd_His');
+    $base = 'brief_' . $slug . '_' . $stamp;     // shared by the saved brief AND the generated email
+    $savedName = $base . '.md';
 
     $title = ($campaign !== '') ? $campaign : '[Campaign Name]';
 
@@ -291,7 +300,7 @@ Test sends target a designated test segment in a non-production Braze workspace.
     if (!$saveError && !$preflight && $cfgReady) {
         require_once __DIR__ . '/lib/claude_pipeline.php';
         try {
-            $gen = hp_run_pipeline($cfg, $briefMd, $slug);
+            $gen = hp_run_pipeline($cfg, $briefMd, $base);
         } catch (Throwable $e) {
             $gen = ['ok' => false, 'error' => $e->getMessage()];
         }
@@ -311,6 +320,74 @@ function fld($label, $for, $summary, $anchor, $control) {
        . ' <a class="doc-link" href="' . $doc . '" target="_blank" rel="noopener">Docs &#8599;</a></span>';
     echo $control;
     echo '</div>';
+}
+
+/* --- pre-fill helpers: read from $prefill (a saved brief parsed back into field values) --- */
+function pv($k) { global $prefill; return isset($prefill[$k]) ? $prefill[$k] : ''; }
+/** ` value="..."` for an <input>, or '' when there's nothing to pre-fill. */
+function pv_attr($k) { $v = pv($k); return ($v === '' || is_array($v)) ? '' : ' value="' . htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8') . '"'; }
+/** Escaped text for a <textarea> body or option compare. */
+function pv_text($k) { $v = pv($k); return is_array($v) ? '' : htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8'); }
+/** ` selected` when the saved value equals this option. */
+function pv_sel($k, $opt) { $v = pv($k); return (!is_array($v) && (string) $v === (string) $opt) ? ' selected' : ''; }
+/** The saved §7 sections as an array (for checkbox `checked`). */
+function pv_sections() { global $prefill; $s = isset($prefill['sections']) ? $prefill['sections'] : array(); return is_array($s) ? $s : array(); }
+
+/** Un-escape a markdown table cell that cell() wrote (it escaped `|` as `\|`). */
+function brief_uncell($s) { return str_replace('\\|', '|', trim((string) $s)); }
+
+/**
+ * Parse a saved brief (the markdown form.php writes) back into form field values, so a brief
+ * can be loaded into the form and adjusted. Mirrors the table layout built in the brief action.
+ */
+function brief_to_fields($md) {
+    $out = array();
+    $rows = array(
+        'product_subject' => 'Product / subject',
+        'campaign_name'   => 'Campaign name',
+        'occasion'        => 'Occasion / theme',
+        'send_date'       => 'Send date',
+        'primary_goal'    => 'Primary goal',
+        'target_segment'  => 'Target segment',
+        'headline'        => 'Headline',
+        'subhead'         => 'Subhead',
+        'key_message'     => 'Key message or offer',
+        'hero_url'        => 'Hosted hero URL',
+        'alt_text'        => 'Alt text',
+        'show_pricing'    => 'Show pricing?',
+        'original_price'  => 'Original price',
+        'sale_price'      => 'Sale / final price',
+        'discount'        => 'Discount',
+        'promo_code'      => 'Promo code',
+        'template'        => 'Start from a template?',
+        'exclude'         => 'Anything to exclude',
+        'notes'           => 'Notes',
+    );
+    foreach ($rows as $key => $label) {
+        if (preg_match('/^\|\s*' . preg_quote($label, '/') . '\s*\|\s*(.*?)\s*\|\s*$/m', $md, $m)) {
+            $out[$key] = brief_uncell($m[1]);
+        }
+    }
+    if (preg_match('/^\|\s*Sections to include\s*\|\s*(.*?)\s*\|\s*$/m', $md, $m)) {
+        $val = brief_uncell($m[1]);
+        $out['sections'] = ($val === '') ? array()
+            : array_values(array_filter(array_map('trim', explode(',', $val)), function ($x) { return $x !== ''; }));
+    }
+    foreach (array(1, 2, 3) as $n) {
+        if (preg_match('/^\|\s*' . $n . '\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*$/m', $md, $m)) {
+            $out['cta' . $n . '_label'] = brief_uncell($m[1]);
+            $out['cta' . $n . '_dest']  = brief_uncell($m[2]);
+        }
+    }
+    return $out;
+}
+
+/** Saved briefs in ../submissions/, newest first — for the "Load a saved brief" picker. */
+function brief_files() {
+    $dir = __DIR__ . '/../submissions';
+    $files = glob($dir . '/brief_*.md') ?: array();
+    rsort($files);   // filenames carry the timestamp, so reverse-alpha = newest first
+    return array_map('basename', $files);
 }
 ?>
 <!DOCTYPE html>
@@ -455,6 +532,18 @@ function fld($label, $for, $summary, $anchor, $control) {
     border-radius: var(--halo-radius-md); padding: 14px 16px;
     font-family: var(--halo-font-mono); font-size: 0.82rem; line-height: 1.5; white-space: pre-wrap;
   }
+
+  /* load-a-saved-brief picker + loaded banner */
+  .loadbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 4px 0 14px; }
+  .loadbar label { font-weight: 650; font-size: 0.9rem; color: var(--halo-gray-700); }
+  .loadbar select { width: auto; min-width: 320px; max-width: 100%; }
+  .loaded-note { font-size: 0.88rem; color: var(--halo-gray-700); background: #f3fbf5; border: 1px solid #b7e0c2; border-radius: var(--halo-radius-md); padding: 8px 12px; margin: 0 0 18px; }
+
+  /* AI edit-with-a-prompt box on the preview */
+  .ai-edit { margin-top: 16px; padding: 14px 16px; border: 1px solid var(--halo-gray-200); border-radius: var(--halo-radius-md); background: var(--halo-white); }
+  .ai-edit label { display: block; font-weight: 650; font-size: 0.9rem; margin: 0 0 6px; }
+  .ai-edit textarea { width: 100%; min-height: 60px; font: inherit; color: var(--halo-ink); padding: 10px 12px; border: 1px solid var(--halo-gray-300); border-radius: var(--halo-radius-md); resize: vertical; margin-bottom: 10px; }
+  .ai-edit textarea:focus { outline: none; border-color: var(--halo-blue); box-shadow: 0 0 0 3px rgba(47,147,243,0.18); }
 </style>
 </head>
 <body>
@@ -514,18 +603,23 @@ function fld($label, $for, $summary, $anchor, $control) {
       <?php if (!empty($gen['truncated'])): ?>
         <p class="hardcoded">&#9888; Output hit the token limit and may be truncated — raise <code>max_tokens</code> in config.php.</p>
       <?php endif; ?>
-      <p class="hardcoded" style="margin-top:8px;">Nothing has been sent yet — review the preview below, then <strong>Send</strong> or <strong>Redo</strong>.</p>
+      <p class="hardcoded" style="margin-top:8px;">Nothing has been sent yet. Saved to <code>generated/<?php echo htmlspecialchars($gen['html_file'] ?? '', ENT_QUOTES, 'UTF-8'); ?></code>. Tweak it with a prompt below, retry the brief, or send.</p>
+
+      <form method="post" action="" data-overlay="edit" class="ai-edit">
+        <input type="hidden" name="action" value="ai_edit">
+        <input type="hidden" name="base" value="<?php echo htmlspecialchars($gen['base'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+        <label for="instruction">Edit with a prompt</label>
+        <textarea id="instruction" name="instruction" required placeholder="e.g. Make the CTA button blue and shorten the intro to one sentence."></textarea>
+        <button type="submit" class="btn btn--ghost">Apply edit</button>
+      </form>
+
       <div class="actions" style="margin-top:16px; display:flex; gap:12px; flex-wrap:wrap;">
         <form method="post" action="" data-overlay="send" style="margin:0;">
           <input type="hidden" name="action" value="send">
           <input type="hidden" name="base" value="<?php echo htmlspecialchars($gen['base'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
           <button type="submit" class="btn">Send this email</button>
         </form>
-        <form method="post" action="" data-overlay="generate" style="margin:0;">
-          <input type="hidden" name="action" value="redo">
-          <input type="hidden" name="brief" value="<?php echo htmlspecialchars($savedName ?? '', ENT_QUOTES, 'UTF-8'); ?>">
-          <button type="submit" class="btn btn--ghost">Redo</button>
-        </form>
+        <a class="btn btn--ghost" href="form.php?load=<?php echo htmlspecialchars(urlencode($savedName ?? ''), ENT_QUOTES, 'UTF-8'); ?>">Retry &mdash; edit the brief</a>
         <a class="btn btn--ghost" href="form.php">New brief</a>
       </div>
     </div>
@@ -564,11 +658,7 @@ function fld($label, $for, $summary, $anchor, $control) {
       </ul>
       <div class="actions" style="margin-top:16px; display:flex; gap:12px; flex-wrap:wrap;">
         <?php if (!empty($savedName)): ?>
-        <form method="post" action="" data-overlay="generate" style="margin:0;">
-          <input type="hidden" name="action" value="redo">
-          <input type="hidden" name="brief" value="<?php echo htmlspecialchars($savedName, ENT_QUOTES, 'UTF-8'); ?>">
-          <button type="submit" class="btn btn--ghost">Redo</button>
-        </form>
+        <a class="btn btn--ghost" href="form.php?load=<?php echo htmlspecialchars(urlencode($savedName), ENT_QUOTES, 'UTF-8'); ?>">Retry &mdash; edit the brief</a>
         <?php endif; ?>
         <a class="btn btn--ghost" href="form.php">New brief</a>
       </div>
@@ -599,7 +689,23 @@ function fld($label, $for, $summary, $anchor, $control) {
     <h1>Email brief</h1>
     <p class="lede">Fill this in for one campaign. On submit it saves a copy to the team's
        <code>submissions/</code> folder. Leave anything blank that doesn't apply — the generator
-       asks about or defaults the rest. Every field links to its documentation.</p>
+       defaults the rest. Every field links to its documentation.</p>
+
+    <?php $saved = brief_files(); if ($saved): ?>
+      <form method="get" action="form.php" class="loadbar">
+        <label for="load">Load a saved brief</label>
+        <select id="load" name="load" onchange="this.form.submit()">
+          <option value="">— start fresh —</option>
+          <?php foreach ($saved as $bf): $sel = ($bf === $loadedName) ? ' selected' : ''; ?>
+            <option value="<?php echo htmlspecialchars($bf, ENT_QUOTES, 'UTF-8'); ?>"<?php echo $sel; ?>><?php echo htmlspecialchars($bf, ENT_QUOTES, 'UTF-8'); ?></option>
+          <?php endforeach; ?>
+        </select>
+        <noscript><button type="submit" class="btn btn--ghost">Load</button></noscript>
+      </form>
+    <?php endif; ?>
+    <?php if ($loadedName !== ''): ?>
+      <p class="loaded-note">Loaded <code><?php echo htmlspecialchars($loadedName, ENT_QUOTES, 'UTF-8'); ?></code> — adjust anything and submit to generate a new version. <a href="form.php">Start fresh</a>.</p>
+    <?php endif; ?>
 
     <form method="post" action="" autocomplete="off">
 
@@ -609,23 +715,23 @@ function fld($label, $for, $summary, $anchor, $control) {
           fld('Campaign name <span class="req">*</span>', 'campaign_name',
               'A short name for this send — used to name the saved file (e.g. "Mothers Day 2026").',
               '1-campaign-basics',
-              '<input type="text" id="campaign_name" name="campaign_name" required>');
+              '<input type="text" id="campaign_name" name="campaign_name" required' . pv_attr('campaign_name') . '>');
           fld('Product / subject', 'product_subject',
               'What the email is about — the product, feature, or topic at its center.',
               '1-campaign-basics',
-              '<input type="text" id="product_subject" name="product_subject">');
+              '<input type="text" id="product_subject" name="product_subject"' . pv_attr('product_subject') . '>');
           fld('Occasion / theme', 'occasion',
               'The hook or timing — holiday, awareness month, flash sale, or evergreen.',
               '1-campaign-basics',
-              '<input type="text" id="occasion" name="occasion">');
+              '<input type="text" id="occasion" name="occasion"' . pv_attr('occasion') . '>');
           fld('Send date', 'send_date',
               'The date this email is scheduled to go out.',
               '1-campaign-basics',
-              '<input type="date" id="send_date" name="send_date">');
+              '<input type="date" id="send_date" name="send_date"' . pv_attr('send_date') . '>');
           fld('Primary goal', 'primary_goal',
               'The one outcome this email is for — drive a purchase, re-engage, or announce a feature.',
               '1-campaign-basics',
-              '<input type="text" id="primary_goal" name="primary_goal">');
+              '<input type="text" id="primary_goal" name="primary_goal"' . pv_attr('primary_goal') . '>');
         ?>
       </fieldset>
 
@@ -645,15 +751,15 @@ function fld($label, $for, $summary, $anchor, $control) {
           fld('Headline', 'headline',
               'The main headline. Provide your own, or write "suggest" to have one generated.',
               '3-content',
-              '<input type="text" id="headline" name="headline">');
+              '<input type="text" id="headline" name="headline"' . pv_attr('headline') . '>');
           fld('Subhead', 'subhead',
               'The supporting line under the headline. Provide one, or write "suggest".',
               '3-content',
-              '<input type="text" id="subhead" name="subhead">');
+              '<input type="text" id="subhead" name="subhead"' . pv_attr('subhead') . '>');
           fld('Key message or offer', 'key_message',
               'The core thing to communicate. Body copy is generated from this, the segment, and brand voice — there is no separate body field.',
               '3-content',
-              '<textarea id="key_message" name="key_message"></textarea>');
+              '<textarea id="key_message" name="key_message">' . pv_text('key_message') . '</textarea>');
         ?>
       </fieldset>
 
@@ -663,11 +769,11 @@ function fld($label, $for, $summary, $anchor, $control) {
           fld('Hosted hero URL', 'hero_url',
               'The live, hosted URL of the hero image the email links to (not an upload).',
               '4-hero-image-hosted-url--reference-upload',
-              '<input type="url" id="hero_url" name="hero_url" placeholder="https://… (PNG / JPG / GIF — not .webp)">');
+              '<input type="url" id="hero_url" name="hero_url" placeholder="https://… (PNG / JPG / GIF — not .webp)"' . pv_attr('hero_url') . '>');
           fld('Alt text', 'alt_text',
               'A short description of the hero image for accessibility and Outlook fallback.',
               '4-hero-image-hosted-url--reference-upload',
-              '<input type="text" id="alt_text" name="alt_text">');
+              '<input type="text" id="alt_text" name="alt_text"' . pv_attr('alt_text') . '>');
         ?>
       </fieldset>
 
@@ -677,23 +783,23 @@ function fld($label, $for, $summary, $anchor, $control) {
           fld('Show pricing?', 'show_pricing',
               'Whether this email displays pricing at all. Choose No to omit the price fields.',
               '5-pricing',
-              '<select id="show_pricing" name="show_pricing"><option value="">—</option><option value="yes">Yes</option><option value="no">No</option></select>');
+              '<select id="show_pricing" name="show_pricing"><option value="">—</option><option value="yes"' . pv_sel('show_pricing', 'yes') . '>Yes</option><option value="no"' . pv_sel('show_pricing', 'no') . '>No</option></select>');
           fld('Original price', 'original_price',
               'The pre-discount / list price, if you are showing a strike-through.',
               '5-pricing',
-              '<input type="text" id="original_price" name="original_price">');
+              '<input type="text" id="original_price" name="original_price"' . pv_attr('original_price') . '>');
           fld('Sale / final price', 'sale_price',
               'The price the customer actually pays.',
               '5-pricing',
-              '<input type="text" id="sale_price" name="sale_price">');
+              '<input type="text" id="sale_price" name="sale_price"' . pv_attr('sale_price') . '>');
           fld('Discount', 'discount',
               'How the discount reads (e.g. "$50 off" or "20% off") — must reconcile with the prices above.',
               '5-pricing',
-              '<input type="text" id="discount" name="discount">');
+              '<input type="text" id="discount" name="discount"' . pv_attr('discount') . '>');
           fld('Promo code', 'promo_code',
               'The promo code to display, if any.',
               '5-pricing',
-              '<input type="text" id="promo_code" name="promo_code">');
+              '<input type="text" id="promo_code" name="promo_code"' . pv_attr('promo_code') . '>');
         ?>
       </fieldset>
 
@@ -703,27 +809,27 @@ function fld($label, $for, $summary, $anchor, $control) {
           fld('CTA 1 label', 'cta1_label',
               'The button text for the primary call to action (e.g. "Shop now").',
               '6-call-to-action',
-              '<input type="text" id="cta1_label" name="cta1_label" placeholder="Shop now">');
+              '<input type="text" id="cta1_label" name="cta1_label" placeholder="Shop now"' . pv_attr('cta1_label') . '>');
           fld('CTA 1 destination', 'cta1_dest',
               'Where the primary button links — brand site, marketplace, or other URL.',
               '6-call-to-action',
-              '<input type="text" id="cta1_dest" name="cta1_dest" placeholder="https://…">');
+              '<input type="text" id="cta1_dest" name="cta1_dest" placeholder="https://…"' . pv_attr('cta1_dest') . '>');
           fld('CTA 2 label', 'cta2_label',
               'Optional second CTA button text. Leave blank to omit this CTA.',
               '6-call-to-action',
-              '<input type="text" id="cta2_label" name="cta2_label">');
+              '<input type="text" id="cta2_label" name="cta2_label"' . pv_attr('cta2_label') . '>');
           fld('CTA 2 destination', 'cta2_dest',
               'Where the second button links. Leave blank to omit this CTA.',
               '6-call-to-action',
-              '<input type="text" id="cta2_dest" name="cta2_dest">');
+              '<input type="text" id="cta2_dest" name="cta2_dest"' . pv_attr('cta2_dest') . '>');
           fld('CTA 3 label', 'cta3_label',
               'Optional third CTA button text. Leave blank to omit this CTA.',
               '6-call-to-action',
-              '<input type="text" id="cta3_label" name="cta3_label">');
+              '<input type="text" id="cta3_label" name="cta3_label"' . pv_attr('cta3_label') . '>');
           fld('CTA 3 destination', 'cta3_dest',
               'Where the third button links. Leave blank to omit this CTA.',
               '6-call-to-action',
-              '<input type="text" id="cta3_dest" name="cta3_dest">');
+              '<input type="text" id="cta3_dest" name="cta3_dest"' . pv_attr('cta3_dest') . '>');
         ?>
       </fieldset>
 
@@ -733,7 +839,7 @@ function fld($label, $for, $summary, $anchor, $control) {
           fld('Start from a template?', 'template',
               'Whether to base this on an existing template (newsletter / promo) or build fresh.',
               '7-structure--starting-point',
-              '<select id="template" name="template"><option value="">—</option><option value="newsletter">Newsletter</option><option value="promo">Promo</option><option value="none — build fresh">None — build fresh</option></select>');
+              '<select id="template" name="template"><option value="">—</option><option value="newsletter"' . pv_sel('template', 'newsletter') . '>Newsletter</option><option value="promo"' . pv_sel('template', 'promo') . '>Promo</option><option value="none — build fresh"' . pv_sel('template', 'none — build fresh') . '>None — build fresh</option></select>');
           fld('Sections to include', 'f_sections',
               'Optional. Leave blank for a minimal email (hero, headline, body, CTA) — the build won\'t add tech-specs/review/membership blocks on its own; tick the ones you want here. Header and footer are always included. Options are read live from the section files in email-design-system/sections/; anything custom goes in Notes (§8).',
               '7-structure--starting-point',
@@ -741,7 +847,7 @@ function fld($label, $for, $summary, $anchor, $control) {
           fld('Anything to exclude', 'exclude',
               'Any blocks or elements to deliberately leave out.',
               '7-structure--starting-point',
-              '<input type="text" id="exclude" name="exclude">');
+              '<input type="text" id="exclude" name="exclude"' . pv_attr('exclude') . '>');
         ?>
       </fieldset>
 
@@ -751,7 +857,7 @@ function fld($label, $for, $summary, $anchor, $control) {
           fld('Notes', 'notes',
               'Anything specific to this send the builder should know — constraints, must-include lines, tone notes. Leave blank if none.',
               '8-notes-for-the-builder',
-              '<textarea id="notes" name="notes"></textarea>');
+              '<textarea id="notes" name="notes">' . pv_text('notes') . '</textarea>');
         ?>
       </fieldset>
 
@@ -795,6 +901,10 @@ function fld($label, $for, $summary, $anchor, $control) {
         send: {
           sub: 'Sending the test email through Braze — this is quick. Please don’t refresh or hit back.',
           msgs: ['Handing it to Braze…', 'Sending to the test segment…', 'Almost there…']
+        },
+        edit: {
+          sub: 'Applying your edit and re-checking every rule. Please don’t refresh, hit back, or close this tab.',
+          msgs: ['Reading your change…', 'Revising the email…', 'Keeping the facts verbatim…', 'Re-running the validators…', 'Almost there — hang tight…']
         }
       };
       var submitting = false;
