@@ -325,7 +325,19 @@ Test sends target a designated test segment in a non-production Braze workspace.
     // ---- "Save" only (draft) skips generation; "Save & generate" runs the pipeline ----
     $doSave = ((($_POST['do'] ?? '') === 'save'));
     if ($doSave) {
-        if (!$saveError) $mode = 'saved';        // saved draft — finish it later
+        // AJAX save (the usual path) returns JSON and stays on the page; a full "saved"
+        // page is only used as a no-JS fallback.
+        if (strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')) === 'xmlhttprequest') {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'ok'    => !$saveError,
+                'base'  => $base,
+                'name'  => ($title === '[Campaign Name]' ? '' : $title),
+                'error' => $saveError,
+            ]);
+            exit;
+        }
+        if (!$saveError) $mode = 'saved';        // no-JS fallback
     } else {
         $preflight = $saveError ? array() : brief_problems();
         if ($preflight) {
@@ -614,6 +626,25 @@ function brief_files() {
   .ai-edit label { display: block; font-weight: 650; font-size: 0.9rem; margin: 0 0 6px; }
   .ai-edit textarea { width: 100%; min-height: 60px; font: inherit; color: var(--halo-ink); padding: 10px 12px; border: 1px solid var(--halo-gray-300); border-radius: var(--halo-radius-md); resize: vertical; margin-bottom: 10px; }
   .ai-edit textarea:focus { outline: none; border-color: var(--halo-blue); box-shadow: 0 0 0 3px rgba(47,147,243,0.18); }
+
+  /* save toast */
+  .toast {
+    position: fixed; right: 24px; bottom: 24px; z-index: 200;
+    display: flex; align-items: flex-start; gap: 12px; max-width: 360px;
+    padding: 14px 16px; background: var(--halo-white);
+    border: 1px solid #b7e0c2; border-left: 4px solid #2fa157;
+    border-radius: var(--halo-radius-lg); box-shadow: 0 16px 44px rgba(7,24,38,0.20);
+    transform: translateY(14px); opacity: 0; pointer-events: none;
+    transition: transform .22s ease, opacity .22s ease;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast--error { border-color: #f1c0bb; border-left-color: #c0392b; }
+  .toast__icon { flex: none; width: 24px; height: 24px; border-radius: 50%; background: #2fa157; color: #fff; font-size: 0.85rem; line-height: 24px; text-align: center; }
+  .toast--error .toast__icon { background: #c0392b; }
+  .toast__body { display: flex; flex-direction: column; gap: 2px; }
+  .toast__title { font-size: 0.95rem; color: var(--halo-ink); }
+  .toast__msg { font-size: 0.84rem; color: var(--halo-gray-700); }
+  @media (prefers-reduced-motion: reduce) { .toast { transition: opacity .15s ease; transform: none; } }
 </style>
 </head>
 <body>
@@ -985,7 +1016,7 @@ function brief_files() {
 
       <div class="actions" style="display:flex; gap:12px; flex-wrap:wrap;">
         <button type="submit" name="do" value="generate" class="btn">Save &amp; generate</button>
-        <button type="submit" name="do" value="save" class="btn btn--ghost">Save</button>
+        <button type="submit" name="do" value="save" id="btn-save" class="btn btn--ghost">Save</button>
       </div>
     </form>
 <?php endif; ?>
@@ -995,6 +1026,14 @@ function brief_files() {
         <div class="pg-loading__spinner"></div>
         <p class="pg-loading__msg" id="pg-loading-msg">Working&hellip;</p>
         <p class="pg-loading__sub" id="pg-loading-sub">This can take a minute or two. Please don&rsquo;t refresh, hit back, or close this tab.</p>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" aria-hidden="true">
+      <span class="toast__icon" id="toast-icon">&#10003;</span>
+      <div class="toast__body">
+        <strong class="toast__title" id="toast-title">Saved</strong>
+        <span class="toast__msg" id="toast-msg"></span>
       </div>
     </div>
   </main>
@@ -1122,6 +1161,54 @@ function brief_files() {
       items.forEach(function (li) { li.addEventListener('click', function () { select(li); }); });
       document.addEventListener('click', function (e) { if (!combo.contains(e.target)) close(); });
       filter();
+    })();
+
+    /* nice toast + Save-without-leaving-the-page (AJAX draft save) */
+    (function () {
+      var toastEl = document.getElementById('toast');
+      function toast(title, msg, isError) {
+        if (!toastEl) return;
+        document.getElementById('toast-title').textContent = title;
+        document.getElementById('toast-msg').textContent = msg || '';
+        document.getElementById('toast-icon').innerHTML = isError ? '&#9888;' : '&#10003;';
+        toastEl.classList.toggle('toast--error', !!isError);
+        toastEl.classList.add('show');
+        toastEl.setAttribute('aria-hidden', 'false');
+        clearTimeout(toastEl._t);
+        toastEl._t = setTimeout(function () {
+          toastEl.classList.remove('show');
+          toastEl.setAttribute('aria-hidden', 'true');
+        }, 3600);
+      }
+
+      var saveBtn = document.getElementById('btn-save');
+      if (!saveBtn || !saveBtn.form || !window.fetch) return;   // no-JS / no-fetch → normal submit (saved page)
+      var form = saveBtn.form;
+      saveBtn.addEventListener('click', function (e) {
+        e.preventDefault();                          // save in place — no page reload
+        if (!form.reportValidity()) return;          // still honor the required Brief name
+        var fd = new FormData(form);
+        fd.set('do', 'save');                        // FormData omits submit buttons; set it explicitly
+        var orig = saveBtn.textContent;
+        saveBtn.textContent = 'Saving…';
+        fetch(form.action || window.location.href, {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          body: fd
+        }).then(function (r) { return r.json(); }).then(function (data) {
+          saveBtn.textContent = orig;
+          if (data && data.ok) {
+            var ed = form.querySelector('input[name="editing"]');
+            if (ed && data.base) ed.value = data.base;   // further saves now UPDATE this brief (no duplicate)
+            toast('Brief saved', data.name ? '“' + data.name + '” saved as a draft.' : 'Saved as a draft.');
+          } else {
+            toast('Save failed', (data && data.error) ? data.error : 'Could not save the brief.', true);
+          }
+        }).catch(function () {
+          saveBtn.textContent = orig;
+          toast('Save failed', 'Network error while saving.', true);
+        });
+      });
     })();
   </script>
 </body>
