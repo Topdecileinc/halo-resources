@@ -704,3 +704,107 @@ function hp_edit_pipeline(array $cfg, $base, $instruction) {
         'edited' => true, 'html_file' => $base . '.html', 'json_file' => $base . '.send.json',
     ];
 }
+
+/** Structured-output schema for a drafted brief — property names match the form fields.
+    Segment + sections are constrained to the valid options passed in. */
+function hp_brief_fields_schema(array $segEnum, array $secEnum) {
+    $props = [
+        'campaign_name'   => ['type' => 'string', 'description' => 'A short name to identify the brief (NOT shown in the email).'],
+        'product_subject' => ['type' => 'string'],
+        'occasion'        => ['type' => 'string'],
+        'send_date'       => ['type' => 'string'],
+        'primary_goal'    => ['type' => 'string'],
+        'target_segment'  => ['type' => 'string', 'enum' => $segEnum],
+        'headline'        => ['type' => 'string', 'description' => 'Draft a headline in brand voice (sentence case, no em dashes).'],
+        'subhead'         => ['type' => 'string', 'description' => 'Draft a supporting subhead.'],
+        'key_message'     => ['type' => 'string', 'description' => 'Draft the core message / offer in plain terms.'],
+        'hero_url'        => ['type' => 'string', 'description' => 'Leave blank unless an image URL was actually given.'],
+        'alt_text'        => ['type' => 'string'],
+        'show_pricing'    => ['type' => 'string', 'enum' => ['', 'yes', 'no']],
+        'original_price'  => ['type' => 'string', 'description' => 'Only if a price was stated.'],
+        'sale_price'      => ['type' => 'string', 'description' => 'Only if a price was stated.'],
+        'discount'        => ['type' => 'string', 'description' => 'Only if stated, e.g. "$50 off".'],
+        'promo_code'      => ['type' => 'string', 'description' => 'Only if a code was given.'],
+        'cta1_label'      => ['type' => 'string'],
+        'cta1_dest'       => ['type' => 'string', 'description' => 'Leave blank unless a URL was given.'],
+        'cta2_label'      => ['type' => 'string'],
+        'cta2_dest'       => ['type' => 'string'],
+        'cta3_label'      => ['type' => 'string'],
+        'cta3_dest'       => ['type' => 'string'],
+        'template'        => ['type' => 'string', 'enum' => ['', 'newsletter', 'promo', 'none — build fresh']],
+        'sections'        => ['type' => 'array', 'items' => ($secEnum ? ['type' => 'string', 'enum' => $secEnum] : ['type' => 'string'])],
+        'exclude'         => ['type' => 'string'],
+        'notes'           => ['type' => 'string'],
+    ];
+    return ['type' => 'json_schema', 'schema' => [
+        'type' => 'object',
+        'properties' => $props,
+        'required' => array_keys($props),
+        'additionalProperties' => false,
+    ]];
+}
+
+/**
+ * Turn a free-text "campaign vision" into a drafted brief (field => value), to PRE-FILL the
+ * form for review. Fills as much as it reasonably can — including drafting headline/subhead/
+ * key message in the brand voice — but never invents hard facts (prices, promo codes, hero
+ * URL, CTA URLs) the user didn't give. Returns ['ok'=>bool,'fields'=>array,'error'=>?string].
+ */
+function hp_parse_brief(array $cfg, $vision, array $segments = array(), array $sections = array()) {
+    list($context, $loaded) = hp_load_context($cfg);
+
+    $segList = array_values(array_filter(array_map('strval', $segments), function ($s) { return trim($s) !== ''; }));
+    $secList = array_values(array_filter(array_map('strval', $sections), function ($s) { return trim($s) !== ''; }));
+    $segEnum = array_merge([''], $segList);
+
+    $userText =
+        "A user described an email campaign in free text. Turn it into a filled-in BRIEF: extract what they "
+        . "stated and DRAFT the rest in the Halo brand voice, following every copy/brand rule (warm and "
+        . "inviting, sentence case, no em dashes). Fill in as MANY fields as you reasonably can — especially "
+        . "draft the headline, subhead, and key_message so they are NOT empty (the user reviews and edits "
+        . "them before generating). "
+        . "Choose target_segment ONLY from " . json_encode($segEnum) . " (blank if unclear). "
+        . "Choose sections ONLY from " . json_encode($secList) . ", and only when the vision implies them. "
+        . "Do NOT invent hard facts the user did not give: leave exact prices, the promo code, the hero image "
+        . "URL, and CTA destination URLs blank unless they were stated. Give the brief a short campaign_name. "
+        . "Return ONLY the structured object.\n\n===== CAMPAIGN VISION =====\n" . $vision;
+
+    $payload = [
+        'model' => $cfg['anthropic_model'],
+        'max_tokens' => 4000,
+        'thinking' => ['type' => 'adaptive'],
+        'output_config' => ['effort' => $cfg['effort'], 'format' => hp_brief_fields_schema($segEnum, $secList)],
+        'system' => [['type' => 'text', 'text' => $context, 'cache_control' => ['type' => 'ephemeral', 'ttl' => '1h']]],
+        'messages' => [['role' => 'user', 'content' => $userText]],
+    ];
+    $headers = [
+        'content-type: application/json',
+        'x-api-key: ' . $cfg['anthropic_api_key'],
+        'anthropic-version: ' . ($cfg['anthropic_version'] ?? '2023-06-01'),
+    ];
+    $url = rtrim($cfg['anthropic_base_url'] ?? 'https://api.anthropic.com', '/') . '/v1/messages';
+
+    list($code, $resp, $raw, $err) = hp_post_json($url, $headers, $payload, (int) $cfg['request_timeout']);
+    if ($err !== '') return ['ok' => false, 'error' => "Network error calling Claude: $err"];
+    if ($code !== 200) {
+        $msg = is_array($resp) && isset($resp['error']['message']) ? $resp['error']['message'] : substr((string) $raw, 0, 400);
+        return ['ok' => false, 'error' => "Claude API returned HTTP $code: $msg"];
+    }
+    $text = '';
+    foreach ($resp['content'] ?? [] as $b) {
+        if (($b['type'] ?? '') === 'text') $text .= $b['text'];
+    }
+    $data = json_decode($text, true);
+    if (!is_array($data)) return ['ok' => false, 'error' => 'Could not read the drafted brief from Claude.'];
+
+    // normalize: strings stay strings; sections stays an array of strings
+    $fields = array();
+    foreach ($data as $k => $v) {
+        if ($k === 'sections') {
+            $fields['sections'] = is_array($v) ? array_values(array_filter(array_map('strval', $v), function ($x) { return trim($x) !== ''; })) : array();
+        } else {
+            $fields[$k] = is_scalar($v) ? (string) $v : '';
+        }
+    }
+    return ['ok' => true, 'fields' => $fields, 'error' => null, 'loaded' => $loaded];
+}

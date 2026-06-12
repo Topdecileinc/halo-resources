@@ -143,6 +143,8 @@ $prefill     = array();   // field => value, consumed by the control helpers bel
 $formMode    = 'new';     // 'new' | 'edit' | 'copy'
 $editingBase = '';        // when editing, the exact brief base to overwrite
 $openedFrom  = '';        // the source brief's display name (for the banner)
+$fromVision  = false;     // true when the form was pre-filled by parsing a free-text vision
+$parseError  = null;      // set if the vision parse failed
 if (!$isPost) {
     $req = isset($_GET['edit']) ? array('edit', $_GET['edit'])
          : (isset($_GET['copy']) ? array('copy', $_GET['copy'])
@@ -205,6 +207,24 @@ if ($isPost) {
             @unlink(__DIR__ . '/../generated/' . $base . '.html');
             @unlink(__DIR__ . '/../generated/' . $base . '.send.json');
             $deletedOk = !is_file(__DIR__ . '/../submissions/' . $base . '.md');
+        }
+    } elseif ($action === 'parse') {
+        // ---- PARSE a free-text campaign vision into a drafted brief, then show the form ----
+        $fromVision = true;
+        $vision = trim((string) ($_POST['vision'] ?? ''));
+        if (!$cfgReady) {
+            $parseError = 'drafting needs the Claude API (config.php)';
+        } elseif ($vision === '') {
+            $parseError = 'no description was entered';
+        } else {
+            require_once __DIR__ . '/lib/claude_pipeline.php';
+            try {
+                $res = hp_parse_brief($cfg, $vision, segment_list(), array_keys(section_list()));
+                if (!empty($res['ok']) && is_array($res['fields'] ?? null)) $prefill = $res['fields'];
+                else $parseError = $res['error'] ?? 'could not draft the brief';
+            } catch (Throwable $e) {
+                $parseError = $e->getMessage();
+            }
         }
     } else {
         // ---- EDIT (overwrite the opened brief) or CREATE a new timestamped brief ----
@@ -354,6 +374,11 @@ Test sends target a designated test segment in a non-production Braze workspace.
     }
     }  // end brief action
 }
+
+// Which view to render: the brief FORM (a vision parse, or an opened/edited/copied/new brief),
+// otherwise the landing page (vision prompt + saved-briefs picker).
+$showForm = ($isPost && isset($action) && $action === 'parse')
+         || (!$isPost && ($formMode === 'edit' || $formMode === 'copy' || isset($_GET['new'])));
 
 /**
  * Render one labelled field: label + summary + a docs link + the control.
@@ -636,6 +661,17 @@ function brief_files() {
   .btn--danger { background: #c0392b; color: #fff; }
   .btn--danger:hover { box-shadow: 0 6px 18px rgba(192,57,43,0.35); }
   .loaded-note { font-size: 0.88rem; color: var(--halo-gray-700); background: #f3fbf5; border: 1px solid #b7e0c2; border-radius: var(--halo-radius-md); padding: 8px 12px; margin: 0 0 18px; }
+  .loaded-note--warn { background: #fdf7ea; border-color: #f1d59a; }
+
+  /* landing: vision prompt + "or" divider */
+  .vision { margin: 6px 0 8px; }
+  .vision label { display: block; font-weight: 650; font-size: 0.95rem; margin: 0 0 6px; }
+  .vision textarea { width: 100%; font: inherit; color: var(--halo-ink); padding: 12px 14px; background: var(--halo-white); border: 1px solid var(--halo-gray-300); border-radius: var(--halo-radius-md); resize: vertical; min-height: 110px; }
+  .vision textarea:focus { outline: none; border-color: var(--halo-blue); box-shadow: 0 0 0 3px rgba(47,147,243,0.18); }
+  .vision .actions { margin-top: 12px; }
+  .lp-or { display: flex; align-items: center; gap: 14px; margin: 22px 0 14px; color: var(--halo-gray-600); font-size: 0.85rem; }
+  .lp-or::before, .lp-or::after { content: ""; flex: 1; height: 1px; background: var(--halo-gray-200); }
+  .lp-blank { margin-top: 18px; font-size: 0.9rem; }
 
   /* AI edit-with-a-prompt box on the preview */
   .ai-edit { margin-top: 16px; padding: 14px 16px; border: 1px solid var(--halo-gray-200); border-radius: var(--halo-radius-md); background: var(--halo-white); }
@@ -675,7 +711,7 @@ function brief_files() {
 
   <main>
     <a class="back" href="https://topdecileinc.github.io/halo-resources/">&larr; Back to all resources</a>
-<?php if ($isPost): ?>
+<?php if ($isPost && $action !== 'parse'): ?>
 
   <?php if ($mode === 'deleted'): ?>
     <div class="panel <?php echo !empty($deletedOk) ? 'ok' : 'warn'; ?>">
@@ -832,47 +868,19 @@ function brief_files() {
     </div>
   <?php endif; ?>
 
-<?php else: ?>
+<?php elseif ($showForm): ?>
     <h1>Email brief</h1>
-    <p class="lede">Fill this in for one campaign. On submit it saves a copy to the team's
-       <code>submissions/</code> folder. Leave anything blank that doesn't apply — the generator
-       defaults the rest. Every field links to its documentation.</p>
-
-    <?php $saved = brief_files(); if ($saved): ?>
-      <div class="loadbar">
-        <div class="combo" id="brief-combo">
-          <input type="text" id="brief-search" placeholder="Search saved briefs…" aria-label="Search saved briefs" autocomplete="off" aria-expanded="false" aria-controls="brief-list">
-          <ul class="combo-list" id="brief-list" role="listbox">
-            <?php foreach ($saved as $b):
-              $bbase = preg_replace('/\.md$/', '', $b['file']);
-              $hay = strtolower($b['title'] . ' ' . $b['file']); ?>
-              <li role="option" tabindex="0"
-                  data-base="<?php echo htmlspecialchars($bbase, ENT_QUOTES, 'UTF-8'); ?>"
-                  data-title="<?php echo htmlspecialchars($b['title'], ENT_QUOTES, 'UTF-8'); ?>"
-                  data-search="<?php echo htmlspecialchars($hay, ENT_QUOTES, 'UTF-8'); ?>">
-                <span class="t"><?php echo htmlspecialchars($b['title'], ENT_QUOTES, 'UTF-8'); ?></span>
-                <span class="d"><?php echo htmlspecialchars($b['when'], ENT_QUOTES, 'UTF-8'); ?></span>
-              </li>
-            <?php endforeach; ?>
-            <li class="combo-empty" hidden>No matching briefs.</li>
-          </ul>
-        </div>
-        <div class="brief-actions" id="brief-actions" hidden>
-          <a class="btn btn--ghost" id="act-edit" href="#">Edit</a>
-          <a class="btn btn--ghost" id="act-copy" href="#">Copy</a>
-          <form method="post" action="" id="act-delete-form" data-no-overlay style="margin:0; display:inline;"
-                onsubmit="return confirm('Delete this brief and its generated email? This cannot be undone.');">
-            <input type="hidden" name="action" value="delete">
-            <input type="hidden" name="base" id="act-delete-base" value="">
-            <button type="submit" class="btn btn--danger">Delete</button>
-          </form>
-        </div>
-      </div>
+    <?php if (!empty($fromVision) && empty($parseError)): ?>
+      <p class="loaded-note">Drafted from your description &mdash; <strong>review and edit</strong> anything below, then Save or Save &amp; generate.</p>
+    <?php elseif (!empty($parseError)): ?>
+      <p class="loaded-note loaded-note--warn">Couldn&rsquo;t draft from your description (<?php echo htmlspecialchars($parseError, ENT_QUOTES, 'UTF-8'); ?>). Fill it in below.</p>
+    <?php else: ?>
+      <p class="lede">Fill this in for one campaign. Leave anything blank that doesn&rsquo;t apply &mdash; the generator drafts the rest. Every field links to its documentation.</p>
     <?php endif; ?>
     <?php if ($formMode === 'edit'): ?>
-      <p class="loaded-note">Editing <strong><?php echo htmlspecialchars($openedFrom !== '' ? $openedFrom : '(untitled)', ENT_QUOTES, 'UTF-8'); ?></strong> — saving will <strong>update this brief</strong> (no duplicate). <a href="form.php">New brief instead</a>.</p>
+      <p class="loaded-note">Editing <strong><?php echo htmlspecialchars($openedFrom !== '' ? $openedFrom : '(untitled)', ENT_QUOTES, 'UTF-8'); ?></strong> — saving will <strong>update this brief</strong> (no duplicate). <a href="form.php?new">New brief instead</a>.</p>
     <?php elseif ($formMode === 'copy'): ?>
-      <p class="loaded-note">Copying from <strong><?php echo htmlspecialchars($openedFrom !== '' ? $openedFrom : '(untitled)', ENT_QUOTES, 'UTF-8'); ?></strong> — this saves as a <strong>new brief</strong>; the original is untouched. <a href="form.php">New blank brief</a>.</p>
+      <p class="loaded-note">Copying from <strong><?php echo htmlspecialchars($openedFrom !== '' ? $openedFrom : '(untitled)', ENT_QUOTES, 'UTF-8'); ?></strong> — this saves as a <strong>new brief</strong>; the original is untouched. <a href="form.php?new">New blank brief</a>.</p>
     <?php endif; ?>
 
     <form method="post" action="" autocomplete="off" id="brief-form">
@@ -1035,6 +1043,51 @@ function brief_files() {
         <button type="submit" name="do" value="save" id="btn-save" class="btn btn--ghost">Save</button>
       </div>
     </form>
+
+  <?php else: ?>
+    <h1>New email brief</h1>
+    <p class="lede">Describe your campaign and we&rsquo;ll draft the brief for you to review &mdash; or open a saved one.</p>
+
+    <form method="post" action="" id="vision-form" data-overlay="parse" class="vision">
+      <input type="hidden" name="action" value="parse">
+      <label for="vision">Describe your campaign</label>
+      <textarea id="vision" name="vision" rows="5" required placeholder="e.g. A Father&rsquo;s Day promo for the Halo Collar 5, $50 off through Sunday, aimed at people who don&rsquo;t own one yet. Warm and reassuring, with a tech-specs section."></textarea>
+      <div class="actions"><button type="submit" class="btn">Draft the brief &rarr;</button></div>
+    </form>
+
+    <?php $saved = brief_files(); if ($saved): ?>
+      <div class="lp-or"><span>or open a saved brief</span></div>
+      <div class="loadbar">
+        <div class="combo" id="brief-combo">
+          <input type="text" id="brief-search" placeholder="Search saved briefs…" aria-label="Search saved briefs" autocomplete="off" aria-expanded="false" aria-controls="brief-list">
+          <ul class="combo-list" id="brief-list" role="listbox">
+            <?php foreach ($saved as $b):
+              $bbase = preg_replace('/\.md$/', '', $b['file']);
+              $hay = strtolower($b['title'] . ' ' . $b['file']); ?>
+              <li role="option" tabindex="0"
+                  data-base="<?php echo htmlspecialchars($bbase, ENT_QUOTES, 'UTF-8'); ?>"
+                  data-title="<?php echo htmlspecialchars($b['title'], ENT_QUOTES, 'UTF-8'); ?>"
+                  data-search="<?php echo htmlspecialchars($hay, ENT_QUOTES, 'UTF-8'); ?>">
+                <span class="t"><?php echo htmlspecialchars($b['title'], ENT_QUOTES, 'UTF-8'); ?></span>
+                <span class="d"><?php echo htmlspecialchars($b['when'], ENT_QUOTES, 'UTF-8'); ?></span>
+              </li>
+            <?php endforeach; ?>
+            <li class="combo-empty" hidden>No matching briefs.</li>
+          </ul>
+        </div>
+        <div class="brief-actions" id="brief-actions" hidden>
+          <a class="btn btn--ghost" id="act-edit" href="#">Edit</a>
+          <a class="btn btn--ghost" id="act-copy" href="#">Copy</a>
+          <form method="post" action="" id="act-delete-form" data-no-overlay style="margin:0; display:inline;"
+                onsubmit="return confirm('Delete this brief and its generated email? This cannot be undone.');">
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="base" id="act-delete-base" value="">
+            <button type="submit" class="btn btn--danger">Delete</button>
+          </form>
+        </div>
+      </div>
+    <?php endif; ?>
+    <p class="lp-blank"><a href="form.php?new">Start a blank brief instead &rarr;</a></p>
 <?php endif; ?>
 
     <div class="pg-loading" id="pg-loading" aria-hidden="true" role="status" aria-live="polite">
@@ -1087,6 +1140,10 @@ function brief_files() {
         save: {
           sub: 'Saving your brief — this is quick.',
           msgs: ['Saving the brief…']
+        },
+        parse: {
+          sub: 'Reading your description and drafting the brief. This takes a few seconds.',
+          msgs: ['Reading your description…', 'Picking the segment and sections…', 'Drafting the copy…', 'Filling in the fields…', 'Almost there…']
         }
       };
       var submitting = false;
