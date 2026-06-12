@@ -322,19 +322,22 @@ Test sends target a designated test segment in a non-production Braze workspace.
         $saveError = 'The submissions/ folder is missing or not writable on this server.';
     }
 
-    // ---- pre-flight: refuse incomplete/invalid briefs before any Claude call ----
-    $preflight = $saveError ? array() : brief_problems();
-    if ($preflight) {
-        $gen = ['ok' => false, 'preflight' => true, 'errors' => $preflight];
-    }
-
-    // ---- generate via Claude (preview only — sending is a separate, manual step) ----
-    if (!$saveError && !$preflight && $cfgReady) {
-        require_once __DIR__ . '/lib/claude_pipeline.php';
-        try {
-            $gen = hp_run_pipeline($cfg, $briefMd, $base);
-        } catch (Throwable $e) {
-            $gen = ['ok' => false, 'error' => $e->getMessage()];
+    // ---- "Save" only (draft) skips generation; "Save & generate" runs the pipeline ----
+    $doSave = ((($_POST['do'] ?? '') === 'save'));
+    if ($doSave) {
+        if (!$saveError) $mode = 'saved';        // saved draft — finish it later
+    } else {
+        $preflight = $saveError ? array() : brief_problems();
+        if ($preflight) {
+            $gen = ['ok' => false, 'preflight' => true, 'errors' => $preflight];
+        }
+        if (!$saveError && !$preflight && $cfgReady) {
+            require_once __DIR__ . '/lib/claude_pipeline.php';
+            try {
+                $gen = hp_run_pipeline($cfg, $briefMd, $base);
+            } catch (Throwable $e) {
+                $gen = ['ok' => false, 'error' => $e->getMessage()];
+            }
         }
     }
     }  // end brief action
@@ -584,9 +587,8 @@ function brief_files() {
   }
 
   /* load-a-saved-brief search picker + loaded banner */
-  .loadbar { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin: 4px 0 14px; }
-  .loadbar label { font-weight: 650; font-size: 0.9rem; color: var(--halo-gray-700); padding-top: 10px; }
-  .combo { position: relative; min-width: 340px; max-width: 100%; flex: 1; }
+  .loadbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 4px 0 16px; }
+  .combo { position: relative; width: 340px; max-width: 100%; }
   .combo input { width: 100%; font: inherit; color: var(--halo-ink); padding: 10px 12px; background: var(--halo-white); border: 1px solid var(--halo-gray-300); border-radius: var(--halo-radius-md); }
   .combo input:focus { outline: none; border-color: var(--halo-blue); box-shadow: 0 0 0 3px rgba(47,147,243,0.18); }
   .combo-list { list-style: none; margin: 6px 0 0; padding: 4px; max-height: 260px; overflow: auto; background: var(--halo-white); border: 1px solid var(--halo-gray-200); border-radius: var(--halo-radius-md); }
@@ -601,8 +603,7 @@ function brief_files() {
   .combo-empty { padding: 8px 10px; font-size: 0.88rem; color: var(--halo-gray-600); }
 
   /* select-a-brief action bar */
-  .brief-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; width: 100%; margin-top: 4px; }
-  .brief-selected { font-weight: 650; font-size: 0.9rem; color: var(--halo-ink); margin-right: 4px; }
+  .brief-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .brief-actions .btn { padding: 8px 20px; font-size: 0.9rem; }
   .btn--danger { background: #c0392b; color: #fff; }
   .btn--danger:hover { box-shadow: 0 6px 18px rgba(192,57,43,0.35); }
@@ -634,6 +635,16 @@ function brief_files() {
       <h2><?php echo !empty($deletedOk) ? '&#10003; Brief deleted' : '&#9888; Could not delete'; ?></h2>
       <p><?php echo !empty($deletedOk) ? 'The brief and its generated email were removed.' : 'The brief could not be deleted (it may already be gone).'; ?></p>
       <div class="actions" style="margin-top:16px;"><a class="btn btn--ghost" href="form.php">Back to briefs</a></div>
+    </div>
+
+  <?php elseif ($mode === 'saved'): ?>
+    <div class="panel ok">
+      <h2>&#10003; Brief saved</h2>
+      <p>Saved <strong><?php echo htmlspecialchars(($title ?? '') === '[Campaign Name]' ? '(untitled)' : ($title ?? ''), ENT_QUOTES, 'UTF-8'); ?></strong> as a draft — no email generated. Pick it up anytime from <strong>Saved briefs</strong>.</p>
+      <div class="actions" style="margin-top:16px; display:flex; gap:12px; flex-wrap:wrap;">
+        <a class="btn" href="form.php?edit=<?php echo htmlspecialchars(urlencode(preg_replace('/\.md$/', '', $savedName ?? '')), ENT_QUOTES, 'UTF-8'); ?>">Keep editing</a>
+        <a class="btn btn--ghost" href="form.php">New brief</a>
+      </div>
     </div>
 
   <?php elseif ($mode === 'sent'): $sok = ($sent && !empty($sent['ok'])); ?>
@@ -782,9 +793,8 @@ function brief_files() {
 
     <?php $saved = brief_files(); if ($saved): ?>
       <div class="loadbar">
-        <label for="brief-search">Saved briefs</label>
         <div class="combo" id="brief-combo">
-          <input type="text" id="brief-search" placeholder="Search by brief name…" autocomplete="off" aria-expanded="false" aria-controls="brief-list">
+          <input type="text" id="brief-search" placeholder="Search saved briefs…" aria-label="Search saved briefs" autocomplete="off" aria-expanded="false" aria-controls="brief-list">
           <ul class="combo-list" id="brief-list" role="listbox">
             <?php foreach ($saved as $b):
               $bbase = preg_replace('/\.md$/', '', $b['file']);
@@ -801,7 +811,6 @@ function brief_files() {
           </ul>
         </div>
         <div class="brief-actions" id="brief-actions" hidden>
-          <span class="brief-selected" id="brief-selected"></span>
           <a class="btn btn--ghost" id="act-edit" href="#">Edit</a>
           <a class="btn btn--ghost" id="act-copy" href="#">Copy</a>
           <form method="post" action="" id="act-delete-form" data-no-overlay style="margin:0; display:inline;"
@@ -974,8 +983,9 @@ function brief_files() {
         ?>
       </fieldset>
 
-      <div class="actions">
-        <button type="submit" class="btn">Generate email</button>
+      <div class="actions" style="display:flex; gap:12px; flex-wrap:wrap;">
+        <button type="submit" name="do" value="generate" class="btn">Save &amp; generate</button>
+        <button type="submit" name="do" value="save" class="btn btn--ghost">Save</button>
       </div>
     </form>
 <?php endif; ?>
@@ -1018,6 +1028,10 @@ function brief_files() {
         edit: {
           sub: 'Applying your edit and re-checking every rule. Please don’t refresh, hit back, or close this tab.',
           msgs: ['Reading your change…', 'Revising the email…', 'Keeping the facts verbatim…', 'Re-running the validators…', 'Almost there — hang tight…']
+        },
+        save: {
+          sub: 'Saving your brief — this is quick.',
+          msgs: ['Saving the brief…']
         }
       };
       var submitting = false;
@@ -1026,9 +1040,10 @@ function brief_files() {
         form.addEventListener('submit', function (e) {
           if (submitting) { e.preventDefault(); return; }   // block any second submit
           submitting = true;
-          var btn = form.querySelector('button[type="submit"]');
+          var btn = (e.submitter && e.submitter.type === 'submit') ? e.submitter : form.querySelector('button[type="submit"]');
           if (btn) { btn.setAttribute('data-orig', btn.textContent); btn.disabled = true; btn.textContent = 'Working…'; }
-          var set = sets[form.getAttribute('data-overlay') || 'generate'] || sets.generate;
+          var which = (e.submitter && e.submitter.value) || form.getAttribute('data-overlay') || 'generate';
+          var set = sets[which] || sets.generate;
           if (subEl) subEl.textContent = set.sub;
           var i = 0;
           if (msgEl) msgEl.textContent = set.msgs[0];
@@ -1061,7 +1076,6 @@ function brief_files() {
       var items   = Array.prototype.slice.call(list.querySelectorAll('li[role="option"]'));
       var empty   = list.querySelector('.combo-empty');
       var actions = document.getElementById('brief-actions');
-      var selName = document.getElementById('brief-selected');
       var editA   = document.getElementById('act-edit');
       var copyA   = document.getElementById('act-copy');
       var delBase = document.getElementById('act-delete-base');
@@ -1083,7 +1097,6 @@ function brief_files() {
       function select(li) {
         if (!li) return;
         var base = li.getAttribute('data-base'), title = li.getAttribute('data-title');
-        if (selName) selName.textContent = title;
         if (editA)   editA.href = 'form.php?edit=' + encodeURIComponent(base);
         if (copyA)   copyA.href = 'form.php?copy=' + encodeURIComponent(base);
         if (delBase) delBase.value = base;
