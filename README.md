@@ -301,8 +301,8 @@ which mirrors it) knows what each field does and how it's used.
 
 ### 1. Campaign basics
 
+- **Brief name** — a short name to identify this brief. **Required.** It names the saved file and is what shows in the "load a saved brief" picker. **It does not appear in the email** — it has no bearing on anything the email displays.
 - **Product / subject** — what the email is about. The campaign angle lives in the brief; the brand is fixed in `rules_brand.md` and the product facts in `product-brain/`.
-- **Campaign name** — your internal label for the send. **Required** — it names the saved file.
 - **Occasion / theme** — the hook (holiday, awareness month, flash sale, evergreen).
 - **Send date** — when it goes out.
 - **Primary goal** — the one action the email is built around (drive purchase, re-engage, announce).
@@ -320,8 +320,8 @@ its definition drives the message, tone, and offer emphasis.
 
 ### 3. Content
 
-- **Headline** — the largest piece of text in the email body. Sits below the hero, usually one short line, sentence case. Provide it, or write `suggest` and the build drafts one to match the campaign and segment.
-- **Subhead** — the smaller line directly under the headline. Adds context or specifics ("for Dad and pup", "$50 off through Sunday"). Optional; write `suggest` or leave blank.
+- **Headline** — the largest piece of text in the email body. Sits below the hero, usually one short line, sentence case. Provide it, or **leave it blank to auto-generate** one to match the campaign and segment.
+- **Subhead** — the smaller line directly under the headline. Adds context or specifics ("for Dad and pup", "$50 off through Sunday"). Optional; **leave blank to auto-generate** (or omit).
 - **Key message or offer** — the single thing the email is trying to communicate. Drives the sales pitch and what gets emphasized. If there's an offer, state it here in plain terms (e.g. "$50 off the Halo Collar 5"). The build won't invent an offer that isn't stated.
 - **Body** — there is no body field. The sales-pitch copy is **AI-generated** from the subhead, key message, segment, and brand voice — but every factual claim in it is relayed from the rule files. To constrain the generated copy, leave a note in §8 (Notes for the builder).
 

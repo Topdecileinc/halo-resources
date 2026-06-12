@@ -201,8 +201,8 @@ if ($isPost) {
 
 | Field | Your input |
 |---|---|
+| Brief name | " . cell(field('campaign_name')) . " |
 | Product / subject | " . cell(field('product_subject')) . " |
-| Campaign name | " . cell(field('campaign_name')) . " |
 | Occasion / theme | " . cell(field('occasion')) . " |
 | Send date | " . cell(field('send_date')) . " |
 | Primary goal | " . cell(field('primary_goal')) . " |
@@ -344,7 +344,6 @@ function brief_to_fields($md) {
     $out = array();
     $rows = array(
         'product_subject' => 'Product / subject',
-        'campaign_name'   => 'Campaign name',
         'occasion'        => 'Occasion / theme',
         'send_date'       => 'Send date',
         'primary_goal'    => 'Primary goal',
@@ -367,6 +366,10 @@ function brief_to_fields($md) {
         if (preg_match('/^\|\s*' . preg_quote($label, '/') . '\s*\|\s*(.*?)\s*\|\s*$/m', $md, $m)) {
             $out[$key] = brief_uncell($m[1]);
         }
+    }
+    // brief name (label renamed from "Campaign name" to "Brief name"; accept either for old briefs)
+    if (preg_match('/^\|\s*(?:Brief name|Campaign name)\s*\|\s*(.*?)\s*\|\s*$/m', $md, $m)) {
+        $out['campaign_name'] = brief_uncell($m[1]);
     }
     if (preg_match('/^\|\s*Sections to include\s*\|\s*(.*?)\s*\|\s*$/m', $md, $m)) {
         $val = brief_uncell($m[1]);
@@ -394,7 +397,7 @@ function brief_files() {
         $f = basename($path);
         $txt = (string) @file_get_contents($path);
         $title = '';
-        if (preg_match('/^\|\s*Campaign name\s*\|\s*(.*?)\s*\|\s*$/m', $txt, $m)) $title = brief_uncell($m[1]);
+        if (preg_match('/^\|\s*(?:Brief name|Campaign name)\s*\|\s*(.*?)\s*\|\s*$/m', $txt, $m)) $title = brief_uncell($m[1]);
         if ($title === '' || $title === '[Campaign Name]') $title = '(untitled)';
         $when = '';
         if (preg_match('/_(\d{4})(\d{2})(\d{2})(?:_(\d{2})(\d{2})(\d{2}))?\.md$/', $f, $d)) {
@@ -638,8 +641,11 @@ function brief_files() {
       <?php if (!empty($gen['truncated'])): ?>
         <p class="hardcoded">&#9888; Output hit the token limit and may be truncated — raise <code>max_tokens</code> in config.php.</p>
       <?php endif; ?>
-      <p class="hardcoded" style="margin-top:8px;">Nothing has been sent yet. Saved to <code>generated/<?php echo htmlspecialchars($gen['html_file'] ?? '', ENT_QUOTES, 'UTF-8'); ?></code>. Tweak it with a prompt below, retry the brief, or send.</p>
+      <p class="hardcoded" style="margin-top:8px;">Nothing has been sent yet. Saved to <code>generated/<?php echo htmlspecialchars($gen['html_file'] ?? '', ENT_QUOTES, 'UTF-8'); ?></code>. Review the preview below, then retry the brief or send.</p>
 
+      <?php /* AI edit prompt box — commented out for the demo. Re-enable by changing the
+               next line to `if (true):`. The ai_edit handler + hp_edit_pipeline stay in place. */ ?>
+      <?php if (false): ?>
       <form method="post" action="" data-overlay="edit" class="ai-edit">
         <input type="hidden" name="action" value="ai_edit">
         <input type="hidden" name="base" value="<?php echo htmlspecialchars($gen['base'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
@@ -647,6 +653,7 @@ function brief_files() {
         <textarea id="instruction" name="instruction" required placeholder="e.g. Make the CTA button blue and shorten the intro to one sentence."></textarea>
         <button type="submit" class="btn btn--ghost">Apply edit</button>
       </form>
+      <?php endif; ?>
 
       <div class="actions" style="margin-top:16px; display:flex; gap:12px; flex-wrap:wrap;">
         <form method="post" action="" data-overlay="send" style="margin:0;">
@@ -755,8 +762,8 @@ function brief_files() {
       <fieldset>
         <legend><span class="num">1</span>Campaign basics</legend>
         <?php
-          fld('Campaign name <span class="req">*</span>', 'campaign_name',
-              'A short name for this send — used to name the saved file (e.g. "Mothers Day 2026").',
+          fld('Brief name <span class="req">*</span>', 'campaign_name',
+              'A short name to identify this brief — it names the saved file and shows in the picker. It does NOT appear in the email.',
               '1-campaign-basics',
               '<input type="text" id="campaign_name" name="campaign_name" required' . pv_attr('campaign_name') . '>');
           fld('Product / subject', 'product_subject',
@@ -792,11 +799,11 @@ function brief_files() {
         <legend><span class="num">3</span>Content</legend>
         <?php
           fld('Headline', 'headline',
-              'The main headline. Provide your own, or write "suggest" to have one generated.',
+              'The main headline. Leave blank to auto-generate one to match the campaign and segment.',
               '3-content',
               '<input type="text" id="headline" name="headline"' . pv_attr('headline') . '>');
           fld('Subhead', 'subhead',
-              'The supporting line under the headline. Provide one, or write "suggest".',
+              'The supporting line under the headline. Leave blank to auto-generate (or omit).',
               '3-content',
               '<input type="text" id="subhead" name="subhead"' . pv_attr('subhead') . '>');
           fld('Key message or offer', 'key_message',

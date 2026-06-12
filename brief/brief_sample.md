@@ -15,8 +15,8 @@
 
 | Field | Your input |
 |---|---|
+| Brief name | (a short name to identify this brief — does NOT appear in the email) |
 | Product / subject | (what the email is about) |
-| Campaign name | |
 | Occasion / theme | (e.g. holiday, awareness month, flash sale, evergreen) |
 | Send date | |
 | Primary goal | (e.g. drive purchase, re-engage, announce feature) |
@@ -41,8 +41,8 @@
 
 | Field | Your input |
 |---|---|
-| Headline | (provide, or write "suggest") |
-| Subhead | (provide, or write "suggest") |
+| Headline | (provide, or leave blank to auto-generate) |
+| Subhead | (provide, or leave blank to auto-generate) |
 | Key message or offer | |
 
 > Body copy is **AI-generated** from the subhead, key message, segment, and brand voice —

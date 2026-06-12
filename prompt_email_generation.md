@@ -119,7 +119,7 @@ as written** — never invented, never lifted from the example emails:
 
 The **brief** sets what is specific to *this send*: the target segment, the campaign
 occasion, the offer/discount and promo code, the hero image URL, the CTAs, and any headline/
-subhead direction (or "suggest").
+subhead direction (left blank, those are auto-generated).
 
 The only copy you generate is the **sales pitch** — the persuasive framing and wording that
 ties the campaign together. Every factual claim inside it (a spec, a price, a review quote, a
