@@ -513,12 +513,28 @@ function brief_files() {
   h1 { font-size: 2rem; letter-spacing: -0.02em; margin: 0 0 8px; }
 
   form { margin-top: 8px; }
-  fieldset {
+  /* collapsible sections (details/summary) */
+  .fs {
     border: 1px solid var(--halo-gray-200); border-radius: var(--halo-radius-lg);
-    padding: 20px 22px 8px; margin: 0 0 22px; background: var(--halo-gray-50);
+    margin: 0 0 14px; background: var(--halo-gray-50); overflow: hidden;
   }
-  legend { font-weight: 800; font-size: 1.05rem; padding: 0 8px; color: var(--halo-ink); }
-  legend .num { display: inline-block; min-width: 1.4em; margin-right: 6px; color: var(--halo-blue); font-variant-numeric: tabular-nums; }
+  .fs > summary {
+    list-style: none; cursor: pointer; user-select: none;
+    display: flex; align-items: center; gap: 8px;
+    padding: 15px 22px; font-weight: 800; font-size: 1.05rem; color: var(--halo-ink);
+  }
+  .fs > summary::-webkit-details-marker { display: none; }
+  .fs > summary:hover { background: var(--halo-gray-200); }
+  .fs > summary:focus-visible { outline: 2px solid var(--halo-blue); outline-offset: -2px; }
+  .fs > summary .num { display: inline-block; min-width: 1.4em; color: var(--halo-blue); font-variant-numeric: tabular-nums; }
+  .fs > summary::after {
+    content: ""; margin-left: auto; width: 8px; height: 8px;
+    border-right: 2px solid var(--halo-gray-600); border-bottom: 2px solid var(--halo-gray-600);
+    transform: rotate(-45deg); transition: transform .18s;        /* points up when open */
+  }
+  .fs:not([open]) > summary::after { transform: rotate(45deg); }  /* points down when collapsed */
+  .fs > *:not(summary) { padding-left: 22px; padding-right: 22px; }
+  .fs > *:not(summary):last-child { padding-bottom: 14px; }
   .field { margin: 0 0 16px; }
   .field > label { display: block; font-weight: 650; font-size: 0.95rem; margin: 0 0 4px; }
   .field .hint { display: block; font-size: 0.82rem; color: var(--halo-gray-600); margin: 0 0 7px; font-weight: 400; }
@@ -859,11 +875,11 @@ function brief_files() {
       <p class="loaded-note">Copying from <strong><?php echo htmlspecialchars($openedFrom !== '' ? $openedFrom : '(untitled)', ENT_QUOTES, 'UTF-8'); ?></strong> — this saves as a <strong>new brief</strong>; the original is untouched. <a href="form.php">New blank brief</a>.</p>
     <?php endif; ?>
 
-    <form method="post" action="" autocomplete="off">
+    <form method="post" action="" autocomplete="off" id="brief-form">
       <input type="hidden" name="editing" value="<?php echo htmlspecialchars($editingBase, ENT_QUOTES, 'UTF-8'); ?>">
 
-      <fieldset>
-        <legend><span class="num">1</span>Campaign basics</legend>
+      <details class="fs" open>
+        <summary><span class="num">1</span>Campaign basics</summary>
         <?php
           fld('Brief name <span class="req">*</span>', 'campaign_name',
               'A short name to identify this brief — it names the saved file and shows in the picker. It does NOT appear in the email.',
@@ -886,20 +902,20 @@ function brief_files() {
               '1-campaign-basics',
               '<input type="text" id="primary_goal" name="primary_goal"' . pv_attr('primary_goal') . '>');
         ?>
-      </fieldset>
+      </details>
 
-      <fieldset>
-        <legend><span class="num">2</span>Audience</legend>
+      <details class="fs" open>
+        <summary><span class="num">2</span>Audience</summary>
         <?php
           fld('Target segment', 'target_segment',
               'Which defined audience segment this email targets. The segment shapes the angle, tone, and offer. Options are read live from rules_segment_definition.md.',
               '2-audience--segments',
               segment_select());
         ?>
-      </fieldset>
+      </details>
 
-      <fieldset>
-        <legend><span class="num">3</span>Content</legend>
+      <details class="fs" open>
+        <summary><span class="num">3</span>Content</summary>
         <?php
           fld('Headline', 'headline',
               'The main headline. Leave blank to auto-generate one to match the campaign and segment.',
@@ -914,10 +930,10 @@ function brief_files() {
               '3-content',
               '<textarea id="key_message" name="key_message">' . pv_text('key_message') . '</textarea>');
         ?>
-      </fieldset>
+      </details>
 
-      <fieldset>
-        <legend><span class="num">4</span>Hero image</legend>
+      <details class="fs" open>
+        <summary><span class="num">4</span>Hero image</summary>
         <?php
           fld('Hosted hero URL', 'hero_url',
               'The live, hosted URL of the hero image the email links to (not an upload).',
@@ -928,10 +944,10 @@ function brief_files() {
               '4-hero-image-hosted-url--reference-upload',
               '<input type="text" id="alt_text" name="alt_text"' . pv_attr('alt_text') . '>');
         ?>
-      </fieldset>
+      </details>
 
-      <fieldset>
-        <legend><span class="num">5</span>Pricing</legend>
+      <details class="fs" open>
+        <summary><span class="num">5</span>Pricing</summary>
         <?php
           fld('Show pricing?', 'show_pricing',
               'Whether this email displays pricing at all. Choose No to omit the price fields.',
@@ -954,10 +970,10 @@ function brief_files() {
               '5-pricing',
               '<input type="text" id="promo_code" name="promo_code"' . pv_attr('promo_code') . '>');
         ?>
-      </fieldset>
+      </details>
 
-      <fieldset>
-        <legend><span class="num">6</span>Call to action</legend>
+      <details class="fs" open>
+        <summary><span class="num">6</span>Call to action</summary>
         <?php
           fld('CTA 1 label', 'cta1_label',
               'The button text for the primary call to action (e.g. "Shop now").',
@@ -984,10 +1000,10 @@ function brief_files() {
               '6-call-to-action',
               '<input type="text" id="cta3_dest" name="cta3_dest"' . pv_attr('cta3_dest') . '>');
         ?>
-      </fieldset>
+      </details>
 
-      <fieldset>
-        <legend><span class="num">7</span>Structure &amp; starting point</legend>
+      <details class="fs" open>
+        <summary><span class="num">7</span>Structure &amp; starting point</summary>
         <?php
           fld('Start from a template?', 'template',
               'Whether to base this on an existing template (newsletter / promo) or build fresh.',
@@ -1002,20 +1018,20 @@ function brief_files() {
               '7-structure--starting-point',
               '<input type="text" id="exclude" name="exclude"' . pv_attr('exclude') . '>');
         ?>
-      </fieldset>
+      </details>
 
-      <fieldset>
-        <legend><span class="num">8</span>Notes for the builder</legend>
+      <details class="fs" open>
+        <summary><span class="num">8</span>Notes for the builder</summary>
         <?php
           fld('Notes', 'notes',
               'Anything specific to this send the builder should know — constraints, must-include lines, tone notes. Leave blank if none.',
               '8-notes-for-the-builder',
               '<textarea id="notes" name="notes">' . pv_text('notes') . '</textarea>');
         ?>
-      </fieldset>
+      </details>
 
       <div class="actions" style="display:flex; gap:12px; flex-wrap:wrap;">
-        <button type="submit" name="do" value="generate" class="btn">Save &amp; generate</button>
+        <button type="submit" name="do" value="generate" id="btn-generate" class="btn">Save &amp; generate</button>
         <button type="submit" name="do" value="save" id="btn-save" class="btn btn--ghost">Save</button>
       </div>
     </form>
@@ -1181,11 +1197,23 @@ function brief_files() {
         }, 3600);
       }
 
+      var form = document.getElementById('brief-form');
+      if (!form) return;
+
+      // a required field hidden inside a collapsed section can't show its validation
+      // bubble — open the offending section first.
+      function openInvalidSection() {
+        var bad = form.querySelector(':invalid');
+        if (bad) { var d = bad.closest('details'); if (d) d.open = true; }
+      }
+      var genBtn = document.getElementById('btn-generate');
+      if (genBtn) genBtn.addEventListener('click', openInvalidSection);
+
       var saveBtn = document.getElementById('btn-save');
-      if (!saveBtn || !saveBtn.form || !window.fetch) return;   // no-JS / no-fetch → normal submit (saved page)
-      var form = saveBtn.form;
+      if (!saveBtn || !window.fetch) return;          // no fetch → Save does a normal submit (saved page)
       saveBtn.addEventListener('click', function (e) {
         e.preventDefault();                          // save in place — no page reload
+        openInvalidSection();
         if (!form.reportValidity()) return;          // still honor the required Brief name
         var fd = new FormData(form);
         fd.set('do', 'save');                        // FormData omits submit buttons; set it explicitly
