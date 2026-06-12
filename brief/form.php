@@ -134,15 +134,32 @@ $saveError = null;
 $savedName = null;
 $briefMd   = '';
 
-// ---- pre-fill support: load a saved brief back into the form (via ?load=, incl. the
-//      preview's "Retry" link) so the team can adjust the values and resubmit. ----
-$prefill    = array();   // field => value, consumed by the control helpers below
-$loadedName = '';
-if (!$isPost && isset($_GET['load'])) {
-    $ln = basename((string) $_GET['load']);
-    if (preg_match('/^brief_[a-z0-9_]+_\d{8}(?:_\d{6})?\.md$/', $ln) && is_file(__DIR__ . '/../submissions/' . $ln)) {
-        $prefill = brief_to_fields((string) @file_get_contents(__DIR__ . '/../submissions/' . $ln));
-        $loadedName = $ln;
+// ---- how the form was opened (pre-fill + mode) ----
+//   ?edit=<base> → editing an existing brief: Save/Generate OVERWRITES it (no duplicate).
+//   ?copy=<base> → create a NEW brief pre-filled from an existing one (name suffixed "(copy)").
+//   (none)       → a fresh, blank brief.
+//   ?load=<base> is kept as an alias for ?edit= (older links + the preview's Retry button).
+$prefill     = array();   // field => value, consumed by the control helpers below
+$formMode    = 'new';     // 'new' | 'edit' | 'copy'
+$editingBase = '';        // when editing, the exact brief base to overwrite
+$openedFrom  = '';        // the source brief's display name (for the banner)
+if (!$isPost) {
+    $req = isset($_GET['edit']) ? array('edit', $_GET['edit'])
+         : (isset($_GET['copy']) ? array('copy', $_GET['copy'])
+         : (isset($_GET['load']) ? array('edit', $_GET['load']) : null));
+    if ($req) {
+        $bse = preg_replace('/\.md$/', '', basename((string) $req[1]));
+        if (preg_match('/^brief_[a-z0-9_]+_\d{8}(?:_\d{6})?$/', $bse) && is_file(__DIR__ . '/../submissions/' . $bse . '.md')) {
+            $prefill = brief_to_fields((string) @file_get_contents(__DIR__ . '/../submissions/' . $bse . '.md'));
+            $openedFrom = isset($prefill['campaign_name']) ? $prefill['campaign_name'] : '';
+            if ($req[0] === 'copy') {
+                $formMode = 'copy';
+                if ($openedFrom !== '') $prefill['campaign_name'] = $openedFrom . ' (copy)';   // a new brief
+            } else {
+                $formMode = 'edit';
+                $editingBase = $bse;                                                           // overwrite this one
+            }
+        }
     }
 }
 
@@ -178,15 +195,30 @@ if ($isPost) {
         } else {
             $gen = ['ok' => false, 'error' => 'Generation is not configured (config.php).'];
         }
+    } elseif ($action === 'delete') {
+        // ---- DELETE a saved brief and its generated email ----
+        $mode = 'deleted';
+        $deletedOk = false;
+        $base = preg_replace('/[^a-z0-9_]/', '', basename((string) ($_POST['base'] ?? '')));
+        if (preg_match('/^brief_[a-z0-9_]+_\d{8}(?:_\d{6})?$/', $base)) {
+            @unlink(__DIR__ . '/../submissions/' . $base . '.md');
+            @unlink(__DIR__ . '/../generated/' . $base . '.html');
+            @unlink(__DIR__ . '/../generated/' . $base . '.send.json');
+            $deletedOk = !is_file(__DIR__ . '/../submissions/' . $base . '.md');
+        }
     } else {
-        // ---- filename: brief_<slug>_<YYYYMMDD_HHMMSS>.md (time avoids same-day collisions) ----
+        // ---- EDIT (overwrite the opened brief) or CREATE a new timestamped brief ----
         $campaign = field('campaign_name');
     $slug = strtolower($campaign !== '' ? $campaign : 'untitled');
     $slug = preg_replace('/[^a-z0-9]+/', '_', $slug);
     $slug = trim($slug, '_');
     if ($slug === '') $slug = 'untitled';
-    $stamp = date('Ymd_His');
-    $base = 'brief_' . $slug . '_' . $stamp;     // shared by the saved brief AND the generated email
+    $editing = preg_replace('/[^a-z0-9_]/', '', (string) ($_POST['editing'] ?? ''));
+    if ($editing !== '' && preg_match('/^brief_[a-z0-9_]+_\d{8}(?:_\d{6})?$/', $editing)) {
+        $base = $editing;                                    // EDIT: overwrite this brief + its email in place
+    } else {
+        $base = 'brief_' . $slug . '_' . date('Ymd_His');    // CREATE (new / copy): always a new file
+    }
     $savedName = $base . '.md';
 
     $title = ($campaign !== '') ? $campaign : '[Campaign Name]';
@@ -561,11 +593,19 @@ function brief_files() {
   /* JS upgrades the list to a focus-to-open dropdown; without JS it stays visible + scrollable */
   .combo.js-combo .combo-list { display: none; position: absolute; left: 0; right: 0; z-index: 40; box-shadow: 0 12px 30px rgba(0,0,0,0.12); }
   .combo.js-combo.open .combo-list { display: block; }
-  .combo-list li a { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 8px 10px; border-radius: 6px; color: var(--halo-ink); text-decoration: none; }
-  .combo-list li a:hover, .combo-list li a.active { background: var(--halo-gray-50); text-decoration: none; }
-  .combo-list li a .t { font-weight: 600; font-size: 0.92rem; }
-  .combo-list li a .d { font-size: 0.78rem; color: var(--halo-gray-600); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .combo-list li[role="option"] { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 8px 10px; border-radius: 6px; cursor: pointer; }
+  .combo-list li[role="option"]:hover, .combo-list li.active { background: var(--halo-gray-50); }
+  .combo-list li.selected { background: rgba(47,147,243,0.12); }
+  .combo-list li[role="option"] .t { font-weight: 600; font-size: 0.92rem; }
+  .combo-list li[role="option"] .d { font-size: 0.78rem; color: var(--halo-gray-600); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .combo-empty { padding: 8px 10px; font-size: 0.88rem; color: var(--halo-gray-600); }
+
+  /* select-a-brief action bar */
+  .brief-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; width: 100%; margin-top: 4px; }
+  .brief-selected { font-weight: 650; font-size: 0.9rem; color: var(--halo-ink); margin-right: 4px; }
+  .brief-actions .btn { padding: 8px 20px; font-size: 0.9rem; }
+  .btn--danger { background: #c0392b; color: #fff; }
+  .btn--danger:hover { box-shadow: 0 6px 18px rgba(192,57,43,0.35); }
   .loaded-note { font-size: 0.88rem; color: var(--halo-gray-700); background: #f3fbf5; border: 1px solid #b7e0c2; border-radius: var(--halo-radius-md); padding: 8px 12px; margin: 0 0 18px; }
 
   /* AI edit-with-a-prompt box on the preview */
@@ -589,7 +629,14 @@ function brief_files() {
     <a class="back" href="https://topdecileinc.github.io/halo-resources/">&larr; Back to all resources</a>
 <?php if ($isPost): ?>
 
-  <?php if ($mode === 'sent'): $sok = ($sent && !empty($sent['ok'])); ?>
+  <?php if ($mode === 'deleted'): ?>
+    <div class="panel <?php echo !empty($deletedOk) ? 'ok' : 'warn'; ?>">
+      <h2><?php echo !empty($deletedOk) ? '&#10003; Brief deleted' : '&#9888; Could not delete'; ?></h2>
+      <p><?php echo !empty($deletedOk) ? 'The brief and its generated email were removed.' : 'The brief could not be deleted (it may already be gone).'; ?></p>
+      <div class="actions" style="margin-top:16px;"><a class="btn btn--ghost" href="form.php">Back to briefs</a></div>
+    </div>
+
+  <?php elseif ($mode === 'sent'): $sok = ($sent && !empty($sent['ok'])); ?>
     <!-- SENT confirmation -->
     <div class="panel <?php echo $sok ? 'ok' : 'warn'; ?>">
       <h2><?php echo $sok ? '&#10003; Sent' : '&#9888; Send failed — not sent'; ?></h2>
@@ -735,29 +782,45 @@ function brief_files() {
 
     <?php $saved = brief_files(); if ($saved): ?>
       <div class="loadbar">
-        <label for="brief-search">Load a saved brief</label>
+        <label for="brief-search">Saved briefs</label>
         <div class="combo" id="brief-combo">
-          <input type="text" id="brief-search" placeholder="Search by campaign title…" autocomplete="off" aria-expanded="false" aria-controls="brief-list">
+          <input type="text" id="brief-search" placeholder="Search by brief name…" autocomplete="off" aria-expanded="false" aria-controls="brief-list">
           <ul class="combo-list" id="brief-list" role="listbox">
-            <?php foreach ($saved as $b): $hay = strtolower($b['title'] . ' ' . $b['file']); ?>
-              <li role="option" data-search="<?php echo htmlspecialchars($hay, ENT_QUOTES, 'UTF-8'); ?>">
-                <a href="form.php?load=<?php echo htmlspecialchars(urlencode($b['file']), ENT_QUOTES, 'UTF-8'); ?>">
-                  <span class="t"><?php echo htmlspecialchars($b['title'], ENT_QUOTES, 'UTF-8'); ?></span>
-                  <span class="d"><?php echo htmlspecialchars($b['when'], ENT_QUOTES, 'UTF-8'); ?></span>
-                </a>
+            <?php foreach ($saved as $b):
+              $bbase = preg_replace('/\.md$/', '', $b['file']);
+              $hay = strtolower($b['title'] . ' ' . $b['file']); ?>
+              <li role="option" tabindex="0"
+                  data-base="<?php echo htmlspecialchars($bbase, ENT_QUOTES, 'UTF-8'); ?>"
+                  data-title="<?php echo htmlspecialchars($b['title'], ENT_QUOTES, 'UTF-8'); ?>"
+                  data-search="<?php echo htmlspecialchars($hay, ENT_QUOTES, 'UTF-8'); ?>">
+                <span class="t"><?php echo htmlspecialchars($b['title'], ENT_QUOTES, 'UTF-8'); ?></span>
+                <span class="d"><?php echo htmlspecialchars($b['when'], ENT_QUOTES, 'UTF-8'); ?></span>
               </li>
             <?php endforeach; ?>
             <li class="combo-empty" hidden>No matching briefs.</li>
           </ul>
         </div>
+        <div class="brief-actions" id="brief-actions" hidden>
+          <span class="brief-selected" id="brief-selected"></span>
+          <a class="btn btn--ghost" id="act-edit" href="#">Edit</a>
+          <a class="btn btn--ghost" id="act-copy" href="#">Copy</a>
+          <form method="post" action="" id="act-delete-form" data-no-overlay style="margin:0; display:inline;"
+                onsubmit="return confirm('Delete this brief and its generated email? This cannot be undone.');">
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="base" id="act-delete-base" value="">
+            <button type="submit" class="btn btn--danger">Delete</button>
+          </form>
+        </div>
       </div>
     <?php endif; ?>
-    <?php if ($loadedName !== ''):
-        $lt = (isset($prefill['campaign_name']) && $prefill['campaign_name'] !== '' && $prefill['campaign_name'] !== '[Campaign Name]') ? $prefill['campaign_name'] : '(untitled)'; ?>
-      <p class="loaded-note">Loaded <strong><?php echo htmlspecialchars($lt, ENT_QUOTES, 'UTF-8'); ?></strong> — adjust anything and submit to generate a new version. <a href="form.php">Start fresh</a>.</p>
+    <?php if ($formMode === 'edit'): ?>
+      <p class="loaded-note">Editing <strong><?php echo htmlspecialchars($openedFrom !== '' ? $openedFrom : '(untitled)', ENT_QUOTES, 'UTF-8'); ?></strong> — saving will <strong>update this brief</strong> (no duplicate). <a href="form.php">New brief instead</a>.</p>
+    <?php elseif ($formMode === 'copy'): ?>
+      <p class="loaded-note">Copying from <strong><?php echo htmlspecialchars($openedFrom !== '' ? $openedFrom : '(untitled)', ENT_QUOTES, 'UTF-8'); ?></strong> — this saves as a <strong>new brief</strong>; the original is untouched. <a href="form.php">New blank brief</a>.</p>
     <?php endif; ?>
 
     <form method="post" action="" autocomplete="off">
+      <input type="hidden" name="editing" value="<?php echo htmlspecialchars($editingBase, ENT_QUOTES, 'UTF-8'); ?>">
 
       <fieldset>
         <legend><span class="num">1</span>Campaign basics</legend>
@@ -928,7 +991,7 @@ function brief_files() {
   <script>
     (function () {
       var overlay = document.getElementById('pg-loading');
-      var forms = document.querySelectorAll('form[method="post"]');
+      var forms = document.querySelectorAll('form[method="post"]:not([data-no-overlay])');
       if (!overlay || !forms.length) return;
       var msgEl = document.getElementById('pg-loading-msg');
       var subEl = document.getElementById('pg-loading-sub');
@@ -989,22 +1052,25 @@ function brief_files() {
       });
     })();
 
-    /* searchable "load a saved brief" picker: filter by campaign title, keyboard-navigable */
+    /* saved-briefs picker: search + SELECT a brief, then act on it (Edit / Copy / Delete) */
     (function () {
       var combo = document.getElementById('brief-combo');
       if (!combo) return;
-      var input = document.getElementById('brief-search');
-      var list  = document.getElementById('brief-list');
-      var items = Array.prototype.slice.call(list.querySelectorAll('li[role="option"]'));
-      var empty = list.querySelector('.combo-empty');
+      var input   = document.getElementById('brief-search');
+      var list    = document.getElementById('brief-list');
+      var items   = Array.prototype.slice.call(list.querySelectorAll('li[role="option"]'));
+      var empty   = list.querySelector('.combo-empty');
+      var actions = document.getElementById('brief-actions');
+      var selName = document.getElementById('brief-selected');
+      var editA   = document.getElementById('act-edit');
+      var copyA   = document.getElementById('act-copy');
+      var delBase = document.getElementById('act-delete-base');
       combo.classList.add('js-combo');                 // turn the visible list into a dropdown
 
       function open()  { combo.classList.add('open'); input.setAttribute('aria-expanded', 'true'); }
-      function clear() { var a = list.querySelector('a.active'); if (a) a.classList.remove('active'); }
-      function close() { combo.classList.remove('open'); input.setAttribute('aria-expanded', 'false'); clear(); }
-      function visibleLinks() {
-        return items.filter(function (li) { return !li.hidden; }).map(function (li) { return li.querySelector('a'); });
-      }
+      function clearActive() { items.forEach(function (li) { li.classList.remove('active'); }); }
+      function close() { combo.classList.remove('open'); input.setAttribute('aria-expanded', 'false'); clearActive(); }
+      function visible() { return items.filter(function (li) { return !li.hidden; }); }
       function filter() {
         var q = input.value.trim().toLowerCase(), shown = 0;
         items.forEach(function (li) {
@@ -1012,18 +1078,32 @@ function brief_files() {
           li.hidden = !ok; if (ok) shown++;
         });
         if (empty) empty.hidden = shown !== 0;
-        clear();
+        clearActive();
+      }
+      function select(li) {
+        if (!li) return;
+        var base = li.getAttribute('data-base'), title = li.getAttribute('data-title');
+        if (selName) selName.textContent = title;
+        if (editA)   editA.href = 'form.php?edit=' + encodeURIComponent(base);
+        if (copyA)   copyA.href = 'form.php?copy=' + encodeURIComponent(base);
+        if (delBase) delBase.value = base;
+        if (actions) actions.hidden = false;
+        input.value = title;
+        items.forEach(function (x) { x.classList.remove('selected'); });
+        li.classList.add('selected');
+        close();
       }
 
       input.addEventListener('focus', open);
       input.addEventListener('input', function () { filter(); open(); });
       input.addEventListener('keydown', function (e) {
-        var links = visibleLinks(), cur = list.querySelector('a.active'), idx = cur ? links.indexOf(cur) : -1;
-        if (e.key === 'ArrowDown') { e.preventDefault(); open(); if (links.length) { clear(); idx = (idx + 1) % links.length; links[idx].classList.add('active'); links[idx].scrollIntoView({ block: 'nearest' }); } }
-        else if (e.key === 'ArrowUp') { e.preventDefault(); if (links.length) { clear(); idx = (idx <= 0 ? links.length - 1 : idx - 1); links[idx].classList.add('active'); links[idx].scrollIntoView({ block: 'nearest' }); } }
-        else if (e.key === 'Enter') { var go = cur || links[0]; if (go) { e.preventDefault(); window.location.href = go.href; } }
+        var vis = visible(), cur = list.querySelector('li.active'), idx = cur ? vis.indexOf(cur) : -1;
+        if (e.key === 'ArrowDown') { e.preventDefault(); open(); if (vis.length) { clearActive(); idx = (idx + 1) % vis.length; vis[idx].classList.add('active'); vis[idx].scrollIntoView({ block: 'nearest' }); } }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); if (vis.length) { clearActive(); idx = (idx <= 0 ? vis.length - 1 : idx - 1); vis[idx].classList.add('active'); vis[idx].scrollIntoView({ block: 'nearest' }); } }
+        else if (e.key === 'Enter') { e.preventDefault(); select(cur || vis[0]); }
         else if (e.key === 'Escape') { close(); }
       });
+      items.forEach(function (li) { li.addEventListener('click', function () { select(li); }); });
       document.addEventListener('click', function (e) { if (!combo.contains(e.target)) close(); });
       filter();
     })();
