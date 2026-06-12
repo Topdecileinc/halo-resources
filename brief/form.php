@@ -600,8 +600,15 @@ function brief_files() {
   .btn:disabled { opacity: 0.65; cursor: progress; box-shadow: none; transform: none; }
 
   .email-preview { border: 1px solid var(--halo-gray-200); border-radius: var(--halo-radius-lg); overflow: hidden; margin-top: 18px; }
-  .email-preview__bar { padding: 9px 14px; border-bottom: 1px solid var(--halo-gray-200); background: var(--halo-gray-50); font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; color: var(--halo-gray-600); }
-  .email-preview__frame { width: 100%; height: 640px; border: 0; display: block; background: #fff; }
+  .email-preview__bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px; border-bottom: 1px solid var(--halo-gray-200); background: var(--halo-gray-50); }
+  .email-preview__label { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; color: var(--halo-gray-600); text-transform: uppercase; }
+  .email-preview__toggle { display: inline-flex; border: 1px solid var(--halo-gray-300); border-radius: var(--halo-radius-pill); overflow: hidden; background: var(--halo-white); }
+  .vw-btn { font: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer; border: 0; background: transparent; color: var(--halo-gray-600); padding: 6px 16px; }
+  .vw-btn + .vw-btn { border-left: 1px solid var(--halo-gray-300); }
+  .vw-btn.is-active { background: var(--halo-blue); color: #fff; }
+  .email-preview__stage { background: #e9edee; padding: 16px; overflow: auto; }
+  /* the email is a 600px design — show it at its true width (capped at 600), centered on a gray stage */
+  .email-preview__frame { width: 600px; max-width: 100%; height: 640px; border: 0; display: block; margin: 0 auto; background: #fff; box-shadow: 0 6px 20px rgba(7,24,38,0.12); transition: width .2s ease; }
 
   /* full-screen processing overlay — blocks the form while generating + sending */
   .pg-loading {
@@ -743,8 +750,16 @@ function brief_files() {
     </div>
     <?php if ($sentEmail && $sentEmail['html'] !== ''): ?>
       <div class="email-preview">
-        <div class="email-preview__bar">Email preview</div>
-        <iframe class="email-preview__frame" srcdoc="<?php echo htmlspecialchars($sentEmail['html'], ENT_QUOTES, 'UTF-8'); ?>" title="Sent email preview"></iframe>
+        <div class="email-preview__bar">
+          <span class="email-preview__label">Email preview</span>
+          <div class="email-preview__toggle" role="group" aria-label="Preview width">
+            <button type="button" class="vw-btn is-active" data-w="600">Desktop</button>
+            <button type="button" class="vw-btn" data-w="375">Mobile</button>
+          </div>
+        </div>
+        <div class="email-preview__stage">
+          <iframe class="email-preview__frame" srcdoc="<?php echo htmlspecialchars($sentEmail['html'], ENT_QUOTES, 'UTF-8'); ?>" title="Sent email preview"></iframe>
+        </div>
       </div>
     <?php endif; ?>
 
@@ -807,8 +822,16 @@ function brief_files() {
       </div>
     </div>
     <div class="email-preview">
-      <div class="email-preview__bar">Email preview</div>
-      <iframe class="email-preview__frame" srcdoc="<?php echo htmlspecialchars($gen['html'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" title="Email preview"></iframe>
+      <div class="email-preview__bar">
+        <span class="email-preview__label">Email preview</span>
+        <div class="email-preview__toggle" role="group" aria-label="Preview width">
+          <button type="button" class="vw-btn is-active" data-w="600">Desktop</button>
+          <button type="button" class="vw-btn" data-w="375">Mobile</button>
+        </div>
+      </div>
+      <div class="email-preview__stage">
+        <iframe class="email-preview__frame" srcdoc="<?php echo htmlspecialchars($gen['html'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" title="Email preview"></iframe>
+      </div>
     </div>
     <?php if (!empty($gen['loaded'])): ?>
       <details style="margin-top:12px;">
@@ -1292,6 +1315,22 @@ function brief_files() {
         }).catch(function () {
           saveBtn.textContent = orig;
           toast('Save failed', 'Network error while saving.', true);
+        });
+      });
+    })();
+
+    /* email preview: Desktop (600px) / Mobile (375px) width toggle */
+    (function () {
+      Array.prototype.forEach.call(document.querySelectorAll('.email-preview'), function (wrap) {
+        var frame = wrap.querySelector('.email-preview__frame');
+        var btns = wrap.querySelectorAll('.vw-btn');
+        if (!frame || !btns.length) return;
+        Array.prototype.forEach.call(btns, function (btn) {
+          btn.addEventListener('click', function () {
+            frame.style.width = btn.getAttribute('data-w') + 'px';
+            Array.prototype.forEach.call(btns, function (b) { b.classList.remove('is-active'); });
+            btn.classList.add('is-active');
+          });
         });
       });
     })();
