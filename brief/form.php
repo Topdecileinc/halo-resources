@@ -1041,7 +1041,10 @@ function brief_files() {
           if (submitting) { e.preventDefault(); return; }   // block any second submit
           submitting = true;
           var btn = (e.submitter && e.submitter.type === 'submit') ? e.submitter : form.querySelector('button[type="submit"]');
-          if (btn) { btn.setAttribute('data-orig', btn.textContent); btn.disabled = true; btn.textContent = 'Working…'; }
+          // NOTE: do NOT set btn.disabled here — a disabled submit button drops its name/value
+          // from the POST, which would strip do=save and make "Save" fall through to generate.
+          // The `submitting` guard already blocks double-submits.
+          if (btn) { btn.setAttribute('data-orig', btn.textContent); btn.textContent = 'Working…'; }
           var which = (e.submitter && e.submitter.value) || form.getAttribute('data-overlay') || 'generate';
           var set = sets[which] || sets.generate;
           if (subEl) subEl.textContent = set.sub;
