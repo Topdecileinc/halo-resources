@@ -21,6 +21,11 @@ Every build must produce a **subject line** and a **preheader** (preview text) a
 output. The pipeline returns them as the `subject` and `preheader` fields alongside the
 `html`, so they can be read and copied without digging through the markup.
 
+**Write the subject FOR THIS CAMPAIGN** — its occasion, offer, and key message — in the brand
+voice; it should make *this specific send* worth opening. The subject is **not** the product
+name, and it is **not** copied from the brief's "Product" field (that field is the topic, not
+the subject line).
+
 - Keep them clearly distinct and easy to copy. For example:
   - **Subject:** Give them both the gift they love
   - **Preheader:** Halo Collar 5, now $50 off for Father's Day

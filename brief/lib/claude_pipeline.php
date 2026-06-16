@@ -710,7 +710,7 @@ function hp_edit_pipeline(array $cfg, $base, $instruction) {
 function hp_brief_fields_schema(array $segEnum, array $secEnum) {
     $props = [
         'campaign_name'   => ['type' => 'string', 'description' => 'A short name to identify the brief (NOT shown in the email).'],
-        'product_subject' => ['type' => 'string'],
+        'product_subject' => ['type' => 'string', 'description' => 'The product or topic the email is about (NOT the email subject line).'],
         'occasion'        => ['type' => 'string'],
         'send_date'       => ['type' => 'string'],
         'primary_goal'    => ['type' => 'string'],
