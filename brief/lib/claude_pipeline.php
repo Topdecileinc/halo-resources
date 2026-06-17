@@ -738,7 +738,7 @@ function hp_brief_fields_schema(array $segEnum, array $secEnum) {
         'template'        => ['type' => 'string', 'enum' => ['', 'newsletter', 'promo', 'none — build fresh']],
         'sections'        => ['type' => 'array', 'items' => ($secEnum ? ['type' => 'string', 'enum' => $secEnum] : ['type' => 'string'])],
         'exclude'         => ['type' => 'string'],
-        'notes'           => ['type' => 'string'],
+        'notes'           => ['type' => 'string', 'description' => 'Leave BLANK unless the vision states a specific build constraint that does not fit any other field (e.g. "keep under 100 words", "must mention the warranty"). Do NOT restate the vision or repeat other fields here.'],
         'rationale'       => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'One short, plain-language line per field you filled (or deliberately left blank), explaining WHY — written for a non-technical reviewer. Prefix each with the field name, e.g. "Subject: leaned into Father\'s Day since the vision named it." / "Pricing: left blank — no price was given."'],
     ];
     return ['type' => 'json_schema', 'schema' => [
@@ -773,6 +773,9 @@ function hp_parse_brief(array $cfg, $vision, array $segments = array(), array $s
         . "Choose sections ONLY from " . json_encode($secList) . ", and only when the vision implies them. "
         . "Do NOT invent hard facts the user did not give: leave exact prices, the promo code, the hero image "
         . "URL, and CTA destination URLs blank unless they were stated. Give the brief a short campaign_name. "
+        . "Leave `notes` BLANK unless the vision has a specific build constraint that fits no other field "
+        . "(e.g. a length limit or a must-include line); the vision's intent already lives in the real fields, "
+        . "so do not restate it in notes. "
         . "Also fill `rationale`: a short, plain-language line for each field you filled (or deliberately left "
         . "blank), explaining WHY you chose it — so a non-technical reviewer understands the draft. "
         . "Return ONLY the structured object.\n\n===== CAMPAIGN VISION =====\n" . $vision;
