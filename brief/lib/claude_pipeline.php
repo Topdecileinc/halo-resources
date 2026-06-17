@@ -723,7 +723,7 @@ function hp_brief_fields_schema(array $segEnum, array $secEnum) {
         'subhead'         => ['type' => 'string', 'description' => 'Draft a supporting subhead.'],
         'key_message'     => ['type' => 'string', 'description' => 'Draft the core message / offer in plain terms.'],
         'hero_url'        => ['type' => 'string', 'description' => 'Leave blank unless an image URL was actually given.'],
-        'alt_text'        => ['type' => 'string'],
+        'alt_text'        => ['type' => 'string', 'description' => 'Leave blank unless a hero image was actually given — no image means no alt text.'],
         'show_pricing'    => ['type' => 'string', 'enum' => ['', 'yes', 'no']],
         'original_price'  => ['type' => 'string', 'description' => 'Only if a price was stated.'],
         'sale_price'      => ['type' => 'string', 'description' => 'Only if a price was stated.'],
@@ -772,7 +772,8 @@ function hp_parse_brief(array $cfg, $vision, array $segments = array(), array $s
         . "Choose target_segment ONLY from " . json_encode($segEnum) . " (blank if unclear). "
         . "Choose sections ONLY from " . json_encode($secList) . ", and only when the vision implies them. "
         . "Do NOT invent hard facts the user did not give: leave exact prices, the promo code, the hero image "
-        . "URL, and CTA destination URLs blank unless they were stated. Give the brief a short campaign_name. "
+        . "URL and its alt text, and CTA destination URLs blank unless they were stated (no image means no "
+        . "alt text). Give the brief a short campaign_name. "
         . "Leave `notes` BLANK unless the vision has a specific build constraint that fits no other field "
         . "(e.g. a length limit or a must-include line); the vision's intent already lives in the real fields, "
         . "so do not restate it in notes. "
