@@ -276,7 +276,10 @@ if ($isPost) {
 |---|---|
 | Headline | " . cell(field('headline')) . " |
 | Subhead | " . cell(field('subhead')) . " |
-| Key message or offer | " . cell(field('key_message')) . " |
+
+**Body copy** (the email body — use this verbatim when present):
+
+" . trim(field('body')) . "
 
 ## 4. Hero image
 
@@ -426,7 +429,6 @@ function brief_to_fields($md) {
         'target_segment'  => 'Target segment',
         'headline'        => 'Headline',
         'subhead'         => 'Subhead',
-        'key_message'     => 'Key message or offer',
         'hero_url'        => 'Hosted hero URL',
         'alt_text'        => 'Alt text',
         'show_pricing'    => 'Show pricing?',
@@ -450,6 +452,12 @@ function brief_to_fields($md) {
     // subject (this field is the email subject line; old briefs called it "Product / subject" or "Product")
     if (preg_match('/^\|\s*(?:Subject|Product \/ subject|Product)\s*\|\s*(.*?)\s*\|\s*$/m', $md, $m)) {
         $out['subject'] = brief_uncell($m[1]);
+    }
+    // body copy (a multi-line block after the §3 table; old briefs had a "Key message or offer" table cell)
+    if (preg_match('/\*\*Body copy\*\*[^\n]*\n+(.*?)\s*(?:\n##\s|$)/s', $md, $m)) {
+        $out['body'] = trim($m[1]);
+    } elseif (preg_match('/^\|\s*Key message or offer\s*\|\s*(.*?)\s*\|\s*$/m', $md, $m)) {
+        $out['body'] = brief_uncell($m[1]);
     }
     if (preg_match('/^\|\s*Sections to include\s*\|\s*(.*?)\s*\|\s*$/m', $md, $m)) {
         $val = brief_uncell($m[1]);
@@ -983,10 +991,10 @@ function brief_files() {
               'The supporting line under the headline. Leave blank to auto-generate (or omit).',
               '3-content',
               '<input type="text" id="subhead" name="subhead"' . pv_attr('subhead') . '>');
-          fld('Key message or offer', 'key_message',
-              'The core thing to communicate. Body copy is generated from this, the segment, and brand voice — there is no separate body field.',
+          fld('Body copy', 'body',
+              'The email body copy. The AI drafts it from your campaign — edit it here, and the email uses what you write (state the offer/price in plain terms). Leave blank to auto-generate.',
               '3-content',
-              '<textarea id="key_message" name="key_message">' . pv_text('key_message') . '</textarea>');
+              '<textarea id="body" name="body" rows="7">' . pv_text('body') . '</textarea>');
         ?>
       </details>
 

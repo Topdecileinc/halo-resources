@@ -162,7 +162,9 @@ function hp_load_context(array $cfg) {
         . "`Subject` field IS the email subject line — when it is filled in, use it as `subject` verbatim "
         . "(the user wrote or approved it; do not rewrite it). Only when the brief's Subject is blank, write "
         . "a subject for this campaign (occasion / offer / key message) in the brand voice — never the bare "
-        . "product name. The HTML must be FINAL and "
+        . "product name. THE BODY: the brief's `Body copy` block is the email body — when it is filled in, "
+        . "use that prose as the body text (place it into the email structure and format it; do not rewrite "
+        . "or pad it). Only when Body copy is blank, write the body yourself. The HTML must be FINAL and "
         . "clean: no builder notes, no TODO / placeholder / 'to be confirmed' text, no internal comments "
         . "about the brief or your process, and no raw escape sequences (e.g. \\uXXXX) — every character "
         . "must be real, rendered content. If the brief does not supply an un-inferrable fact (a price, a "
@@ -721,7 +723,7 @@ function hp_brief_fields_schema(array $segEnum, array $secEnum) {
         'target_segment'  => ['type' => 'string', 'enum' => $segEnum],
         'headline'        => ['type' => 'string', 'description' => 'Draft a headline in brand voice (sentence case, no em dashes).'],
         'subhead'         => ['type' => 'string', 'description' => 'Draft a supporting subhead.'],
-        'key_message'     => ['type' => 'string', 'description' => 'Draft the core message / offer in plain terms.'],
+        'body'            => ['type' => 'string', 'description' => 'Draft the email BODY COPY — a few short paragraphs in the brand voice, stating the offer/price in plain terms. The user edits it and the email uses it.'],
         'hero_url'        => ['type' => 'string', 'description' => 'Leave blank unless an image URL was actually given.'],
         'alt_text'        => ['type' => 'string', 'description' => 'Leave blank unless a hero image was actually given — no image means no alt text.'],
         'show_pricing'    => ['type' => 'string', 'enum' => ['', 'yes', 'no']],
@@ -766,9 +768,10 @@ function hp_parse_brief(array $cfg, $vision, array $segments = array(), array $s
         "A user described an email campaign in free text. Turn it into a filled-in BRIEF: extract what they "
         . "stated and DRAFT the rest in the Halo brand voice, following every copy/brand rule (warm and "
         . "inviting, sentence case, no em dashes). Fill in as MANY fields as you reasonably can — especially "
-        . "draft the subject, headline, subhead, and key_message so they are NOT empty (the user reviews and "
+        . "draft the subject, headline, subhead, and body so they are NOT empty (the user reviews and "
         . "edits them before generating). The subject is the email subject line for THIS campaign (its "
-        . "occasion / offer), NOT the product name. "
+        . "occasion / offer), NOT the product name. The `body` is the email BODY COPY — a few short "
+        . "paragraphs, not a one-line summary. "
         . "Choose target_segment ONLY from " . json_encode($segEnum) . " (blank if unclear). "
         . "Choose sections ONLY from " . json_encode($secList) . ", and only when the vision implies them. "
         . "Do NOT invent hard facts the user did not give: leave exact prices, the promo code, the hero image "

@@ -43,11 +43,13 @@
 |---|---|
 | Headline | (provide, or leave blank to auto-generate) |
 | Subhead | (provide, or leave blank to auto-generate) |
-| Key message or offer | |
 
-> Body copy is **AI-generated** from the subhead, key message, segment, and brand voice —
-> there's no body field to fill. Tone is fixed (warm and inviting) and lives in `rules_brand.md`.
-> If you need to constrain the generated body, note it in §8 (Notes for the builder).
+**Body copy** (the email body — use this verbatim when present):
+
+(the AI drafts a few paragraphs here; edit them, or leave blank to auto-generate)
+
+> Tone is fixed (warm and inviting) and lives in `rules_brand.md`. When Body copy is filled in,
+> the build uses it; leave it blank and the build writes it from the headline/subhead/segment.
 
 ## 4. Hero image
 
