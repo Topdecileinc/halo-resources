@@ -143,8 +143,9 @@ $prefill     = array();   // field => value, consumed by the control helpers bel
 $formMode    = 'new';     // 'new' | 'edit' | 'copy'
 $editingBase = '';        // when editing, the exact brief base to overwrite
 $openedFrom  = '';        // the source brief's display name (for the banner)
-$fromVision  = false;     // true when the form was pre-filled by parsing a free-text vision
-$parseError  = null;      // set if the vision parse failed
+$fromVision    = false;   // true when the form was pre-filled by parsing a free-text vision
+$parseError    = null;    // set if the vision parse failed
+$parseRationale = array(); // the AI's per-field reasoning (shown in a collapsed window)
 if (!$isPost) {
     $req = isset($_GET['edit']) ? array('edit', $_GET['edit'])
          : (isset($_GET['copy']) ? array('copy', $_GET['copy'])
@@ -220,8 +221,12 @@ if ($isPost) {
             require_once __DIR__ . '/lib/claude_pipeline.php';
             try {
                 $res = hp_parse_brief($cfg, $vision, segment_list(), array_keys(section_list()));
-                if (!empty($res['ok']) && is_array($res['fields'] ?? null)) $prefill = $res['fields'];
-                else $parseError = $res['error'] ?? 'could not draft the brief';
+                if (!empty($res['ok']) && is_array($res['fields'] ?? null)) {
+                    $prefill = $res['fields'];
+                    if (!empty($res['rationale']) && is_array($res['rationale'])) $parseRationale = $res['rationale'];
+                } else {
+                    $parseError = $res['error'] ?? 'could not draft the brief';
+                }
             } catch (Throwable $e) {
                 $parseError = $e->getMessage();
             }
@@ -683,6 +688,15 @@ function brief_files() {
   .lp-or::before, .lp-or::after { content: ""; flex: 1; height: 1px; background: var(--halo-gray-200); }
   .lp-blank { margin-top: 18px; font-size: 0.9rem; }
 
+  /* "why the AI filled these fields" window — collapsed by default */
+  .rationale { border: 1px solid var(--halo-gray-200); border-radius: var(--halo-radius-md); background: var(--halo-white); margin: 0 0 18px; }
+  .rationale > summary { list-style: none; cursor: pointer; user-select: none; display: flex; align-items: center; gap: 8px; padding: 10px 14px; font-weight: 650; font-size: 0.9rem; color: var(--halo-gray-700); }
+  .rationale > summary::-webkit-details-marker { display: none; }
+  .rationale > summary::after { content: ""; margin-left: auto; width: 7px; height: 7px; border-right: 2px solid var(--halo-gray-600); border-bottom: 2px solid var(--halo-gray-600); transform: rotate(45deg); transition: transform .18s; }
+  .rationale[open] > summary::after { transform: rotate(-135deg); }
+  .rationale ul { margin: 0; padding: 2px 16px 12px 32px; }
+  .rationale li { font-size: 0.86rem; color: var(--halo-gray-700); line-height: 1.5; margin: 4px 0; }
+
   /* AI edit-with-a-prompt box on the preview */
   .ai-edit { margin-top: 16px; padding: 14px 16px; border: 1px solid var(--halo-gray-200); border-radius: var(--halo-radius-md); background: var(--halo-white); }
   .ai-edit label { display: block; font-weight: 650; font-size: 0.9rem; margin: 0 0 6px; }
@@ -902,6 +916,16 @@ function brief_files() {
       <p class="loaded-note loaded-note--warn">Couldn&rsquo;t draft from your description (<?php echo htmlspecialchars($parseError, ENT_QUOTES, 'UTF-8'); ?>). Fill it in below.</p>
     <?php else: ?>
       <p class="lede">Fill this in for one campaign. Leave anything blank that doesn&rsquo;t apply &mdash; the generator drafts the rest. Every field links to its documentation.</p>
+    <?php endif; ?>
+    <?php if (!empty($parseRationale)): ?>
+      <details class="rationale">
+        <summary>Why the AI filled these fields</summary>
+        <ul>
+          <?php foreach ($parseRationale as $r): ?>
+            <li><?php echo htmlspecialchars($r, ENT_QUOTES, 'UTF-8'); ?></li>
+          <?php endforeach; ?>
+        </ul>
+      </details>
     <?php endif; ?>
     <?php if ($formMode === 'edit'): ?>
       <p class="loaded-note">Editing <strong><?php echo htmlspecialchars($openedFrom !== '' ? $openedFrom : '(untitled)', ENT_QUOTES, 'UTF-8'); ?></strong> — saving will <strong>update this brief</strong> (no duplicate). <a href="form.php?new">New brief instead</a>.</p>

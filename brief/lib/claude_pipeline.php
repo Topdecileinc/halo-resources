@@ -739,6 +739,7 @@ function hp_brief_fields_schema(array $segEnum, array $secEnum) {
         'sections'        => ['type' => 'array', 'items' => ($secEnum ? ['type' => 'string', 'enum' => $secEnum] : ['type' => 'string'])],
         'exclude'         => ['type' => 'string'],
         'notes'           => ['type' => 'string'],
+        'rationale'       => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'One short, plain-language line per field you filled (or deliberately left blank), explaining WHY — written for a non-technical reviewer. Prefix each with the field name, e.g. "Subject: leaned into Father\'s Day since the vision named it." / "Pricing: left blank — no price was given."'],
     ];
     return ['type' => 'json_schema', 'schema' => [
         'type' => 'object',
@@ -772,6 +773,8 @@ function hp_parse_brief(array $cfg, $vision, array $segments = array(), array $s
         . "Choose sections ONLY from " . json_encode($secList) . ", and only when the vision implies them. "
         . "Do NOT invent hard facts the user did not give: leave exact prices, the promo code, the hero image "
         . "URL, and CTA destination URLs blank unless they were stated. Give the brief a short campaign_name. "
+        . "Also fill `rationale`: a short, plain-language line for each field you filled (or deliberately left "
+        . "blank), explaining WHY you chose it — so a non-technical reviewer understands the draft. "
         . "Return ONLY the structured object.\n\n===== CAMPAIGN VISION =====\n" . $vision;
 
     $payload = [
@@ -802,6 +805,13 @@ function hp_parse_brief(array $cfg, $vision, array $segments = array(), array $s
     $data = json_decode($text, true);
     if (!is_array($data)) return ['ok' => false, 'error' => 'Could not read the drafted brief from Claude.'];
 
+    // pull the rationale out (it's not a form field) before normalizing the rest
+    $rationale = array();
+    if (isset($data['rationale']) && is_array($data['rationale'])) {
+        $rationale = array_values(array_filter(array_map('strval', $data['rationale']), function ($x) { return trim($x) !== ''; }));
+    }
+    unset($data['rationale']);
+
     // normalize: strings stay strings; sections stays an array of strings
     $fields = array();
     foreach ($data as $k => $v) {
@@ -811,5 +821,5 @@ function hp_parse_brief(array $cfg, $vision, array $segments = array(), array $s
             $fields[$k] = is_scalar($v) ? (string) $v : '';
         }
     }
-    return ['ok' => true, 'fields' => $fields, 'error' => null, 'loaded' => $loaded];
+    return ['ok' => true, 'fields' => $fields, 'rationale' => $rationale, 'error' => null, 'loaded' => $loaded];
 }
