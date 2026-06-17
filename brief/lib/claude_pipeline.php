@@ -158,7 +158,11 @@ function hp_load_context(array $cfg) {
         . "and footer (last) are fixed positions.\n\n"
         . "OUTPUT CONTRACT (overrides any output instruction in the orchestrator): return your result "
         . "ONLY as the structured object with keys `subject`, `preheader` (50-100 chars), and `html` "
-        . "(the complete, production-ready, cross-client email HTML document). The HTML must be FINAL and "
+        . "(the complete, production-ready, cross-client email HTML document). THE SUBJECT: the brief's "
+        . "`Subject` field IS the email subject line — when it is filled in, use it as `subject` verbatim "
+        . "(the user wrote or approved it; do not rewrite it). Only when the brief's Subject is blank, write "
+        . "a subject for this campaign (occasion / offer / key message) in the brand voice — never the bare "
+        . "product name. The HTML must be FINAL and "
         . "clean: no builder notes, no TODO / placeholder / 'to be confirmed' text, no internal comments "
         . "about the brief or your process, and no raw escape sequences (e.g. \\uXXXX) — every character "
         . "must be real, rendered content. If the brief does not supply an un-inferrable fact (a price, a "
@@ -710,7 +714,7 @@ function hp_edit_pipeline(array $cfg, $base, $instruction) {
 function hp_brief_fields_schema(array $segEnum, array $secEnum) {
     $props = [
         'campaign_name'   => ['type' => 'string', 'description' => 'A short name to identify the brief (NOT shown in the email).'],
-        'product_subject' => ['type' => 'string', 'description' => 'The product or topic the email is about (NOT the email subject line).'],
+        'subject'         => ['type' => 'string', 'description' => 'The email subject line — draft a short, campaign-specific subject in brand voice (occasion / offer / message), NOT the product name.'],
         'occasion'        => ['type' => 'string'],
         'send_date'       => ['type' => 'string'],
         'primary_goal'    => ['type' => 'string'],
@@ -761,8 +765,9 @@ function hp_parse_brief(array $cfg, $vision, array $segments = array(), array $s
         "A user described an email campaign in free text. Turn it into a filled-in BRIEF: extract what they "
         . "stated and DRAFT the rest in the Halo brand voice, following every copy/brand rule (warm and "
         . "inviting, sentence case, no em dashes). Fill in as MANY fields as you reasonably can — especially "
-        . "draft the headline, subhead, and key_message so they are NOT empty (the user reviews and edits "
-        . "them before generating). "
+        . "draft the subject, headline, subhead, and key_message so they are NOT empty (the user reviews and "
+        . "edits them before generating). The subject is the email subject line for THIS campaign (its "
+        . "occasion / offer), NOT the product name. "
         . "Choose target_segment ONLY from " . json_encode($segEnum) . " (blank if unclear). "
         . "Choose sections ONLY from " . json_encode($secList) . ", and only when the vision implies them. "
         . "Do NOT invent hard facts the user did not give: leave exact prices, the promo code, the hero image "

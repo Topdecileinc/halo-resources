@@ -302,7 +302,7 @@ which mirrors it) knows what each field does and how it's used.
 ### 1. Campaign basics
 
 - **Brief name** — a short name to identify this brief. **Required.** It names the saved file and is what shows in the "load a saved brief" picker. **It does not appear in the email** — it has no bearing on anything the email displays.
-- **Product** — the product or topic the email is about. This is **not** the email subject line (that's written for you at generation). The brand is fixed in `rules_brand.md` and the product facts in `product-brain/`.
+- **Subject** — the email subject line. The AI drafts one from your campaign; edit it here, or leave it blank to auto-generate. When it's filled in, the build uses it verbatim. (Keep it short and warm, no em dashes.) The brand is fixed in `rules_brand.md`; product facts in `product-brain/`.
 - **Occasion / theme** — the hook (holiday, awareness month, flash sale, evergreen).
 - **Send date** — when it goes out.
 - **Primary goal** — the one action the email is built around (drive purchase, re-engage, announce).

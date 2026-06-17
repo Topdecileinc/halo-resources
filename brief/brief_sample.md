@@ -16,7 +16,7 @@
 | Field | Your input |
 |---|---|
 | Brief name | (a short name to identify this brief — does NOT appear in the email) |
-| Product | (the product or topic — not the email subject line) |
+| Subject | (the email subject line — AI-drafted, editable; blank = auto-generate) |
 | Occasion / theme | (e.g. holiday, awareness month, flash sale, evergreen) |
 | Send date | |
 | Primary goal | (e.g. drive purchase, re-engage, announce feature) |

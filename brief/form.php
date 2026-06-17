@@ -254,7 +254,7 @@ if ($isPost) {
 | Field | Your input |
 |---|---|
 | Brief name | " . cell(field('campaign_name')) . " |
-| Product | " . cell(field('product_subject')) . " |
+| Subject | " . cell(field('subject')) . " |
 | Occasion / theme | " . cell(field('occasion')) . " |
 | Send date | " . cell(field('send_date')) . " |
 | Primary goal | " . cell(field('primary_goal')) . " |
@@ -442,9 +442,9 @@ function brief_to_fields($md) {
     if (preg_match('/^\|\s*(?:Brief name|Campaign name)\s*\|\s*(.*?)\s*\|\s*$/m', $md, $m)) {
         $out['campaign_name'] = brief_uncell($m[1]);
     }
-    // product (label renamed from "Product / subject" to "Product"; accept either for old briefs)
-    if (preg_match('/^\|\s*(?:Product \/ subject|Product)\s*\|\s*(.*?)\s*\|\s*$/m', $md, $m)) {
-        $out['product_subject'] = brief_uncell($m[1]);
+    // subject (this field is the email subject line; old briefs called it "Product / subject" or "Product")
+    if (preg_match('/^\|\s*(?:Subject|Product \/ subject|Product)\s*\|\s*(.*?)\s*\|\s*$/m', $md, $m)) {
+        $out['subject'] = brief_uncell($m[1]);
     }
     if (preg_match('/^\|\s*Sections to include\s*\|\s*(.*?)\s*\|\s*$/m', $md, $m)) {
         $val = brief_uncell($m[1]);
@@ -919,10 +919,10 @@ function brief_files() {
               'A short name to identify this brief — it names the saved file and shows in the picker. It does NOT appear in the email.',
               '1-campaign-basics',
               '<input type="text" id="campaign_name" name="campaign_name" required' . pv_attr('campaign_name') . '>');
-          fld('Product', 'product_subject',
-              'The product or topic the email is about. (This is NOT the email subject line — that\'s written for you at generation.)',
+          fld('Subject', 'subject',
+              'The email subject line. The AI drafts one from your campaign — edit it here. Keep it short (~50 chars), warm, no em dashes. Leave blank to auto-generate.',
               '1-campaign-basics',
-              '<input type="text" id="product_subject" name="product_subject"' . pv_attr('product_subject') . '>');
+              '<input type="text" id="subject" name="subject"' . pv_attr('subject') . '>');
           fld('Occasion / theme', 'occasion',
               'The hook or timing — holiday, awareness month, flash sale, or evergreen.',
               '1-campaign-basics',
