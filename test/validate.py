@@ -3,7 +3,7 @@
 test/validate.py
 
 Walks every campaign folder under emails/ and validates the email package against
-the rules (brand-brain/, email-design-system/, braze-deployment/) and the
+the rules (brand-guidelines/, email-design-system/, developer-skills/) and the
 sections/components in email-design-system/.
 
 Each campaign folder must contain exactly:
@@ -66,7 +66,7 @@ def load_config():
     # `rules_dirs`; fall back to a legacy single `rules_dir` if that's all that's set.
     rules_spec = cp.get("paths", "rules_dirs",
                         fallback=cp.get("paths", "rules_dir",
-                                        fallback="brand-brain, email-design-system, braze-deployment"))
+                                        fallback="brand-guidelines, email-design-system, developer-skills"))
     rules_dirs = [resolve(d.strip(), base=repo_root) for d in rules_spec.split(",") if d.strip()]
 
     return {

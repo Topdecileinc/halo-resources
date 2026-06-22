@@ -39,7 +39,7 @@ If you ever need to stand the styling back up:
 
 After the rebuild, any markdown file is reachable at its `.html` URL, for example:
 - `https://topdecileinc.github.io/halo-resources/README.html`
-- `https://topdecileinc.github.io/halo-resources/brand-brain/rules_brand.html`
+- `https://topdecileinc.github.io/halo-resources/brand-guidelines/rules_brand.html`
 
 GitHub Pages serves `.md` files at `.html` URLs (the `.md` extension lives in the repo, the
 `.html` extension on the live site).

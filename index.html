@@ -203,81 +203,69 @@ layout: null
 <main class="overview-shell">
   <section class="overview-index" aria-labelledby="overview-title">
     <header class="overview-index__intro">
-      <h1 id="overview-title">Getting Started</h1>
+      <h1 id="overview-title">Halo Email Resources</h1>
     </header>
 
     <section class="overview-index__group" aria-labelledby="grp-getting-started">
-      <h2 id="grp-getting-started">Getting Started</h2>
+      <h2 id="grp-getting-started">Getting Started (root)</h2>
       <ul class="overview-link-list">
-        <li>
-          <a href="/halo-resources/README.html">
-            Developer README
-            <span class="desc">How the email engine is put together and how to work in it.</span>
-          </a>
-        </li>
         <li>
           <a href="/halo-resources/prompt_email_generation.html">
             Orchestrator (prompt_email_generation.md)
-            <span class="desc">The entry point the AI reads first — defines the flow and the prefix system.</span>
+            <span class="desc">The entry point the engine reads first: the build flow, the prefix system, and how every resource fits together. Load this as the chatbot's instructions.</span>
+          </a>
+        </li>
+        <li>
+          <a href="/halo-resources/README.html">
+            Developer README (README.md)
+            <span class="desc">How the engine is built and the two ways to run it (chat or pipeline) — including exactly what to load into the chatbot.</span>
+          </a>
+        </li>
+        <li>
+          <a href="/halo-resources/INSTALL.html">
+            Docs-site setup (INSTALL.md)
+            <span class="desc">How this GitHub Pages documentation site is wired: the layout, front matter, and the auto-built sidebar.</span>
           </a>
         </li>
       </ul>
     </section>
 
-    <section class="overview-index__group" aria-labelledby="grp-brief">
-      <h2 id="grp-brief">Brief</h2>
+    <section class="overview-index__group" aria-labelledby="grp-brand-guidelines">
+      <h2 id="grp-brand-guidelines">Brand Guidelines (brand-guidelines/)</h2>
       <ul class="overview-link-list">
         <li>
-          <a href="/halo-resources/brief/brief_sample.html">
-            Brief template (brief_sample.md)
-            <span class="desc">The blank brief, copied per campaign and filled in by hand.</span>
-          </a>
-        </li>
-        <li>
-          <a href="http://halo-ai.test.i.ng/form.php">
-            Open the brief form
-            <span class="desc">Interactive form (PHP, hosted separately) that fills the brief and saves it. Every field links to its documentation.</span>
-          </a>
-        </li>
-      </ul>
-    </section>
-
-    <section class="overview-index__group" aria-labelledby="grp-brand-brain">
-      <h2 id="grp-brand-brain">Brand Brain</h2>
-      <ul class="overview-link-list">
-        <li>
-          <a href="/halo-resources/brand-brain/rules_brand.html">
+          <a href="/halo-resources/brand-guidelines/rules_brand.html">
             Brand identity (rules_brand.md)
             <span class="desc">Brand name, site, voice, hosted logo URL.</span>
           </a>
         </li>
         <li>
-          <a href="/halo-resources/brand-brain/rules_segment_definition.html">
-            Segment definitions (rules_segment_definition.md)
+          <a href="/halo-resources/brand-guidelines/rules_brand.html#segment-definitions">
+            Segment definitions
             <span class="desc">Audience segments and how to write for each.</span>
           </a>
         </li>
-      </ul>
-    </section>
-
-    <section class="overview-index__group" aria-labelledby="grp-product-brain">
-      <h2 id="grp-product-brain">Product Brain</h2>
-      <ul class="overview-link-list">
         <li>
-          <a href="/halo-resources/product-brain/rules_membership.html">
-            Membership (rules_membership.md)
+          <a href="/halo-resources/brand-guidelines/rules_brand.html#email-copy-rules">
+            Email copy rules
+            <span class="desc">Voice, sentence case, no em dashes.</span>
+          </a>
+        </li>
+        <li>
+          <a href="/halo-resources/brand-guidelines/rules_brand.html#membership">
+            Membership
             <span class="desc">Pack Membership Plan facts: what it's required for, pricing, and when it's chosen.</span>
           </a>
         </li>
         <li>
-          <a href="/halo-resources/product-brain/rules_social_proof.html">
-            Social proof (rules_social_proof.md)
+          <a href="/halo-resources/brand-guidelines/rules_brand.html#social-proof">
+            Social proof
             <span class="desc">Verbatim customer reviews and the aggregate rating, used as social proof.</span>
           </a>
         </li>
         <li>
-          <a href="/halo-resources/product-brain/rules_technical_features.html">
-            Technical features (rules_technical_features.md)
+          <a href="/halo-resources/brand-guidelines/rules_brand.html#technical-features">
+            Technical features
             <span class="desc">Product specs and features: model comparison, headline specs, colors, and advanced tech.</span>
           </a>
         </li>
@@ -285,18 +273,12 @@ layout: null
     </section>
 
     <section class="overview-index__group" aria-labelledby="grp-email-design-system">
-      <h2 id="grp-email-design-system">Email Design System</h2>
+      <h2 id="grp-email-design-system">Email Design System (email-design-system/)</h2>
       <ul class="overview-link-list">
         <li>
           <a href="/halo-resources/email-design-system/rules_email_style_guide.html">
             Email style guide (rules_email_style_guide.md)
             <span class="desc">Visual standards: colors, type, layout, button variants.</span>
-          </a>
-        </li>
-        <li>
-          <a href="/halo-resources/email-design-system/rules_email_copy.html">
-            Email copy rules (rules_email_copy.md)
-            <span class="desc">Voice, sentence case, no em dashes.</span>
           </a>
         </li>
         <li>
@@ -348,12 +330,6 @@ layout: null
           </a>
         </li>
         <li>
-          <a href="https://github.com/topdecileinc/halo-resources/tree/main/email-design-system/templates">
-            Templates
-            <span class="desc">Full email skeletons (to be built).</span>
-          </a>
-        </li>
-        <li>
           <a href="https://github.com/topdecileinc/halo-resources/tree/main/email-design-system/assets">
             Assets
             <span class="desc">Shared brand images and social icons.</span>
@@ -362,11 +338,11 @@ layout: null
       </ul>
     </section>
 
-    <section class="overview-index__group" aria-labelledby="grp-braze-deployment">
-      <h2 id="grp-braze-deployment">Braze Deployment</h2>
+    <section class="overview-index__group" aria-labelledby="grp-developer-skills">
+      <h2 id="grp-developer-skills">Developer Skills (developer-skills/)</h2>
       <ul class="overview-link-list">
         <li>
-          <a href="/halo-resources/braze-deployment/rules_braze_send.html">
+          <a href="/halo-resources/developer-skills/rules_braze_send.html">
             Braze send rules (rules_braze_send.md)
             <span class="desc">/messages/send schema and safety constraints.</span>
           </a>
@@ -375,19 +351,37 @@ layout: null
     </section>
 
     <section class="overview-index__group" aria-labelledby="grp-examples">
-      <h2 id="grp-examples">Examples</h2>
+      <h2 id="grp-examples">Email Examples (email-examples/)</h2>
       <ul class="overview-link-list">
         <li>
           <a href="https://github.com/topdecileinc/halo-resources/tree/main/email-examples">
-            Email examples
-            <span class="desc">Real, shipped emails used as tone and structure reference. View the HTML source on GitHub.</span>
+            Sample emails (sample_*.html)
+            <span class="desc">Five real, shipped emails. Loaded into the chatbot as tone + HTML-structure reference only — never a source of facts. View the source on GitHub.</span>
+          </a>
+        </li>
+      </ul>
+    </section>
+
+    <section class="overview-index__group" aria-labelledby="grp-brief">
+      <h2 id="grp-brief">Brief (brief/)</h2>
+      <ul class="overview-link-list">
+        <li>
+          <a href="/halo-resources/brief/brief_sample.html">
+            Brief template (brief_sample.md)
+            <span class="desc">The blank, annotated brief — one per campaign. Defines every field the engine reads: segment, occasion, offer, hero URL, CTAs, and which sections to include.</span>
+          </a>
+        </li>
+        <li>
+          <a href="http://halo-ai.test.i.ng/form.php">
+            Open the brief form
+            <span class="desc">The PHP pipeline's interactive form (hosted separately): fills the brief, generates the email, previews it, and test-sends via Braze.</span>
           </a>
         </li>
       </ul>
     </section>
 
     <section class="overview-index__group" aria-labelledby="grp-validation">
-      <h2 id="grp-validation">Validation</h2>
+      <h2 id="grp-validation">Validation (test/)</h2>
       <ul class="overview-link-list">
         <li>
           <a href="/halo-resources/test/README.html">

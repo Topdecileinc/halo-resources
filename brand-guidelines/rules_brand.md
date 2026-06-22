@@ -1,11 +1,29 @@
 ---
 ---
+> **What this file is — Brand Guidelines.** The single home for everything *brand-level and
+> standing* — the things that stay the same across campaigns (what changes per send lives in the
+> brief). Use this as a **routing guide**: when you're not sure where something belongs, find the
+> row it matches and put it in that section.
+>
+> | Put it in… | …when it's |
+> |---|---|
+> | **Brand Identity** | who we are and how we always sound: name, site, logo, voice/tone |
+> | **Segment Definitions** | an audience we email and what to emphasize for them |
+> | **Email Copy Rules** | a rule for *how* copy is written (punctuation, casing) — not what it says |
+> | **Membership** | a standing fact about the Pack Membership Plan (what it's for, price, timing) |
+> | **Social Proof** | a real customer review or the aggregate star rating |
+> | **Technical Features** | a product spec, number, capability, or the Trustpilot score |
+>
+> Everything here is binding and relayed **verbatim** — the engine never invents, alters, or pulls
+> facts from the example emails.
+
 # Brand Identity
 
-> Binding reference (prefix: `rules_`): the standing brand identity for this setup. The
-> brand does not change between campaigns, so it lives here rather than in the brief. It is
-> defined in this one place — so the brief never restates the brand, and the rest of the
-> engine reads it from here.
+> **What goes here:** who Halo is and how it always sounds — the brand name, the site / default
+> CTA URL, the logo, and the standing voice/tone used in *every* email. Put anything that's true of
+> the brand regardless of campaign here, and the rest of the engine reads it from this one place.
+> (How to *execute* copy — punctuation, casing — is separate: see *Email Copy Rules*. What changes
+> per send lives in the brief.)
 
 ---
 
@@ -35,13 +53,11 @@ The brand is fixed; the *campaign* is not. The brief still owns:
 ---
 # Segment Definitions
 
-> Binding reference (prefix: `rules_`): the audience segments this program emails. A brief
-> names a segment in its Audience section; the matching definition here drives what the
-> email is about — its angle, tone, and offer emphasis.
->
-> This is the **source of truth** for segments. Add, rename, or refine segments here and
-> every brief and email picks them up. Keep each definition tight: who they are, and what
-> an email to them should emphasize.
+> **What goes here:** each audience we email and what an email to them should emphasize (angle,
+> tone, offer focus). Define, rename, or refine an audience here — this is the **source of truth**
+> the brief and the form's segment dropdown both read. Keep each one tight: *who they are* and
+> *what to emphasize*. (This is who we're talking to; the voice we always use is in *Brand
+> Identity*; the specifics of one send come from the brief.)
 
 ---
 
@@ -89,12 +105,11 @@ segment it maps to) rather than guessing.
 
 # Email Copy Rules
 
-> Binding reference (prefix: `rules_`): conventions for the **words** in an email — voice,
-> punctuation, and copy mechanics. The style guide governs how text *looks*; this file
-> governs how it *reads*. Applies to all generated copy (headlines, body, CTAs, alt text).
->
-> Brand voice notes live in `rules_brand.md`; segment-specific emphasis lives in
-> `rules_segment_definition.md`. This file is the place for cross-campaign copy mechanics.
+> **What goes here:** the rules for *how* copy is written — punctuation, casing, sentence
+> mechanics — applied to all generated text (headlines, body, CTAs, alt text). Put a "how to
+> phrase it" rule here. The brand *voice itself* (warm, plain-spoken) is defined once in *Brand
+> Identity* — this section is only the mechanical do/don'ts that execute it. (The style guide
+> governs how text *looks*; this governs how it *reads*.)
 
 ---
 
@@ -105,9 +120,9 @@ segment it maps to) rather than guessing.
   - Use: *Halo Collar 5 for Dad and pup* / *Halo Collar 5: for Dad and pup*
 - En dashes (–) are fine for numeric ranges only (e.g. "9–5"). Hyphens for compound words as normal.
 
-## Voice & mechanics
+## Mechanics
 
-- Match the brand voice in `rules_brand.md` and the segment emphasis in `rules_segment_definition.md`.
+- Match the brand voice in *Brand Identity* above and the segment emphasis in *Segment Definitions* above.
 - Sentence case for headlines (per the style guide); no ALL-CAPS shouting.
 - Keep copy tight: lead with the benefit, keep sentences short, avoid hype words.
 - Use the exact product name, prices, and claims from the brief — never invent or alter them.
@@ -123,8 +138,10 @@ segment it maps to) rather than guessing.
 
 # Membership
 
-> Binding reference (prefix: `rules_`): facts about Halo's Pack Membership Plan that emails
-> may state. Use these exactly. Do not invent plan names, tiers, prices, or benefits.
+> **What goes here:** standing facts about Halo's Pack Membership Plan that an email may state —
+> what it's required for, its pricing, and when it's chosen. Put membership/plan facts here and
+> relay them verbatim; don't invent plan names, tiers, prices, or benefits. (A *campaign's* offer
+> or discount is not a membership fact — that comes from the brief.)
 >
 > **Source:** the "Plans" panel of the Halo Collar 5 product page (image provided 2026-06-09).
 
@@ -142,10 +159,11 @@ segment it maps to) rather than guessing.
 
 # Social Proof
 
-> Binding reference (prefix: `rules_`): real customer reviews that emails may quote as
-> social proof. Quote them verbatim, or trim faithfully without changing meaning. Do not
-> invent reviews, names, ratings, or aggregate numbers, and do not attribute a quote to the
-> wrong person.
+> **What goes here:** real customer reviews and the aggregate star rating that an email may quote
+> as social proof. Put a customer quote, name, rating, or the overall rating here — verbatim, or
+> trimmed faithfully without changing meaning. Don't invent reviews, names, ratings, or counts, or
+> attribute a quote to the wrong person. (The product's Trustpilot score is a *spec*, not a review —
+> it lives in *Technical Features*; keep the two ratings separate.)
 >
 > **Source:** scraped from https://www.halocollar.com/reviews/ on 2026-06-09, from the
 > page's embedded review structured data (schema.org `Review` / `AggregateRating`). Every
@@ -159,7 +177,7 @@ segment it maps to) rather than guessing.
 *Source: `AggregateRating` in the page's structured data.*
 
 - **4.3 out of 5** (scale 1–5).
-- The structured data did **not** include a total review count, so do not state one from this source. (The Halo Collar 5 product card separately shows a Trustpilot score of 4.5 / 1,512 reviews — see `rules_technical_features.md`. The two figures come from different places; keep them straight and don't blend them.)
+- The structured data did **not** include a total review count, so do not state one from this source. (The Halo Collar 5 product card separately shows a Trustpilot score of 4.5 / 1,512 reviews — see the *Technical Features* section. The two figures come from different places; keep them straight and don't blend them.)
 
 ---
 
@@ -193,9 +211,10 @@ segment it maps to) rather than guessing.
 
 # Technical Features
 
-> Binding reference (prefix: `rules_`): the product's technical specifications and
-> features. Emails may state only the facts recorded here. Do not invent, round, or
-> embellish any number or claim.
+> **What goes here:** the product's technical specifications and capabilities — every spec,
+> number, model difference, and the Trustpilot score. Put a hard product fact here, verbatim and
+> with its source; don't invent, round, or embellish any number or claim. (Membership pricing is
+> not a spec — see *Membership*; customer quotes are not specs — see *Social Proof*.)
 >
 > **Sources (provided product images, 2026-06-09):**
 > 1. "Compare Halo Collar Models" comparison table (Halo Collar 5 vs Halo Collar 4)

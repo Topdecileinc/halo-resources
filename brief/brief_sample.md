@@ -29,9 +29,9 @@
 
 | Field | Your input |
 |---|---|
-| Target segment | (which segment this email is for — see `rules_segment_definition.md`) |
+| Target segment | (which segment this email is for — see `rules_brand.md` → Segment Definitions) |
 
-> Segments are defined in `brand-brain/rules_segment_definition.md`. The chosen segment
+> Segments are defined in `brand-guidelines/rules_brand.md` (Segment Definitions). The chosen segment
 > shapes what the email is about, its tone, and its offer emphasis. Name the segment here;
 > the definition drives the rest.
 

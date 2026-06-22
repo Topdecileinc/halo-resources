@@ -51,7 +51,7 @@ function brief_problems() {
 }
 
 /* --- dynamic option lists, read live from the repo ----------------------------
-   Segments come from brand-brain/rules_segment_definition.md; §7 section options
+   Segments come from brand-guidelines/rules_brand.md (Segment Definitions); §7 section options
    come from the section_*.html files in email-design-system/sections/ (each with
    its own <!-- section-desc: ... --> note). Apache's docroot may be the brief/
    directory, but PHP still reads these sibling files from the FILESYSTEM (they're
@@ -64,10 +64,10 @@ function repo_text($rel) {
     return (is_file($p) && is_readable($p)) ? @file_get_contents($p) : null;
 }
 
-/** Segment names — the `### ` headings under `## Segments` in rules_segment_definition.md. */
+/** Segment names — the `### ` headings under `## Segments` in the Segment Definitions section of rules_brand.md. */
 function segment_list() {
     $fallback = array('Acquisition', 'Warm leads', 'New customers', 'Active / existing customers', 'Lapsed', 'Gold / premium members');
-    $txt = repo_text('../brand-brain/rules_segment_definition.md');
+    $txt = repo_text('../brand-guidelines/rules_brand.md');
     if ($txt === null) return $fallback;
     $names = array(); $inSeg = false;
     foreach (preg_split('/\r?\n/', $txt) as $line) {
@@ -974,7 +974,7 @@ function brief_files() {
         <summary><span class="num">2</span>Audience</summary>
         <?php
           fld('Target segment', 'target_segment',
-              'Which defined audience segment this email targets. The segment shapes the angle, tone, and offer. Options are read live from rules_segment_definition.md.',
+              'Which defined audience segment this email targets. The segment shapes the angle, tone, and offer. Options are read live from rules_brand.md (Segment Definitions).',
               '2-audience--segments',
               segment_select());
         ?>

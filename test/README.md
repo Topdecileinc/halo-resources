@@ -97,7 +97,7 @@ directory so the script runs identically from any working directory.
 |---|---|---|
 | `repo_root` | `..` | Root of the resources repo. Other path defaults are derived from this. Change this one setting if the test folder ever moves. |
 | `emails_dir` | `./emails` | Where campaign subfolders live. |
-| `rules_dirs` | `brand-brain, email-design-system, braze-deployment` | Comma-separated folders where `rules_*.md` files live (relative to `repo_root`). Rules are split across the layered folders; for each rule file the validator searches these in order. A legacy single `rules_dir` is still honored if `rules_dirs` is absent. |
+| `rules_dirs` | `brand-guidelines, email-design-system, developer-skills` | Comma-separated folders where `rules_*.md` files live (relative to `repo_root`). Rules are split across the layered folders; for each rule file the validator searches these in order. A legacy single `rules_dir` is still honored if `rules_dirs` is absent. |
 | `sections_dir` | `email-design-system/sections` | Where `section_*.html` files live. |
 | `components_dir` | `email-design-system/components` | Where `component_*.html` files live. |
 
@@ -166,7 +166,7 @@ in someone's inbox.
 
 **What it does:**
 - Parses the HTML with Python's stdlib HTML5-tolerant parser and warns if tags are unbalanced.
-- Scans visible copy for em dashes (`—`) which `rules_email_copy.md` forbids; copy is supposed to use commas or colons instead. Emits line numbers and snippets for each em dash found.
+- Scans visible copy for em dashes (`—`) which the Email Copy Rules (in `rules_brand.md`) forbid; copy is supposed to use commas or colons instead. Emits line numbers and snippets for each em dash found.
 - For every `<img>` tag: verifies it has `alt`, `width`, `height`, `display:block`, and an absolute `https://` URL (relative paths break in email; uploads aren't supported).
 - Errors on `display:flex` or `display:grid` — neither is email-safe.
 - Heuristic warning if the HTML has many `<div>`s vs. few `<table>`s (suggests non-table-based layout).

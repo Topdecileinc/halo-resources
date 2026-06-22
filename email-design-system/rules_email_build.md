@@ -30,7 +30,7 @@ the bare product name.
   - **Subject:** Give them both the gift they love
   - **Preheader:** Halo Collar 5, now $50 off for Father's Day
 - Also include the preheader in the HTML as hidden preview text (a visually-hidden span right after `<body>`), and keep the `<title>` aligned with the subject.
-- Subject and preheader follow the copy rules (`rules_email_copy.md`) — warm and inviting, no em dashes. Keep subject ~50 characters or less where possible; preheader complements the subject rather than repeating it.
+- Subject and preheader follow the copy rules (the *Email Copy Rules* section of `rules_brand.md`) — warm and inviting, no em dashes. Keep subject ~50 characters or less where possible; preheader complements the subject rather than repeating it.
 
 ## CSS
 

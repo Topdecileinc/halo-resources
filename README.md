@@ -2,11 +2,12 @@
 ---
 # Halo Email Resources — Developer README
 
-This repository is Halo's **email-building engine**. A brief form (`brief/form.php`) feeds
-these resources plus a filled-in brief to the Claude API, which produces a production-ready,
-cross-client HTML marketing email; the pipeline then validates it, shows a preview, and (on
-approval) sends it through Braze. This README explains how the system is put together and how
-to work in it. It's for the team — not for the model.
+This repository is Halo's **email-building engine**: a set of rule files, reusable HTML blocks,
+and example emails, orchestrated by `prompt_email_generation.md`, that produce a production-ready,
+cross-client HTML marketing email. You can run it **two ways** — load the resources into an AI
+chatbot and describe your campaign in chat, or use the automated brief form (`brief/form.php`),
+which calls the Claude API, validates, previews, and test-sends via Braze. This README explains how
+the system is put together and how to work in it. It's for the team — not for the model.
 
 > **Not to be confused with `prompt_email_generation.md`.** That file is the instruction
 > *to the model* (the system prompt it reads). This README is documentation *for us* about
@@ -18,9 +19,10 @@ to work in it. It's for the team — not for the model.
 
 Three layers:
 
-1. **The pipeline** (`brief/`) — the brief form and the PHP behind it. It loads the resources
-   below, calls the Claude API, validates the result, shows a preview, and sends via Braze.
-   This is the runner; it replaces the old "paste the resources into a chat" workflow.
+1. **The runner** — either a **chatbot** you've loaded the resources into (you describe the
+   campaign in chat and it returns the email) or **the pipeline** (`brief/`): the brief form and
+   the PHP behind it, which loads the resources, calls the Claude API, validates, previews, and
+   test-sends via Braze. Both are supported — see *Running it — two ways* below.
 2. **`prompt_email_generation.md`** — the orchestrator / system prompt. It defines the flow,
    the prefix system, and the order to use everything. It points; it doesn't restate.
 3. **Everything else** — the modular resources: rules, brief, sections, components, templates,
@@ -31,6 +33,54 @@ voice, product specs, reviews, membership terms, and legal text come from the `r
 and are relayed verbatim. The brief sets what's specific to one send (segment, occasion,
 offer, hero, CTAs). The engine writes only the **sales pitch**; the orchestrator stitches it
 all together.
+
+---
+
+## Running it — two ways
+
+The resources drive the same engine whether you run it by **chat** or by the **pipeline**. Both
+use `prompt_email_generation.md` as the orchestrator and the same `rules_` / `section_` /
+`component_` / `sample_` resources; they differ only in *how* the brief goes in and the email
+comes out.
+
+### A. Chat training — what to load into the chatbot
+
+Set up an AI chatbot (e.g. a **Claude Project**) and load the engine's resources as its
+knowledge, then describe your campaign in chat and it returns the email (`subject`, `preheader`,
+`html`).
+
+**Load these (the engine):**
+
+- `prompt_email_generation.md` — the orchestrator. Use it as the project's **custom instructions / system prompt** (or the first knowledge file).
+- `brand-guidelines/rules_brand.md` — brand identity, audience segments, copy rules, membership, social proof, technical features.
+- `email-design-system/rules_email_style_guide.md` — visual standards (colors, type, buttons, logos).
+- `email-design-system/rules_email_build.md` — HTML / code standards.
+- `email-design-system/rules_email_footer.md` — footer, legal line, unsubscribe.
+- `developer-skills/rules_braze_send.md` — Braze `/messages/send` schema + safety (load only if you'll hand the output to Braze yourself).
+- `email-design-system/sections/*.html` — the section blocks (header, footer, tech specs, reviews, membership).
+- `email-design-system/components/*.html` — the button component.
+- `email-examples/*.html` — the real, shipped sample emails (tone + structure reference).
+- `brief/brief_sample.md` — the brief template, so the chatbot knows the brief's shape.
+
+**Do NOT load these (tooling / docs / not needed):**
+
+- `README.md`, `INSTALL.md` — team docs (this file).
+- `brief/form.php`, `brief/config.sample.php`, `brief/lib/` — the pipeline code.
+- `test/` — the validation harness.
+- `email-design-system/playground/` — interactive previews for humans.
+- `email-design-system/assets/` — reference `.webp` copies; the email uses the **hosted** logo/icon URLs that live in the rule files, so the chatbot doesn't need the image files.
+- `index.html`, `_layouts/`, `_config.yml`, `add_frontmatter.py` — the GitHub Pages docs site.
+
+**Then:** describe the campaign in chat — the brief fields (segment, occasion, offer, hero URL,
+CTAs, any copy you want to fix) — and ask it to build the email. It follows
+`prompt_email_generation.md` and returns the finished HTML. Sending is manual: copy the HTML, or
+hand it to Braze yourself per `developer-skills/rules_braze_send.md`.
+
+### B. The PHP pipeline — automated
+
+The `brief/` form automates the same thing end to end: fill the brief, it calls the Claude API
+with the same resources, validates, previews, and (on approval) test-sends via Braze. Setup is
+below.
 
 ---
 
@@ -122,12 +172,14 @@ grows by *adding correctly-prefixed files*, not by editing the orchestrator.
 | `img_` | Shared brand images (logo, header). | …you add a shared brand image. |
 | `social_` | Footer social icons. | …you add/replace a social icon. |
 
-`rules_` files live across the layer folders (`brand-brain/`, `product-brain/`,
-`email-design-system/`, `braze-deployment/`); the loader finds them by prefix at any depth.
+`rules_` files live across the layer folders (`brand-guidelines/`, `email-design-system/`,
+`developer-skills/`); the loader finds them by prefix at any depth. (`brand-guidelines/rules_brand.md`
+holds brand, segments, copy rules, and all product facts; the design-system and Braze rules live in
+their own folders.)
 
 **Rule of precedence** (when two files overlap): the most specific owner wins. The style guide
 wins on visual values (hex, font size, button shape). The build rules win on code structure.
-The product-brain files win on product facts. The brief wins on what this specific send says.
+The brand-guidelines file wins on brand facts, segments, copy rules, and product facts. The brief wins on what this specific send says.
 The orchestrator only routes.
 
 ---
@@ -137,39 +189,37 @@ The orchestrator only routes.
 ```
 halo-resources/
 ├── prompt_email_generation.md          ← entry point / orchestrator (the ONE prompt_)
+├── brand-guidelines/
+│   └── rules_brand.md                  ← brand identity, audience segments, copy rules,
+│                                          membership, social proof, technical features
+├── email-design-system/
+│   ├── rules_email_style_guide.md      ← visual standards (from Figma design system)
+│   ├── rules_email_build.md            ← HTML / code standards
+│   ├── rules_email_footer.md           ← stable footer/legal boilerplate
+│   ├── sections/                       ← section_*.html (header, footer, tech specs, reviews, membership)
+│   ├── components/                     ← component_*.html (button)
+│   ├── playground/                     ← interactive previews of each section/component (for humans)
+│   └── assets/
+│       ├── shared-images/              ← img_*.webp (reference copies; emails link to hosted URLs)
+│       └── social-icons/               ← social_*.webp
+├── developer-skills/
+│   └── rules_braze_send.md             ← Braze /messages/send schema + safety
+├── email-examples/                     ← sample_*.html (real, shipped emails)
 ├── brief/
-│   ├── brief_sample.md                 ← copy per campaign → brief_<name>.md
+│   ├── brief_sample.md                 ← the brief template → brief_<name>.md
 │   ├── form.php                        ← brief form + pipeline entry point
 │   ├── config.sample.php               ← copy to config.php (gitignored) with keys
 │   └── lib/claude_pipeline.php         ← Claude REST API → validate → preview → Braze
-├── brand-brain/
-│   ├── rules_brand.md                  ← brand identity (name, site, voice)
-│   └── rules_segment_definition.md     ← audience segment definitions
-├── product-brain/
-│   ├── rules_technical_features.md     ← product specs & features
-│   ├── rules_social_proof.md           ← customer reviews & ratings
-│   └── rules_membership.md             ← membership / plan facts
-├── email-design-system/
-│   ├── rules_email_style_guide.md      ← visual standards (from Figma design system)
-│   ├── rules_email_copy.md             ← copy/voice + punctuation rules
-│   ├── rules_email_build.md            ← HTML / code standards
-│   ├── rules_email_footer.md           ← stable footer/legal boilerplate
-│   ├── sections/                       ← section_*.html (header, footer, ...)
-│   ├── components/                     ← component_*.html (button, ...)
-│   ├── templates/                      ← template_*.html   (to be built)
-│   └── assets/
-│       ├── shared-images/              ← img_*.webp
-│       └── social-icons/               ← social_*.webp
-├── braze-deployment/
-│   └── rules_braze_send.md             ← Braze /messages/send schema + safety
-├── email-examples/                     ← sample_*.html
 ├── test/                               ← validation harness (local tooling, not loaded)
 │   ├── validate.py                     ← Python 3 entry point
 │   ├── config.ini                      ← paths and toggles
-│   ├── validators/                     ← one module per concern
-│   └── emails/                         ← campaign packages, gitignored
+│   └── validators/                     ← one module per concern
+├── index.html · _layouts/ · _config.yml  ← the GitHub Pages docs site (see INSTALL.md)
 └── README.md                           ← this file (team docs, not loaded)
 ```
+
+> No `templates/` folder exists yet — `template_` is a reserved prefix; add a `template_*.html`
+> file when a repeatable skeleton stabilizes and the flow picks it up automatically.
 
 > **Folders are for humans.** The pipeline discovers files by prefix, recursively — folder
 > depth doesn't matter. So folder placement is purely about making the repo easy for *us* to
@@ -182,7 +232,7 @@ halo-resources/
 This mirrors the flow inside `prompt_email_generation.md`:
 
 1. **Brief.** Fill in the brief form (`brief/form.php`); it's saved to `submissions/` and passed to the pipeline.
-2. **Rules.** The pipeline loads all `rules_` files — binding. Style guide governs look; build rules govern code; the `product-brain/` files supply product facts, relayed verbatim.
+2. **Rules.** All `rules_` files are binding. Style guide governs look; build rules govern code; `brand-guidelines/rules_brand.md` supplies brand, segments, copy rules, and product facts (specs, reviews, membership), relayed verbatim.
 3. **Examples.** It reviews `sample_` emails for tone and HTML structure **only** — never for facts.
 4. **Start point.** If the brief names a template, it starts from a `template_` file; if it names sections, it assembles those. With neither, it builds a **minimal email** — header, hero (if a hero URL is given), headline/subhead, body, CTA, footer — and nothing more. The build arranges the middle (and the CTA placement) however reads best; only header-first and footer-last are fixed. Extra blocks (tech specs, reviews, membership) are opt-in via §7.
 5. **Build.** It places the hero from the brief's hosted URL, pulls the logo/icon URLs from `rules_brand.md` / `rules_email_footer.md`, and applies the rules throughout. The only copy it writes is the sales pitch.
@@ -205,7 +255,7 @@ leaks, HTML that won't render, brief-to-output divergence, pricing math that doe
 
 - **JSON send body** — schema, required fields, UUID formats, the chat-mask leak (`[email protected]`), forbidden fields (`audience`, `campaign_id`, etc.), `broadcast: true` for segment sends.
 - **HTML hygiene** — well-formedness, em-dash detection, `<img>` attribute completeness, absolute URL enforcement, no `display:flex`/`grid`, table-based structure, MSO conditionals, web-safe font fallback.
-- **Brand fidelity** — reads the `rules_` files (`brand-brain/`, `email-design-system/`, `braze-deployment/`) at runtime; verifies the footer legal line, unsubscribe link, social icon URLs, and brand logo URL actually appear in the HTML.
+- **Brand fidelity** — reads the `rules_` files (`brand-guidelines/`, `email-design-system/`, `developer-skills/`) at runtime; verifies the footer legal line, unsubscribe link, social icon URLs, and brand logo URL actually appear in the HTML.
 - **Brief reconciliation** — confirms the JSON's `app_id`, `from`, and `segment_id` match what the brief said; verifies pricing math reconciles; confirms brief prices and headline appear in the HTML. This is the "not making things up" layer.
 - **W3C HTML validation (optional)** — disabled by default; when enabled, uses W3C's free web service at validator.w3.org/nu (no install needed) with email-specific exceptions filtered out.
 
@@ -249,7 +299,7 @@ lands. Human review still required.
 The whole point of the design is that **you rarely touch the orchestrator.** To add
 capability, drop in a correctly-prefixed file:
 
-- **New standard or product fact** → add a `rules_` file in the matching layer folder (`brand-brain/`, `product-brain/`, `email-design-system/`, or `braze-deployment/`). The flow already says "read all `rules_` files."
+- **New standard or product fact** → add a `rules_` file in the matching layer folder (`brand-guidelines/`, `email-design-system/`, or `developer-skills/`), or extend `brand-guidelines/rules_brand.md` for brand/segment/copy/product facts. The flow already says "read all `rules_` files."
 - **New section** (composed block like tech specs, reviews) → add a `section_*.html` file (with a `<!-- section-desc: … -->` marker so the form lists it). The flow already assembles from `section_*.html`.
 - **New component** (primitive like button, card, used inside sections) → add a `component_*.html` file.
 - **New email shape** → add a `template_` file. The flow already starts from `template_`.
@@ -275,15 +325,16 @@ register a new file.
 | Run the pipeline (form, generate, preview, send) | `brief/form.php` + `brief/lib/claude_pipeline.php` |
 | Keys + send identity (gitignored) | `brief/config.php` (copied from `config.sample.php`) |
 | Flow, prefix system, precedence | `prompt_email_generation.md` |
-| Brand identity (name, site, voice) | `brand-brain/rules_brand.md` |
-| Audience segment definitions | `brand-brain/rules_segment_definition.md` |
-| Product specs & features | `product-brain/rules_technical_features.md` |
-| Customer reviews & ratings | `product-brain/rules_social_proof.md` |
-| Membership / plan details | `product-brain/rules_membership.md` |
+| Brand identity (name, site, voice) | `brand-guidelines/rules_brand.md` → *Brand Identity* |
+| Audience segment definitions | `brand-guidelines/rules_brand.md` → *Segment Definitions* |
+| Copy / voice + punctuation rules | `brand-guidelines/rules_brand.md` → *Email Copy Rules* |
+| Product specs & features | `brand-guidelines/rules_brand.md` → *Technical Features* |
+| Customer reviews & ratings | `brand-guidelines/rules_brand.md` → *Social Proof* |
+| Membership / plan details | `brand-guidelines/rules_brand.md` → *Membership* |
 | Colors, type, buttons, logos | `email-design-system/rules_email_style_guide.md` |
 | HTML structure, CSS, Outlook, image markup, checklist | `email-design-system/rules_email_build.md` |
 | Footer, legal line, unsubscribe text (stable across sends) | `email-design-system/rules_email_footer.md` |
-| Braze `/messages/send` schema + safety constraints | `braze-deployment/rules_braze_send.md` |
+| Braze `/messages/send` schema + safety constraints | `developer-skills/rules_braze_send.md` |
 | Campaign offer, CTAs, hero URL, segment (per send) | the active `brief_` file |
 | Composed blocks (header, footer, tech specs, reviews, membership, ...) | `email-design-system/sections/` |
 | Reusable primitives (button, card, ...) used inside sections | `email-design-system/components/` |
@@ -302,7 +353,7 @@ which mirrors it) knows what each field does and how it's used.
 ### 1. Campaign basics
 
 - **Brief name** — a short name to identify this brief. **Required.** It names the saved file and is what shows in the "load a saved brief" picker. **It does not appear in the email** — it has no bearing on anything the email displays.
-- **Subject** — the email subject line. The AI drafts one from your campaign; edit it here, or leave it blank to auto-generate. When it's filled in, the build uses it verbatim. (Keep it short and warm, no em dashes.) The brand is fixed in `rules_brand.md`; product facts in `product-brain/`.
+- **Subject** — the email subject line. The AI drafts one from your campaign; edit it here, or leave it blank to auto-generate. When it's filled in, the build uses it verbatim. (Keep it short and warm, no em dashes.) The brand is fixed in `rules_brand.md` (*Brand Identity*); product facts are in the same file (*Technical Features*, *Social Proof*, *Membership*).
 - **Occasion / theme** — the hook (holiday, awareness month, flash sale, evergreen).
 - **Send date** — when it goes out.
 - **Primary goal** — the one action the email is built around (drive purchase, re-engage, announce).
@@ -312,9 +363,9 @@ which mirrors it) knows what each field does and how it's used.
 The email's angle is driven by **which segment it targets**. Name the segment in the brief;
 its definition drives the message, tone, and offer emphasis.
 
-> Segment definitions live in `brand-brain/rules_segment_definition.md` — that's the
-> source of truth, and the pipeline reads it at build time (the form even reads the segment
-> dropdown live from it). Add or refine segments there, not here. Example: **Acquisition** =
+> Segment definitions live in `brand-guidelines/rules_brand.md` (the *Segment Definitions*
+> section) — that's the source of truth, and the pipeline reads it at build time (the form even
+> reads the segment dropdown live from it). Add or refine segments there, not here. Example: **Acquisition** =
 > people we're targeting to buy the product but who don't own one yet → email emphasizes core
 > value, trust, and a low-pressure CTA.
 
@@ -348,7 +399,7 @@ unambiguous**:
 > Example: Original $529, Sale $479, Discount "$50 off" → shown as ~~$529~~ $479, $50 off.
 > Never imply a discount stacks on an already-discounted price unless that's explicitly stated.
 > (This is the campaign offer — distinct from standing facts like membership pricing, which
-> come from `product-brain/rules_membership.md`.)
+> come from the *Membership* section of `rules_brand.md`.)
 
 ### 6. Call to action
 
@@ -418,9 +469,9 @@ preview under `email-design-system/playground/`:
 |---|---|---|
 | `header` | Logo at top of the email, left-aligned. | No — **always included** (part of the frame). |
 | `footer` | Social icons, legal/address line, unsubscribe link. | No — **always included** (part of the frame). |
-| `tech specs` | Key product specs in a light stats panel. Facts from `rules_technical_features.md`. | **Yes** — opt-in. |
-| `reviews` | Customer reviews as quote cards. Quotes from `rules_social_proof.md`. | **Yes** — opt-in. |
-| `membership` | Pack Membership Plan details panel. Facts from `rules_membership.md`. | **Yes** — opt-in. |
+| `tech specs` | Key product specs in a light stats panel. Facts from `rules_brand.md` (*Technical Features*). | **Yes** — opt-in. |
+| `reviews` | Customer reviews as quote cards. Quotes from `rules_brand.md` (*Social Proof*). | **Yes** — opt-in. |
+| `membership` | Pack Membership Plan details panel. Facts from `rules_brand.md` (*Membership*). | **Yes** — opt-in. |
 
 ### Not chosen in §7 (driven by other fields)
 
@@ -443,8 +494,8 @@ that doesn't fit any pattern here, describe it in your own words and add detail 
 
 ## Notes & open items
 
-- **This is Halo's engine.** Brand-specific content is defined on purpose: identity and voice in `rules_brand.md`, product facts in the `product-brain/` files, and visual tokens (named from the source Figma design system, e.g. "Halo Yellow") in `rules_email_style_guide.md`.
-- **Facts come from the rule files, relayed verbatim.** Product specs, reviews, and membership terms live in `product-brain/`; the engine must state them exactly and must **not** invent facts or pull them from the example emails. The campaign-specific offer/pricing still comes from the brief. The only copy the engine writes is the sales pitch.
+- **This is Halo's engine.** Brand-specific content is defined on purpose: identity, voice, segments, copy rules, and product facts all in `brand-guidelines/rules_brand.md`, and visual tokens (named from the source Figma design system, e.g. "Halo Yellow") in `rules_email_style_guide.md`.
+- **Facts come from the rule files, relayed verbatim.** Product specs, reviews, and membership terms live in `brand-guidelines/rules_brand.md` (*Technical Features*, *Social Proof*, *Membership*); the engine must state them exactly and must **not** invent facts or pull them from the example emails. The campaign-specific offer/pricing still comes from the brief. The only copy the engine writes is the sales pitch.
 - **Templates aren't built yet.** The orchestrator references `template_*.html` files by convention so they work the moment they're added.
 - **Formalized sections:** header and footer (always-on frame) plus the three opt-in blocks — `tech specs`, `reviews`, `membership`. The hero and offer/pricing are driven by §4 and §5, not §7. New recurring patterns can be promoted to a `section_*.html` file when the shape stabilizes.
 - **Images are hosted, not generated.** The hero comes as a hosted URL in the brief; the logo and social icons are hosted URLs in `rules_brand.md` / `rules_email_footer.md`. The engine never sources or generates imagery on its own.

@@ -74,7 +74,7 @@ def check(ctx):
         hits_text = ctx.format_locations("\u2014", source="html", max_results=3)
         ctx.err(
             "html.no_em_dashes",
-            f"found {n} em dash(es) in visible copy — rules_email_copy.md forbids them\n" + hits_text,
+            f"found {n} em dash(es) in visible copy — the Email Copy Rules (rules_brand.md) forbid them\n" + hits_text,
         )
     else:
         ctx.ok("html.no_em_dashes")

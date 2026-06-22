@@ -88,7 +88,7 @@ function hp_load_context(array $cfg) {
     $root = rtrim($cfg['repo_root'], '/');
 
     $rels = ['prompt_email_generation.md'];                       // orchestrator first
-    foreach (['brand-brain', 'product-brain', 'email-design-system', 'braze-deployment'] as $d) {
+    foreach (['brand-guidelines', 'email-design-system', 'developer-skills'] as $d) {
         foreach (hp_find_rel($root, $d, 'rules_*.md') as $r) $rels[] = $r;          // rules at any depth
     }
     foreach (hp_find_rel($root, 'email-design-system/sections', 'section_*.html') as $r) $rels[] = $r;
@@ -107,15 +107,15 @@ function hp_load_context(array $cfg) {
         . "Never invent product facts, prices, or claims not present in the brief or these resources.\n\n"
         . "FACT SOURCING (strict). Every factual statement in the email — product specs, model "
         . "differences, prices, battery life, GPS/satellite numbers, what is in the box, customer reviews / "
-        . "quotes / ratings, and membership or plan details — MUST come from the PRODUCT-BRAIN rule files "
-        . "(rules_technical_features.md, rules_social_proof.md, rules_membership.md) and be relayed EXACTLY "
+        . "quotes / ratings, and membership or plan details — MUST come from brand-guidelines/rules_brand.md "
+        . "(its Technical Features, Social Proof, and Membership sections) and be relayed EXACTLY "
         . "as written there: verbatim numbers, names, and review quotes (you may trim a review without "
         . "changing its meaning, but never reword a fact). Do NOT take any spec, number, review, or product "
         . "claim from the example emails — the example emails are a reference for COPY TONE/VOICE and HTML "
         . "STRUCTURE ONLY, and may contain outdated facts. Do NOT invent, infer, round, update, or combine "
-        . "facts. If a fact is not in those three files, leave it out. The ONLY copy you may write freely is "
+        . "facts. If a fact is not in those sections, leave it out. The ONLY copy you may write freely is "
         . "the connective SALES PITCH (headlines, subheads, and persuasive framing) in the brand voice — and "
-        . "even that must not assert any spec, price, review, or claim that is not in the product-brain files. "
+        . "even that must not assert any spec, price, review, or claim that is not in brand-guidelines/rules_brand.md. "
         . "CURATE, DON'T DUMP: when a source file lists MORE items than a section needs (several membership "
         . "tiers, more specs than the grid holds, more reviews than there are cards), freely SELECT the few "
         . "that best fit this campaign and target segment, and relay each selected item verbatim — do not "
@@ -152,7 +152,7 @@ function hp_load_context(array $cfg) {
         . "CTA and pricing the brief actually provides, and the footer. Do NOT add a feature / specs row, a "
         . "model-comparison or spec grid, a reviews / social-proof block, or a membership section on your "
         . "own — those are OPT-IN and appear only when §7 names them. Having product facts available in "
-        . "the product-brain files does not mean you should showcase them: pull a fact only to support copy "
+        . "brand-guidelines/rules_brand.md does not mean you should showcase them: pull a fact only to support copy "
         . "that belongs in a section the brief actually asked for. ORDER IS YOUR CALL: arrange the included "
         . "blocks however reads best — the CTA can sit anywhere and may repeat — and only the header (first) "
         . "and footer (last) are fixed positions.\n\n"
@@ -422,8 +422,8 @@ function hp_ai_review(array $cfg, array $email, $briefMarkdown) {
         . "voice/tone, segment fit, accuracy of any claim or price, the offer/discount treatment, and "
         . "whether the structure reuses the provided sections/components and example patterns rather than "
         . "inventing new ones. FACT SOURCING: every product spec, number, price, review quote/rating, and "
-        . "membership detail in the email must trace VERBATIM to the product-brain files "
-        . "(rules_technical_features.md, rules_social_proof.md, rules_membership.md); flag any fact that is "
+        . "membership detail in the email must trace VERBATIM to brand-guidelines/rules_brand.md "
+        . "(its Technical Features, Social Proof, and Membership sections); flag any fact that is "
         . "invented, altered, or lifted from the example emails (examples are tone/HTML reference only). "
         . "List EVERY rule it violates, each as one short specific line naming the rule "
         . "and what is wrong. If it fully complies, return pass=true with an empty violations list. Do not "
