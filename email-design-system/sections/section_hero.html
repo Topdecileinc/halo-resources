@@ -1,0 +1,92 @@
+<!-- section-desc: Hero band — full-bleed background image with a star rating, headline, subhead, and CTA. -->
+<!--
+  section_hero.html  (root class="section-hero")
+  Hero block — the top content band of an email: a background image with an overlaid star
+  rating, headline, subhead, and CTA button. Drop in as the first row after section_header,
+  inside the 600px container table.
+
+  RENDER (background-image + fallback): the text + CTA are overlaid on the hero image using the
+  bulletproof VML/CSS pattern. Outlook replaces the photo with [HERO_BG_FALLBACK] (a light color)
+  and keeps the dark text + CTA readable; every other client shows the photo. The exact cell
+  height for the photo is client-sensitive — preview and tune the spacer / VML height.
+  (See rules_email_build.md -> "Always flag rendering risks".)
+
+  DYNAMIC ([BRACKETED]): hero image, stars, headline, subhead, CTA label/URL, the Outlook
+  fallback color, and the CTA fill/text color. The CTA reuses the component_button.html pattern.
+  Images default to placehold.co so nothing renders broken.
+
+  STYLE (rules_email_style_guide.md): 24px card radius; stars Halo Yellow #FCD62D; text #333.
+  CTA uses the style guide's Coral button variant (#FC5A41), added there for hero/photo CTAs
+  (yellow remains the primary CTA). The headline uses a 48px hero display size (the Figma source
+  is 60px; the style guide H1 is 34px). Stars are yellow per the style guide (the Figma star
+  graphic is replaced with type).
+-->
+<!-- figma-source
+     file:          khVeCWBF9aKmLmCcPev3nv
+     node:          4618:108
+     url:           https://www.figma.com/design/khVeCWBF9aKmLmCcPev3nv/Halo-Email-Design-System--Copy---Copy-?node-id=4618-108
+     kind:          section
+     fetched:       2026-06-22
+     generated-sha: 5256a6d57c142651e6f0d7f9efd569229efeaf7a8ac0cd12956e6d2e3bd4d9f5
+     On "refresh" this node is re-pulled and this file + its playground are rebuilt.
+     See developer-skills/rules_figma_download.md -> Refresh for how hand edits are preserved. -->
+<tr class="section-hero">
+  <td align="center" style="padding:0;">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:100%;">
+      <tr>
+        <td background="[HERO_IMAGE_URL]" bgcolor="[HERO_BG_FALLBACK]" valign="top" style="background-color:[HERO_BG_FALLBACK]; background-image:url('[HERO_IMAGE_URL]'); background-position:center top; background-repeat:no-repeat; background-size:cover; border-radius:24px; font-family:'Inter',Arial,Helvetica,sans-serif;">
+          <!--[if gte mso 9]>
+          <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false" style="width:600px;height:878px;">
+            <v:fill type="frame" src="[HERO_IMAGE_URL]" color="[HERO_BG_FALLBACK]" />
+            <v:textbox inset="0,0,0,0">
+          <![endif]-->
+          <div>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" style="padding:36px 30px 0 30px;">
+                  <p style="margin:0; font-size:22px; line-height:22px; letter-spacing:3px; color:#fcd62d;">[HERO_STARS]</p>
+                </td>
+              </tr>
+              <tr>
+                <td align="center" style="padding:10px 30px 0 30px;">
+                  <h1 style="margin:0; font-family:'Inter',Arial,Helvetica,sans-serif; font-size:48px; line-height:52px; font-weight:700; color:#333333;">[HERO_HEADLINE]</h1>
+                </td>
+              </tr>
+              <tr>
+                <td align="center" style="padding:14px 40px 0 40px;">
+                  <p style="margin:0; font-size:18px; line-height:24px; color:#333333;">[HERO_SUBHEAD]</p>
+                </td>
+              </tr>
+              <tr>
+                <td align="center" style="padding:24px 30px 40px 30px;">
+                  <!-- CTA — component_button.html (bulletproof pill) -->
+                  <table class="component-button" role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+                    <tr>
+                      <td align="center" style="border-radius:999px; background-color:[CTA_FILL];">
+                        <!--[if mso]>
+                        <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="[CTA_URL]" style="height:52px;v-text-anchor:middle;width:220px;" arcsize="100%" stroke="f" fillcolor="[CTA_FILL]">
+                          <w:anchorlock/>
+                          <center style="color:[CTA_TEXT_COLOR];font-family:Arial,sans-serif;font-size:16px;font-weight:bold;">[CTA_LABEL]</center>
+                        </v:roundrect>
+                        <![endif]-->
+                        <!--[if !mso]><!-- -->
+                        <a href="[CTA_URL]" target="_blank" style="display:inline-block; padding:15px 40px; font-family:'Inter',Arial,Helvetica,sans-serif; font-size:16px; font-weight:bold; color:[CTA_TEXT_COLOR]; text-decoration:none; border-radius:999px; mso-hide:all;">[CTA_LABEL]</a>
+                        <!--<![endif]-->
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <!-- spacer: lets the lower part of the hero photo (the dog) show below the text. Tune per preview. -->
+              <tr><td style="font-size:1px; line-height:1px; height:540px;">&nbsp;</td></tr>
+            </table>
+          </div>
+          <!--[if gte mso 9]>
+            </v:textbox>
+          </v:rect>
+          <![endif]-->
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>

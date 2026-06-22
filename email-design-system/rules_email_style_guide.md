@@ -17,6 +17,7 @@
 |---|---|---|
 | `--halo-yellow` | Halo Yellow | `#FCD62D` |
 | `--halo-blue` | Halo Blue | `#2F93F3` |
+| `--cta-coral` | CTA Coral | `#FC5A41` |
 | `--gray-bg` | Gray 01 (background) | `#F2F4F4` |
 | `--dark-gray-bg` | Gray 02 (dark background) | `#434343` |
 | `--text` | Text (primary) | `#333333` |
@@ -105,6 +106,7 @@ Pill-shaped buttons, fully rounded (border-radius ~100px), Inter Semi Bold ~18px
 | Yellow | `#FCD62D` | Dark gray `#333` | Light, blue, dark backgrounds (primary CTA) |
 | Blue | `#2F93F3` | White | Light / yellow backgrounds |
 | White | White | Dark gray `#333` | Yellow, blue, dark backgrounds |
+| Coral | `#FC5A41` | White | Photo / hero backgrounds (campaign accent CTA — yellow stays the primary) |
 
 **Guardrail:** Avoid white text on blue buttons (per the text-combination rules).
 

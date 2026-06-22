@@ -57,6 +57,7 @@ knowledge, then describe your campaign in chat and it returns the email (`subjec
 - `email-design-system/rules_email_build.md` — HTML / code standards.
 - `email-design-system/rules_email_footer.md` — footer, legal line, unsubscribe.
 - `developer-skills/rules_braze_send.md` — Braze `/messages/send` schema + safety (load only if you'll hand the output to Braze yourself).
+- `developer-skills/rules_figma_download.md` — the Figma → email-HTML download / refresh procedure (load only if you'll import blocks from Figma in chat).
 - `email-design-system/sections/*.html` — the section blocks (header, footer, tech specs, reviews, membership).
 - `email-design-system/components/*.html` — the button component.
 - `email-examples/*.html` — the real, shipped sample emails (tone + structure reference).
@@ -203,7 +204,8 @@ halo-resources/
 │       ├── shared-images/              ← img_*.webp (reference copies; emails link to hosted URLs)
 │       └── social-icons/               ← social_*.webp
 ├── developer-skills/
-│   └── rules_braze_send.md             ← Braze /messages/send schema + safety
+│   ├── rules_braze_send.md             ← Braze /messages/send schema + safety
+│   └── rules_figma_download.md         ← Figma → email HTML: download, classify, refresh
 ├── email-examples/                     ← sample_*.html (real, shipped emails)
 ├── brief/
 │   ├── brief_sample.md                 ← the brief template → brief_<name>.md
@@ -335,6 +337,7 @@ register a new file.
 | HTML structure, CSS, Outlook, image markup, checklist | `email-design-system/rules_email_build.md` |
 | Footer, legal line, unsubscribe text (stable across sends) | `email-design-system/rules_email_footer.md` |
 | Braze `/messages/send` schema + safety constraints | `developer-skills/rules_braze_send.md` |
+| Download a Figma node into a component/section/template (+ refresh) | `developer-skills/rules_figma_download.md` |
 | Campaign offer, CTAs, hero URL, segment (per send) | the active `brief_` file |
 | Composed blocks (header, footer, tech specs, reviews, membership, ...) | `email-design-system/sections/` |
 | Reusable primitives (button, card, ...) used inside sections | `email-design-system/components/` |
