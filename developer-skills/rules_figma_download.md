@@ -70,11 +70,20 @@ changes how the brief and the build treat the block.
 
 ## Step 2 — Pull the Figma node (the spec)
 
-From the node URL (`…/design/<fileKey>/<name>?node-id=<node-id>`), pull via the Figma Dev Mode MCP:
+From the node URL `…/design/<fileKey>/<name>?node-id=<id1>-<id2>`: the **fileKey** is the path
+segment; the **node id** is `<id1>:<id2>` (the tools accept the URL's `4618-108` form and you pass
+`4618:108`). Then pull via the connected Figma Dev Mode MCP:
 
-- **Screenshot** — the visual source of truth to match.
-- **Variables / tokens** — colors, spacing, type sizes.
-- **Structure / metadata** — layer order and grouping.
+- **`get_design_context(fileKey, nodeId)`** — returns a **screenshot** (the visual source of truth),
+  reference **code**, and the node's image asset URLs. The code is **React + Tailwind — a SPEC to
+  translate, not to copy** (see Step 4). Those image asset URLs **expire in ~7 days** and are not
+  hosted by us — never put them in the output (use placehold.co; see Images).
+- **`get_variable_defs(fileKey, nodeId)`** — bound design **tokens**. Often `{}` when the design uses
+  raw values; then read hexes/sizes off the code + screenshot.
+- **`get_metadata(fileKey, nodeId)`** — the node's **size + layer tree** (names, types, x/y/w/h). The
+  top-level frame name (e.g. `acquisitions-background`) is the design's intent; the `mj-*` child names
+  (`mj-hero-Frame`, `mj-text-Frame`, `mj-button-Frame`, `mj-section`, `mj-column`) are MJML-ish email
+  block hints. **600px wide = full email width.**
 
 ## Step 3 — Reconcile tokens with the style guide
 
@@ -92,9 +101,29 @@ knob defaulting to the Figma value, **not** a brand token.
 Build to `rules_email_build.md`:
 
 - Table-based, inline CSS, MSO conditionals; no `div`/flex/grid.
-- Root class marker — `class="section-<name>"` or `class="component-<name>"` (the validator checks for it).
+- Root class marker — `class="section-<name>"` / `class="component-<name>"`, where `<name>` is the filename's name part with underscores → hyphens (`section_hero_overlay.html` → `class="section-hero-overlay"`). The validator checks for it.
 - Put **every editable value in a `[BRACKETED]` placeholder** so the playground and the brief can fill it. Content is never baked in.
 - For a **section**, add the `<!-- section-desc: … -->` marker as the very first line, so the brief §7 list and `index.html` pick it up automatically.
+
+### Translate, don't copy — the recurring recipes
+
+The Figma code shows layout intent (Tailwind `flex`, `rounded-[24px]`, `bg-[#hex]`); rebuild it with
+these email-safe patterns so results come out consistent every time:
+
+- **Stacked block** (text panel above/below an image, no overlap) → a solid-`bgcolor` `<td>` for the
+  text and a normal `<img>` row for the photo. No VML needed; bulletproof everywhere. Reference:
+  `section_hero_stacked.html`.
+- **Text overlaid on a photo** (Outlook drops background images) → the bulletproof background pattern:
+  `background` + `bgcolor` on the `<td>`, an `<!--[if gte mso 9]><v:rect><v:fill type="frame">…`
+  block with a **light solid fallback color**, text inside a `<v:textbox>`/`<div>`, and a spacer row
+  to give the photo height. Flag that the height is client-sensitive. Reference: `section_hero_overlay.html`.
+- **Any CTA** → reuse `component_button.html` verbatim (MSO `v:roundrect` + non-MSO `<a>` pill).
+  Standard placeholders: `[CTA_LABEL]`, `[CTA_URL]`, `[CTA_FILL]`, `[CTA_TEXT_COLOR]`; keep the MSO
+  `width:` near the visible button width.
+- **`rounded-[24px]`** → `border-radius:24px`; **`rounded-tl/tr`** → top-only radius, etc. (per the style guide's 24px rule).
+- **Icon-ish graphics** (star ratings, eyebrow badges) → render as **type, not images**, matching the
+  existing sections: stars as `&#9733;` in Halo Yellow; an eyebrow as styled uppercase text. Flag in
+  your summary that you replaced a graphic with type.
 
 ### Decide what's dynamic — and where its values live
 
@@ -135,28 +164,81 @@ Add this comment at the top of the file (just under the `section-desc` for secti
      url:           https://www.figma.com/design/<fileKey>/<name>?node-id=<node-id>
      kind:          section            (component | section | template)
      fetched:       2026-06-21
-     generated-sha: <sha256 of the freshly generated file, before any hand edits>
+     generated-sha: <sha256 of the block markup — compute per the command below>
      On "refresh" this node is re-pulled and this file + its playground are rebuilt.
      See developer-skills/rules_figma_download.md -> Refresh for how hand edits are preserved. -->
 ```
 
-`file` + `node` are what a refresh re-pulls. `generated-sha` records the clean generation as the
-baseline used to detect hand edits (see Refresh).
+`file` + `node` are what a refresh re-pulls. `generated-sha` is the **refresh baseline**: the sha256
+of the **block markup only** — from the root element (the line beginning `<tr class="…"` or
+`<table class="…"`) to end of file, *excluding* this comment header — so it's stable and doesn't
+hash itself. Compute it after writing the file, then paste it into the comment:
+
+```bash
+sed -n '/^<\(tr\|table\) class="/,$p' <file> | shasum -a 256
+```
 
 ## Step 6 — Generate the playground
 
-Create `email-design-system/playground/<name>.html` following the existing playground pattern
-(`initPlayground` on `playground.css` + `playground.js`): one control per dynamic value — text/URL
-inputs for content, an **image-URL field for each image** (default = the placehold.co URL), and
-**style-token controls** (e.g. a background-color picker) whose options are the style-guide values.
-Defaults are filled with the Figma values; live preview + copy-the-HTML. Carry the same `figma-source`
-link in a comment so the playground refreshes alongside the block.
+Copy an existing playground (e.g. `playground/hero_stacked.html`) and adapt it — they all share one
+skeleton: header, `<main>` with a `.lede`, the `pg-grid`, and a `<script>` calling
+`initPlayground({ template, fields, wrap })`. Then:
 
-## Step 7 — Verify
+- **template** — the block markup as a JS string (each line `'…\n' +`); escape single quotes
+  (`\'Inter\'`, `url(\'[IMG]\')`). The MSO conditional comments can be dropped from the *playground*
+  copy (browsers ignore them) — keep them in the section file itself.
+- **fields** — one per `[BRACKETED]` value. Supported `type`s: `text`, `url`, `textarea`,
+  `select` (+ `options`), `color` (picker + hex). Map content → text/url/textarea; an image → `url`
+  defaulting to the placehold.co URL; a **style token** → `color`, or a `select` whose `options` are
+  the style-guide values.
+- **Variants** (same-structure designs) → add a `select` plus `presets: { VARIANT: { optionValue: { KEY: value, … } } }`
+  so picking a variant swaps the defaults. This is how near-identical Figma nodes live as **one**
+  control instead of many files.
+- **wrap** — the 600px container function; copy it verbatim from a sibling playground.
+- Add a `figma-source` comment at the very top so the playground refreshes alongside the block.
 
-- A new **section** auto-appears in the brief form's §7 list and in `index.html` (the folder is the
-  source of truth — no list to hand-maintain).
+## Step 7 — Verify, wire in, ship
+
+Verify the markers (replace `<name>`):
+
+```bash
+f=email-design-system/sections/section_<name>.html
+grep -q '<!-- section-desc:' "$f" && grep -q 'class="section-<name>"' "$f" \
+  && grep -q 'generated-sha: [a-f0-9]' "$f" && ! grep -q GENSHA "$f" && echo OK
+ls email-design-system/playground/<name>.html        # playground exists
+```
+
+Then:
+
+- Confirm the new **section** reads correctly in the brief form's §7 list (the form auto-discovers
+  `section_*.html` minus header/footer — no list to hand-maintain).
+- **Wire it into the index:** add one `<li>` under the *Email Design System* group in `index.html`
+  linking the block's **rendered playground**
+  (`/halo-resources/email-design-system/playground/<name>.html`), matching the existing
+  section/component entries. (The index links each block via its playground, not a separate area.)
 - Run `test/validate.py` against a sample build that uses the block.
+- **Commit and push** (`git add -A && git commit && git push origin main`) — work is tested against
+  the deployed site, so always push.
+
+---
+
+## Bulk scan / import (many blocks at once)
+
+You don't need a link per block — you can enumerate a container — but **scan a subtree, not the whole
+file**: `get_metadata` on a large page can time out (the Halo file's single page does). Work
+container-at-a-time:
+
+1. `get_metadata(fileKey)` with no node lists the **pages**; pick one (or have the user select a
+   group/section frame in Figma and copy its link — one link covers many blocks).
+2. `get_metadata(fileKey, <containerId>)` → the subtree of named child frames = the candidate blocks.
+3. **Inventory, don't blind-download.** For each candidate, propose: structural **name**, **kind**,
+   and **new vs variant-of-existing vs already-downloaded** (dedup by `figma-source` node id +
+   structure). Present the list.
+4. Get the user's OK on the import set, then run Steps 1–7 per approved block, folding same-structure
+   nodes into one control as variants/presets.
+
+**Never silently create a file per node** — that reproduces the duplicate-control problem the naming
+rules exist to prevent.
 
 ---
 
@@ -209,4 +291,5 @@ Refresh must **not** blow away manual edits. Two layers protect them:
 - [ ] A section also carries its `<!-- section-desc: … -->` marker.
 - [ ] Playground generated (or refreshed) and carries the figma-source link.
 - [ ] On refresh: `[BRACKETED]` + `local:` regions preserved; conflicts flagged, not clobbered; `fetched`/`generated-sha` updated.
-- [ ] Reviewed with `git diff`.
+- [ ] Wired into `index.html` (Email Design System group → rendered-playground link).
+- [ ] Reviewed with `git diff`, then committed and pushed.
