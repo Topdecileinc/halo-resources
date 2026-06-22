@@ -1,0 +1,77 @@
+<!-- section-desc: Promo hero — discount badge, large price-drop offer, CTA, and product image on a dark panel. -->
+<!--
+  section_hero_offer.html  (root class="section-hero-offer")
+  Offer / promo hero: a dark panel with a discount badge, a large price-drop display (discount,
+  sale price, struck-through original) and a CTA, above a full-width product image. Drop in as the
+  first content row after section_header.
+
+  Layout is stacked-like (panel + image below) but its panel is built around an OFFER module (not a
+  headline/subhead), so it is its own control rather than a section_hero_stacked variant.
+
+  RECONCILIATION FLAGS (Figma vs style guide):
+   - The Figma "PRICE DROP" badge is a yellow PILL. The style guide forbids pill-shaped badges
+     (pills are for CTAs only), so it is rendered here as bold uppercase Halo-Yellow TEXT, not a pill.
+   - The offer/price is an IMAGE in Figma; per the build + style rules it is rendered as LIVE TEXT
+     (struck-through original next to the bold sale price) — which is also what brief §5 fills.
+   - Background is pure black (#000000); the style guide's dark background is #434343. Exposed as a
+     dynamic [PANEL_BG] knob defaulting to the Figma black.
+
+  DYNAMIC ([BRACKETED]): panel color, badge, discount/sale/original price, CTA label/URL/fill/text,
+  and the product image (URL + alt). The CTA reuses component_button.html (Yellow variant). The image
+  defaults to placehold.co. The offer values normally come from brief §5.
+
+  STYLE (rules_email_style_guide.md): 24px radius; on a dark bg the eyebrow is Halo Yellow, the offer
+  text is white, and the CTA is the Yellow pill (#FCD62D fill / #333 text). Bound Figma vars confirm
+  --halo-yellow #FCD62D and --text #333.
+-->
+<!-- figma-source
+     file:          khVeCWBF9aKmLmCcPev3nv
+     node:          4644:112
+     url:           https://www.figma.com/design/khVeCWBF9aKmLmCcPev3nv/Halo-Email-Design-System--Copy---Copy-?node-id=4644-112
+     kind:          section
+     fetched:       2026-06-22
+     generated-sha: 1861373c84f267214717c4f3aa9ce351258c18fd8e2a83e79402c2ce5845556f
+     On "refresh" this node is re-pulled and this file + its playground are rebuilt.
+     See developer-skills/rules_figma_download.md -> Refresh for how hand edits are preserved. -->
+<tr class="section-hero-offer">
+  <td bgcolor="[PANEL_BG]" align="center" style="background-color:[PANEL_BG]; border-radius:24px; padding:0; font-family:'Inter',Arial,Helvetica,sans-serif;">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:100%;">
+      <tr>
+        <td align="center" style="padding:48px 30px 0 30px;">
+          <p style="margin:0; font-size:14px; line-height:16px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#fcd62d;">[BADGE]</p>
+        </td>
+      </tr>
+      <tr>
+        <td align="center" style="padding:18px 30px 0 30px;">
+          <p style="margin:0; font-family:'Inter',Arial,Helvetica,sans-serif; font-size:56px; line-height:56px; font-weight:700; color:#ffffff;">[DISCOUNT]</p>
+          <p style="margin:10px 0 0 0; font-size:26px; line-height:30px; font-weight:700; color:#ffffff;">[SALE_PRICE] <span style="font-weight:400; color:#9d9d9d; text-decoration:line-through;">[ORIGINAL_PRICE]</span></p>
+        </td>
+      </tr>
+      <tr>
+        <td align="center" style="padding:36px 30px 40px 30px;">
+          <!-- CTA — component_button.html (bulletproof pill) -->
+          <table class="component-button" role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+            <tr>
+              <td align="center" style="border-radius:999px; background-color:[CTA_FILL];">
+                <!--[if mso]>
+                <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="[CTA_URL]" style="height:52px;v-text-anchor:middle;width:220px;" arcsize="100%" stroke="f" fillcolor="[CTA_FILL]">
+                  <w:anchorlock/>
+                  <center style="color:[CTA_TEXT_COLOR];font-family:Arial,sans-serif;font-size:16px;font-weight:bold;">[CTA_LABEL]</center>
+                </v:roundrect>
+                <![endif]-->
+                <!--[if !mso]><!-- -->
+                <a href="[CTA_URL]" target="_blank" style="display:inline-block; padding:15px 40px; font-family:'Inter',Arial,Helvetica,sans-serif; font-size:16px; font-weight:bold; color:[CTA_TEXT_COLOR]; text-decoration:none; border-radius:999px; mso-hide:all;">[CTA_LABEL]</a>
+                <!--<![endif]-->
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0; font-size:0; line-height:0;">
+          <img src="[IMAGE_URL]" width="600" height="568" alt="[IMAGE_ALT]" style="display:block; width:100%; max-width:600px; height:auto; border-radius:0 0 24px 24px;" />
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>

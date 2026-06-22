@@ -175,7 +175,8 @@ of the **block markup only** — from the root element (the line beginning `<tr 
 hash itself. Compute it after writing the file, then paste it into the comment:
 
 ```bash
-sed -n '/^<\(tr\|table\) class="/,$p' <file> | shasum -a 256
+# -E for ERE alternation — works on both GNU and BSD/macOS sed (plain BRE \| does NOT on macOS)
+sed -nE '/^<(tr|table) class="/,$p' <file> | shasum -a 256
 ```
 
 ## Step 6 — Generate the playground

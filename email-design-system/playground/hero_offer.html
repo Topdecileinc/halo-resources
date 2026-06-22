@@ -1,0 +1,102 @@
+<!-- figma-source: file khVeCWBF9aKmLmCcPev3nv · node 4644:112 — playground for section_hero_offer.html. Refreshed alongside the section. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hero (offer) playground — Halo Email Resources</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="playground.css">
+</head>
+<body>
+  <header class="halo-header">
+    <div class="halo-header__inner">
+      <img src="https://topdecileinc.github.io/halo-resources/email-design-system/assets/shared-images/halo-logo-dark.svg" alt="Halo">
+      <span class="halo-header__tag">PLAYGROUND</span>
+      <span class="spacer"></span>
+      <a class="home" href="/halo-resources/">All resources</a>
+    </div>
+  </header>
+
+  <main>
+    <a class="back" href="/halo-resources/">&larr; Back to resources</a>
+    <p class="kind">Section</p>
+    <h1>Hero (offer)</h1>
+    <p class="lede">A promo hero on a dark panel: a discount badge, a large price-drop display, a CTA,
+       and a full-width product photo. Downloaded from Figma (<code>node 4644:112</code>).
+       <strong>Note:</strong> the Figma badge was a yellow pill and the price was an image &mdash;
+       both rendered here as live text per the style guide. The offer values normally come from brief
+       §5. Edit the image URL to preview a real photo.</p>
+
+    <div class="pg-grid">
+      <form class="pg-controls" id="pg-controls" autocomplete="off" onsubmit="return false;">
+        <h2>Controls</h2>
+      </form>
+
+      <div class="pg-preview">
+        <div class="pg-bar"><span class="label">Preview</span> &middot; 600px email width</div>
+        <iframe class="pg-frame" id="pg-frame" title="Hero (offer) preview"></iframe>
+        <details class="pg-source">
+          <summary>View &amp; copy HTML</summary>
+          <button type="button" class="copy-btn" id="pg-copy">Copy HTML</button>
+          <pre id="pg-src"></pre>
+        </details>
+      </div>
+    </div>
+  </main>
+
+  <script src="playground.js"></script>
+  <script>
+    initPlayground({
+      template:
+'<tr class="section-hero-offer">\n' +
+'  <td bgcolor="[PANEL_BG]" align="center" style="background-color:[PANEL_BG]; border-radius:24px; padding:0; font-family:\'Inter\',Arial,Helvetica,sans-serif;">\n' +
+'    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:100%;">\n' +
+'      <tr><td align="center" style="padding:48px 30px 0 30px;"><p style="margin:0; font-size:14px; line-height:16px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#fcd62d;">[BADGE]</p></td></tr>\n' +
+'      <tr><td align="center" style="padding:18px 30px 0 30px;">\n' +
+'        <p style="margin:0; font-family:\'Inter\',Arial,Helvetica,sans-serif; font-size:56px; line-height:56px; font-weight:700; color:#ffffff;">[DISCOUNT]</p>\n' +
+'        <p style="margin:10px 0 0 0; font-size:26px; line-height:30px; font-weight:700; color:#ffffff;">[SALE_PRICE] <span style="font-weight:400; color:#9d9d9d; text-decoration:line-through;">[ORIGINAL_PRICE]</span></p>\n' +
+'      </td></tr>\n' +
+'      <tr><td align="center" style="padding:36px 30px 40px 30px;">\n' +
+'        <table class="component-button" role="presentation" cellpadding="0" cellspacing="0" border="0" align="center"><tr>\n' +
+'          <td align="center" style="border-radius:999px; background-color:[CTA_FILL];">\n' +
+'            <a href="[CTA_URL]" target="_blank" style="display:inline-block; padding:15px 40px; font-family:\'Inter\',Arial,Helvetica,sans-serif; font-size:16px; font-weight:bold; color:[CTA_TEXT_COLOR]; text-decoration:none; border-radius:999px;">[CTA_LABEL]</a>\n' +
+'          </td>\n' +
+'        </tr></table>\n' +
+'      </td></tr>\n' +
+'      <tr><td style="padding:0; font-size:0; line-height:0;">\n' +
+'        <img src="[IMAGE_URL]" width="600" height="568" alt="[IMAGE_ALT]" style="display:block; width:100%; max-width:600px; height:auto; border-radius:0 0 24px 24px;" />\n' +
+'      </td></tr>\n' +
+'    </table>\n' +
+'  </td>\n' +
+'</tr>',
+      fields: [
+        { key: "PANEL_BG", label: "Panel background", type: "color", default: "#000000",
+          hint: "Figma uses pure black. The style guide's dark bg is #434343." },
+        { key: "BADGE", label: "Badge", type: "text", default: "PRICE DROP",
+          hint: "Rendered as text, not a pill (pills are CTAs only)." },
+        { key: "DISCOUNT", label: "Discount (large)", type: "text", default: "$75 OFF" },
+        { key: "SALE_PRICE", label: "Sale price", type: "text", default: "$524" },
+        { key: "ORIGINAL_PRICE", label: "Original price (struck through)", type: "text", default: "$599" },
+        { key: "CTA_LABEL", label: "CTA label", type: "text", default: "Shop Halo Collar 5" },
+        { key: "CTA_URL", label: "CTA URL", type: "url", default: "https://www.halocollar.com/" },
+        { key: "CTA_FILL", label: "CTA fill", type: "color", default: "#FCD62D",
+          hint: "Yellow primary CTA (style guide). On a dark bg, white CTA also works." },
+        { key: "CTA_TEXT_COLOR", label: "CTA text color", type: "color", default: "#333333" },
+        { key: "IMAGE_URL", label: "Product image URL", type: "url", default: "https://placehold.co/600x568?text=Product",
+          hint: "Default is a placeholder so nothing renders broken. Paste a real hosted URL to preview." },
+        { key: "IMAGE_ALT", label: "Product image alt", type: "text", default: "Halo Collar 5 in six colors" }
+      ],
+      wrap: function (html) {
+        return '<!DOCTYPE html><html><head><meta charset="utf-8">' +
+          '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">' +
+          '<style>html,body{margin:0}body{font-family:Inter,Arial,sans-serif;background:#e9edee;padding:24px 12px;}</style></head>' +
+          '<body><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" align="center" style="width:600px;max-width:100%;background:#ffffff;margin:0 auto;">' +
+          html + '</table></body></html>';
+      }
+    });
+  </script>
+</body>
+</html>
