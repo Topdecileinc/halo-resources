@@ -1,0 +1,104 @@
+<!-- figma-source: file khVeCWBF9aKmLmCcPev3nv · node 4675:400 — playground for section_hero_stacked.html. Refreshed alongside the section. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hero (stacked) playground — Halo Email Resources</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="playground.css">
+</head>
+<body>
+  <header class="halo-header">
+    <div class="halo-header__inner">
+      <img src="https://topdecileinc.github.io/halo-resources/email-design-system/assets/shared-images/halo-logo-dark.svg" alt="Halo">
+      <span class="halo-header__tag">PLAYGROUND</span>
+      <span class="spacer"></span>
+      <a class="home" href="/halo-resources/">All resources</a>
+    </div>
+  </header>
+
+  <main>
+    <a class="back" href="/halo-resources/">&larr; Back to resources</a>
+    <p class="kind">Section</p>
+    <h1>Hero (stacked)</h1>
+    <p class="lede">A solid-color text panel (eyebrow, headline, subhead, CTA) stacked above a
+       full-width photo &mdash; the bulletproof alternative to the overlay hero. Downloaded from
+       Figma (<code>node 4675:400</code>). <strong>Note:</strong> the panel and magenta are
+       campaign colors (Memorial Day), exposed here as editable knobs rather than style-guide
+       tokens. Edit the image URL to preview a real photo.</p>
+
+    <div class="pg-grid">
+      <form class="pg-controls" id="pg-controls" autocomplete="off" onsubmit="return false;">
+        <h2>Controls</h2>
+      </form>
+
+      <div class="pg-preview">
+        <div class="pg-bar"><span class="label">Preview</span> &middot; 600px email width</div>
+        <iframe class="pg-frame" id="pg-frame" title="Hero (stacked) preview"></iframe>
+        <details class="pg-source">
+          <summary>View &amp; copy HTML</summary>
+          <button type="button" class="copy-btn" id="pg-copy">Copy HTML</button>
+          <pre id="pg-src"></pre>
+        </details>
+      </div>
+    </div>
+  </main>
+
+  <script src="playground.js"></script>
+  <script>
+    initPlayground({
+      template:
+'<tr class="section-hero-stacked">\n' +
+'  <td align="center" style="padding:0;">\n' +
+'    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:100%;">\n' +
+'      <tr>\n' +
+'        <td bgcolor="[PANEL_BG]" align="center" style="background-color:[PANEL_BG]; border-radius:24px 24px 0 0; padding:50px 30px 40px 30px; font-family:\'Inter\',Arial,Helvetica,sans-serif;">\n' +
+'          <p style="margin:0 0 16px 0; font-size:13px; line-height:16px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:[HEADLINE_COLOR];">[EYEBROW]</p>\n' +
+'          <h1 style="margin:0 0 14px 0; font-family:\'Inter\',Arial,Helvetica,sans-serif; font-size:40px; line-height:44px; font-weight:700; color:[HEADLINE_COLOR];">[STACKED_HEADLINE]</h1>\n' +
+'          <p style="margin:0 0 28px 0; font-size:18px; line-height:24px; color:#333333;">[STACKED_SUBHEAD]</p>\n' +
+'          <table class="component-button" role="presentation" cellpadding="0" cellspacing="0" border="0" align="center"><tr>\n' +
+'            <td align="center" style="border-radius:999px; background-color:[CTA_FILL];">\n' +
+'              <a href="[CTA_URL]" target="_blank" style="display:inline-block; padding:15px 40px; font-family:\'Inter\',Arial,Helvetica,sans-serif; font-size:16px; font-weight:bold; color:[CTA_TEXT_COLOR]; text-decoration:none; border-radius:999px;">[CTA_LABEL]</a>\n' +
+'            </td>\n' +
+'          </tr></table>\n' +
+'        </td>\n' +
+'      </tr>\n' +
+'      <tr>\n' +
+'        <td style="padding:0; font-size:0; line-height:0;">\n' +
+'          <img src="[IMAGE_URL]" width="600" height="554" alt="[IMAGE_ALT]" style="display:block; width:100%; max-width:600px; height:auto; border-radius:0 0 24px 24px;" />\n' +
+'        </td>\n' +
+'      </tr>\n' +
+'    </table>\n' +
+'  </td>\n' +
+'</tr>',
+      fields: [
+        { key: "PANEL_BG", label: "Panel background", type: "color", default: "#FFD7E6",
+          hint: "Campaign color (not a style-guide token)." },
+        { key: "EYEBROW", label: "Eyebrow", type: "text", default: "MEMORIAL DAY SAVINGS" },
+        { key: "HEADLINE_COLOR", label: "Headline + eyebrow color", type: "color", default: "#F91A6B",
+          hint: "Campaign color (not a style-guide token)." },
+        { key: "STACKED_HEADLINE", label: "Headline", type: "text", default: "Make every outdoor minute count" },
+        { key: "STACKED_SUBHEAD", label: "Subhead", type: "textarea", default: "Spend less time worrying and more time exploring this summer." },
+        { key: "CTA_LABEL", label: "CTA label", type: "text", default: "Shop $75 off Halo Collar 5" },
+        { key: "CTA_URL", label: "CTA URL", type: "url", default: "https://www.halocollar.com/" },
+        { key: "CTA_FILL", label: "CTA fill", type: "color", default: "#F91A6B",
+          hint: "Campaign color. Style-guide variants: Coral #FC5A41, Yellow #FCD62D, Blue #2F93F3." },
+        { key: "CTA_TEXT_COLOR", label: "CTA text color", type: "color", default: "#ffffff" },
+        { key: "IMAGE_URL", label: "Photo URL", type: "url", default: "https://placehold.co/600x554?text=Hero+image",
+          hint: "Default is a placeholder so nothing renders broken. Paste a real hosted URL to preview." },
+        { key: "IMAGE_ALT", label: "Photo alt text", type: "text", default: "Dog wearing a Halo Collar outdoors" }
+      ],
+      wrap: function (html) {
+        return '<!DOCTYPE html><html><head><meta charset="utf-8">' +
+          '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">' +
+          '<style>html,body{margin:0}body{font-family:Inter,Arial,sans-serif;background:#e9edee;padding:24px 12px;}</style></head>' +
+          '<body><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" align="center" style="width:600px;max-width:100%;background:#ffffff;margin:0 auto;">' +
+          html + '</table></body></html>';
+      }
+    });
+  </script>
+</body>
+</html>

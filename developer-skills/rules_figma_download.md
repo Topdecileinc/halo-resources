@@ -54,6 +54,18 @@ Tie-breakers: used *inside* other blocks → component; a full self-contained ba
 entire email → template. **If you're genuinely unsure, ask rather than guess** — the wrong bucket
 changes how the brief and the build treat the block.
 
+### Naming & variants
+
+- **Name by structure, not by content or segment.** Two heroes that differ in *layout* are
+  different controls: `section_hero_overlay.html` (text on a photo) vs `section_hero_stacked.html`
+  (a text panel above a photo). A segment or campaign label (`acquisitions`, `memorial_day`) is
+  **never** part of the name.
+- **Near-identical nodes are variants, not new files.** If a new node has the *same structure* as
+  an existing control and differs only in image / copy / color, do **not** create a second file —
+  those differences are `[BRACKETED]` values, optionally surfaced as named presets in the
+  playground. Only a genuinely different *structure* earns a new file. This sharpens Step 0:
+  *same node id → update; same structure, new node → variant; new structure → new file.*
+
 ---
 
 ## Step 2 — Pull the Figma node (the spec)
@@ -69,7 +81,11 @@ From the node URL (`…/design/<fileKey>/<name>?node-id=<node-id>`), pull via th
 `email-design-system/rules_email_style_guide.md` is the **single source of visual truth.** Map
 every Figma token to its existing value there. If Figma introduces a genuinely new value (a color
 or size not in the style guide), **add it to the style guide** and reference it — do **not**
-hardcode a one-off hex/size in the block. Call out any new token in your summary.
+hardcode a one-off hex/size in the block. Call out any new token in your summary. **But distinguish
+three cases:** a genuinely new *brand* token → add it to the style guide; a value that *conflicts*
+with an existing rule (e.g. a coral CTA when the guide says the primary CTA is yellow) → **flag it,
+don't silently add**; a *per-campaign accent* (a seasonal promo's pink/magenta) → keep it a dynamic
+knob defaulting to the Figma value, **not** a brand token.
 
 ## Step 4 — Build the block (email-compliant)
 
