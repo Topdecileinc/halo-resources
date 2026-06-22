@@ -235,38 +235,8 @@ layout: null
       <ul class="overview-link-list">
         <li>
           <a href="/halo-resources/brand-guidelines/rules_brand.html">
-            Brand identity (rules_brand.md)
-            <span class="desc">Brand name, site, voice, hosted logo URL.</span>
-          </a>
-        </li>
-        <li>
-          <a href="/halo-resources/brand-guidelines/rules_brand.html#segment-definitions">
-            Segment definitions
-            <span class="desc">Audience segments and how to write for each.</span>
-          </a>
-        </li>
-        <li>
-          <a href="/halo-resources/brand-guidelines/rules_brand.html#email-copy-rules">
-            Email copy rules
-            <span class="desc">Voice, sentence case, no em dashes.</span>
-          </a>
-        </li>
-        <li>
-          <a href="/halo-resources/brand-guidelines/rules_brand.html#membership">
-            Membership
-            <span class="desc">Pack Membership Plan facts: what it's required for, pricing, and when it's chosen.</span>
-          </a>
-        </li>
-        <li>
-          <a href="/halo-resources/brand-guidelines/rules_brand.html#social-proof">
-            Social proof
-            <span class="desc">Verbatim customer reviews and the aggregate rating, used as social proof.</span>
-          </a>
-        </li>
-        <li>
-          <a href="/halo-resources/brand-guidelines/rules_brand.html#technical-features">
-            Technical features
-            <span class="desc">Product specs and features: model comparison, headline specs, colors, and advanced tech.</span>
+            Brand guidelines (rules_brand.md)
+            <span class="desc">The one brand-level file. Inside it: brand identity (name, site, voice, logo), audience segment definitions, email copy rules, and the product facts — membership, social proof (reviews), and technical features (specs). All relayed verbatim.</span>
           </a>
         </li>
       </ul>
@@ -278,61 +248,43 @@ layout: null
         <li>
           <a href="/halo-resources/email-design-system/rules_email_style_guide.html">
             Email style guide (rules_email_style_guide.md)
-            <span class="desc">Visual standards: colors, type, layout, button variants.</span>
+            <span class="desc">Visual standards: colors, typography, layout, button variants. Values come from the Figma design system.</span>
           </a>
         </li>
         <li>
           <a href="/halo-resources/email-design-system/rules_email_build.html">
             Email build rules (rules_email_build.md)
-            <span class="desc">HTML / code standards: tables, MSO, inline CSS, class conventions.</span>
+            <span class="desc">HTML / code standards: table layout, inline CSS, Outlook/MSO handling, image markup, class conventions, and the pre-delivery checklist.</span>
           </a>
         </li>
         <li>
           <a href="/halo-resources/email-design-system/rules_email_footer.html">
             Footer rules (rules_email_footer.md)
-            <span class="desc">Stable footer boilerplate and social icon URLs.</span>
+            <span class="desc">The stable footer, legal line, unsubscribe text, and hosted social-icon URLs used on every email.</span>
           </a>
         </li>
         <li>
-          <a href="/halo-resources/email-design-system/playground/header.html">
-            Section: Header  &middot; interactive
-            <span class="desc">Live preview of the logo header &mdash; set the logo, link, and alt text, then copy the HTML.</span>
+          <a href="https://github.com/topdecileinc/halo-resources/tree/main/email-design-system/sections">
+            sections/
+            <span class="desc">The reusable section blocks an email is built from — section_*.html: header, footer, tech specs, reviews, membership.</span>
           </a>
         </li>
         <li>
-          <a href="/halo-resources/email-design-system/playground/footer.html">
-            Section: Footer  &middot; interactive
-            <span class="desc">Live preview of the footer &mdash; social icons, legal line, unsubscribe &mdash; then copy the HTML.</span>
+          <a href="https://github.com/topdecileinc/halo-resources/tree/main/email-design-system/components">
+            components/
+            <span class="desc">Reusable primitives used inside sections — component_*.html (the bulletproof CTA button).</span>
           </a>
         </li>
         <li>
-          <a href="/halo-resources/email-design-system/playground/tech_specs.html">
-            Section: Tech specs  &middot; interactive
-            <span class="desc">Live preview of the tech-specs panel &mdash; edit the spec values and labels, then copy the HTML.</span>
-          </a>
-        </li>
-        <li>
-          <a href="/halo-resources/email-design-system/playground/reviews.html">
-            Section: Reviews  &middot; interactive
-            <span class="desc">Live preview of the review quote cards &mdash; edit quotes, authors, and ratings, then copy the HTML.</span>
-          </a>
-        </li>
-        <li>
-          <a href="/halo-resources/email-design-system/playground/membership.html">
-            Section: Membership  &middot; interactive
-            <span class="desc">Live preview of the membership panel &mdash; edit the requirement, price, and note, then copy the HTML.</span>
-          </a>
-        </li>
-        <li>
-          <a href="/halo-resources/email-design-system/playground/button.html">
-            Component: Button  &middot; interactive
-            <span class="desc">Live preview of the pill CTA &mdash; pick a variant, label, colors, and background, then copy the HTML.</span>
+          <a href="https://github.com/topdecileinc/halo-resources/tree/main/email-design-system/playground">
+            playground/
+            <span class="desc">Interactive in-browser previews of each section and component (for humans, not loaded into the chatbot): edit the values, then copy the HTML.</span>
           </a>
         </li>
         <li>
           <a href="https://github.com/topdecileinc/halo-resources/tree/main/email-design-system/assets">
-            Assets
-            <span class="desc">Shared brand images and social icons.</span>
+            assets/
+            <span class="desc">Reference copies of the brand images and social icons (img_*.webp, social_*.webp). Emails link to the hosted URLs in the rule files, not these files.</span>
           </a>
         </li>
       </ul>
@@ -373,8 +325,14 @@ layout: null
         </li>
         <li>
           <a href="http://halo-ai.test.i.ng/form.php">
-            Open the brief form
-            <span class="desc">The PHP pipeline's interactive form (hosted separately): fills the brief, generates the email, previews it, and test-sends via Braze.</span>
+            Open the brief form (form.php)
+            <span class="desc">The PHP pipeline's interactive form, running (hosted separately): fills the brief, generates the email, previews it, and test-sends via Braze.</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://github.com/topdecileinc/halo-resources/tree/main/brief">
+            Pipeline source (form.php, config.sample.php, lib/)
+            <span class="desc">The PHP behind the form: form.php, config.sample.php (copy to config.php for keys), and lib/claude_pipeline.php (calls Claude, validates, previews, sends via Braze).</span>
           </a>
         </li>
       </ul>
@@ -391,8 +349,8 @@ layout: null
         </li>
         <li>
           <a href="https://github.com/topdecileinc/halo-resources/tree/main/test">
-            Test harness source
-            <span class="desc">Zero-dependency Python validator code. View on GitHub.</span>
+            Test harness source (validate.py, config.ini, validators/)
+            <span class="desc">The zero-dependency Python validator: validate.py (entry point), config.ini (paths/toggles), and the validators/ modules. View on GitHub.</span>
           </a>
         </li>
       </ul>
