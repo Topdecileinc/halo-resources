@@ -1,0 +1,40 @@
+{
+  "_generated_by": "developer-skills/generate_manifest.py",
+  "_source_of_truth": "figma-source comments in email-design-system/{sections,components}/*.html",
+  "_note": "Run after any Figma download/refresh to keep this in sync. Only Figma-sourced blocks appear here.",
+  "targets": [
+    {
+      "figma_file_key": "khVeCWBF9aKmLmCcPev3nv",
+      "figma_node_id": "4618:108",
+      "kind": "section",
+      "output_path": "email-design-system/sections/section_hero_overlay.html",
+      "playground_path": "email-design-system/playground/hero_overlay.html",
+      "uses_components": [
+        "email-design-system/components/component_button.html"
+      ],
+      "figma_url": "https://www.figma.com/design/khVeCWBF9aKmLmCcPev3nv/Halo-Email-Design-System--Copy---Copy-?node-id=4618-108"
+    },
+    {
+      "figma_file_key": "khVeCWBF9aKmLmCcPev3nv",
+      "figma_node_id": "4644:112",
+      "kind": "section",
+      "output_path": "email-design-system/sections/section_hero_offer.html",
+      "playground_path": "email-design-system/playground/hero_offer.html",
+      "uses_components": [
+        "email-design-system/components/component_button.html"
+      ],
+      "figma_url": "https://www.figma.com/design/khVeCWBF9aKmLmCcPev3nv/Halo-Email-Design-System--Copy---Copy-?node-id=4644-112"
+    },
+    {
+      "figma_file_key": "khVeCWBF9aKmLmCcPev3nv",
+      "figma_node_id": "4675:400",
+      "kind": "section",
+      "output_path": "email-design-system/sections/section_hero_stacked.html",
+      "playground_path": "email-design-system/playground/hero_stacked.html",
+      "uses_components": [
+        "email-design-system/components/component_button.html"
+      ],
+      "figma_url": "https://www.figma.com/design/khVeCWBF9aKmLmCcPev3nv/Halo-Email-Design-System--Copy---Copy-?node-id=4675-400"
+    }
+  ]
+}
