@@ -13,11 +13,17 @@ anything in here. Keep it that way.
 - **`generate_manifest.py`** — builds `figma_manifest.json` from the `figma-source` comments in the
   `email-design-system` blocks (the Figma-node → output-file map). Run after any download/refresh.
 - **`figma_manifest.json`** — the generated mapping; the webhook receiver's lookup table.
-- **`figma_fetch.py`** — headless Figma read for the CI builder (OAuth refresh token → node JSON +
+- **`figma_fetch.py`** — headless Figma read for the builder (OAuth refresh token → node JSON +
   rendered PNG via the Figma REST API). Replaces the remote Figma MCP, which can't run headless.
+- **`validate_block.py`** — the pre-commit safety gate; hard-fails a bad/broken block so it can't
+  be committed.
+- **`receiver/`** — the always-on webhook receiver (Figma publish event → repository_dispatch).
+- The builder workflow lives at **`.github/workflows/figma-build.yml`** (GitHub requires that path);
+  it just calls the scripts here.
 
-_Coming:_ the GitHub Actions builder workflow, the webhook receiver, and the Lane B send app. The
-larger services (receiver, Lane B app) may move to their own repo entirely.
+**Scope:** this pipeline ends at **commit-to-git** — detect a Figma change, regenerate the email
+HTML block, validate it, and check it in. It does **not** send anything (no Braze / Lane B); that
+is intentionally out of scope.
 
 ## Where the procedure is documented
 
