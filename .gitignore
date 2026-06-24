@@ -5,6 +5,9 @@ send-email
 __pycache__/
 *.pyc
 
+# Figma fetch artifacts — temporary CI inputs, never source
+_figma_in/
+
 # Brief form submissions (runtime data, not source)
 submissions/*
 !submissions/.gitkeep
