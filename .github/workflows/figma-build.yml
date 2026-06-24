@@ -24,6 +24,7 @@ on:
 
 permissions:
   contents: write           # to commit the regenerated block
+  id-token: write           # claude-code-action uses OIDC to auth
 
 concurrency:                # don't let two rebuilds race the same refresh-token/commit
   group: figma-build
