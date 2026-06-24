@@ -55,6 +55,9 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Use the workflow's built-in token so the action skips the OIDC->GitHub-App
+          # exchange (which needs the Claude GitHub App installed on the repo).
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           prompt: >-
             Regenerate the email block at
             ${{ github.event.client_payload.output_path || github.event.inputs.output_path }}
