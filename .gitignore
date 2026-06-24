@@ -1,6 +1,10 @@
 .DS_Store
 send-email
 
+# Python bytecode cache (build/validation tooling)
+__pycache__/
+*.pyc
+
 # Brief form submissions (runtime data, not source)
 submissions/*
 !submissions/.gitkeep
