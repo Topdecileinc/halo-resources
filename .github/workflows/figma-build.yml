@@ -6,8 +6,8 @@
 # (GitHub requires workflows under .github/workflows/); the real logic is in figma-pipeline/.
 #
 # DEV TO DO before this runs:
-#   - Add repo Actions secrets: CLAUDE_CODE_OAUTH_TOKEN (from `claude setup-token`, uses your
-#     Claude subscription), FIGMA_CLIENT_ID, FIGMA_CLIENT_SECRET, FIGMA_REFRESH_TOKEN.
+#   - Add repo Actions secrets: ANTHROPIC_API_KEY (from console.anthropic.com — API billing,
+#     pennies/run), FIGMA_CLIENT_ID, FIGMA_CLIENT_SECRET, FIGMA_REFRESH_TOKEN.
 #   - This is UNTESTED here (no runner/secrets) — smoke-test with the manual trigger first.
 #   - Confirm the Claude Code install command + flags against current docs at deploy time.
 
@@ -36,7 +36,7 @@ jobs:
       FIGMA_CLIENT_ID:     ${{ secrets.FIGMA_CLIENT_ID }}
       FIGMA_CLIENT_SECRET: ${{ secrets.FIGMA_CLIENT_SECRET }}
       FIGMA_REFRESH_TOKEN: ${{ secrets.FIGMA_REFRESH_TOKEN }}
-      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       FILE_KEY:    ${{ github.event.client_payload.file_key    || github.event.inputs.file_key }}
       NODE_ID:     ${{ github.event.client_payload.node_id     || github.event.inputs.node_id }}
       OUTPUT_PATH: ${{ github.event.client_payload.output_path || github.event.inputs.output_path }}
@@ -57,11 +57,11 @@ jobs:
 
       - name: Check the Claude token reached the runner
         run: |
-          if [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
-            echo "::error::CLAUDE_CODE_OAUTH_TOKEN is EMPTY — secret missing or has no value."
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::error::ANTHROPIC_API_KEY is EMPTY — secret missing or has no value."
             exit 1
           fi
-          echo "CLAUDE_CODE_OAUTH_TOKEN present (length ${#CLAUDE_CODE_OAUTH_TOKEN})."
+          echo "ANTHROPIC_API_KEY present (length ${#ANTHROPIC_API_KEY})."
 
       - name: Translate to an email block (Claude Code, headless)
         # NOTE on --bare: it gives reproducible CI runs but trims tools to Read/Edit/Bash (no
