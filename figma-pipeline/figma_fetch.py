@@ -31,6 +31,7 @@ import base64
 import json
 import os
 import sys
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -39,8 +40,13 @@ API = "https://api.figma.com"
 
 def _req(url, *, headers=None, data=None, method=None):
     r = urllib.request.Request(url, data=data, headers=headers or {}, method=method)
-    with urllib.request.urlopen(r, timeout=30) as resp:
-        return resp.read()
+    try:
+        with urllib.request.urlopen(r, timeout=30) as resp:
+            return resp.read()
+    except urllib.error.HTTPError as e:
+        # Surface the API's actual error message (e.g. invalid client / invalid refresh token)
+        body = e.read().decode("utf-8", "replace")
+        raise SystemExit(f"HTTP {e.code} from {url}\n  {body}") from None
 
 
 def refresh_access_token(client_id, client_secret, refresh_token):
