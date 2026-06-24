@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-developer-skills/figma_fetch.py
+figma-pipeline/figma_fetch.py
 
 Headless Figma read for the CI builder. The remote Figma MCP server is OAuth-only and
 restricted to whitelisted "catalog" clients with an *interactive* OAuth flow, so it can't
@@ -19,7 +19,7 @@ Credentials come from the environment (set these as CI secrets — never in the 
   FIGMA_CLIENT_ID, FIGMA_CLIENT_SECRET, FIGMA_REFRESH_TOKEN
 
 Usage:
-  python3 developer-skills/figma_fetch.py --file <FILE_KEY> --node 4618:108 --out ./_figma_in
+  python3 figma-pipeline/figma_fetch.py --file <FILE_KEY> --node 4618:108 --out ./_figma_in
 
 Zero dependencies (stdlib only), to match test/ and generate_manifest.py.
 NOTE: not runnable without live credentials, so it has not been executed here — your dev

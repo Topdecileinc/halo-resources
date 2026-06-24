@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-developer-skills/generate_manifest.py
+figma-pipeline/generate_manifest.py
 
-Builds developer-skills/figma_manifest.json from the `figma-source` comments that
+Builds figma-pipeline/figma_manifest.json from the `figma-source` comments that
 the Figma download flow (see rules_figma_download.md) stamps into every downloaded
 block. The comments are the single source of truth for the Figma-node -> output-file
 mapping; this script just collects them so the webhook receiver / CI can look up
@@ -14,8 +14,8 @@ are not Figma-sourced and are not rebuilt by the pipeline).
 
 Run from anywhere; paths resolve relative to the repo root (this file's parent's parent):
 
-    python3 developer-skills/generate_manifest.py            # write the manifest
-    python3 developer-skills/generate_manifest.py --check    # exit 1 if out of date
+    python3 figma-pipeline/generate_manifest.py            # write the manifest
+    python3 figma-pipeline/generate_manifest.py --check    # exit 1 if out of date
 
 Zero dependencies (stdlib only), to match test/.
 """
@@ -33,7 +33,7 @@ SCAN_DIRS = [
 ]
 PLAYGROUND_DIR = REPO_ROOT / "email-design-system" / "playground"
 COMPONENTS_DIR = REPO_ROOT / "email-design-system" / "components"
-OUTPUT = REPO_ROOT / "developer-skills" / "figma_manifest.json"
+OUTPUT = REPO_ROOT / "figma-pipeline" / "figma_manifest.json"
 
 FIGMA_SOURCE_BLOCK = re.compile(r"<!--\s*figma-source\b(.*?)-->", re.DOTALL)
 
@@ -83,7 +83,7 @@ def build():
             })
     targets.sort(key=lambda t: (t["figma_file_key"] or "", t["figma_node_id"] or ""))
     return {
-        "_generated_by": "developer-skills/generate_manifest.py",
+        "_generated_by": "figma-pipeline/generate_manifest.py",
         "_source_of_truth": "figma-source comments in email-design-system/{sections,components}/*.html",
         "_note": "Run after any Figma download/refresh to keep this in sync. Only Figma-sourced blocks appear here.",
         "targets": targets,
@@ -101,7 +101,7 @@ def main():
     if args.check:
         current = OUTPUT.read_text(encoding="utf-8") if OUTPUT.is_file() else ""
         if current != fresh:
-            print("figma_manifest.json is OUT OF DATE — run: python3 developer-skills/generate_manifest.py")
+            print("figma_manifest.json is OUT OF DATE — run: python3 figma-pipeline/generate_manifest.py")
             return 1
         print("figma_manifest.json is up to date.")
         return 0

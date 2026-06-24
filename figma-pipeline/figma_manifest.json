@@ -1,5 +1,5 @@
 {
-  "_generated_by": "developer-skills/generate_manifest.py",
+  "_generated_by": "figma-pipeline/generate_manifest.py",
   "_source_of_truth": "figma-source comments in email-design-system/{sections,components}/*.html",
   "_note": "Run after any Figma download/refresh to keep this in sync. Only Figma-sourced blocks appear here.",
   "targets": [
