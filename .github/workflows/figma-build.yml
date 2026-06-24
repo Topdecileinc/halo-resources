@@ -36,7 +36,6 @@ jobs:
       FIGMA_CLIENT_ID:     ${{ secrets.FIGMA_CLIENT_ID }}
       FIGMA_CLIENT_SECRET: ${{ secrets.FIGMA_CLIENT_SECRET }}
       FIGMA_REFRESH_TOKEN: ${{ secrets.FIGMA_REFRESH_TOKEN }}
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       FILE_KEY:    ${{ github.event.client_payload.file_key    || github.event.inputs.file_key }}
       NODE_ID:     ${{ github.event.client_payload.node_id     || github.event.inputs.node_id }}
       OUTPUT_PATH: ${{ github.event.client_payload.output_path || github.event.inputs.output_path }}
@@ -49,37 +48,24 @@ jobs:
       - name: Pull the node from Figma (REST, headless)
         run: python3 figma-pipeline/figma_fetch.py --file "$FILE_KEY" --node "$NODE_ID" --out ./_figma_in
 
-      - uses: actions/setup-node@v4
-        with: { node-version: "20" }
-
-      - name: Install Claude Code
-        run: npm install -g @anthropic-ai/claude-code
-
-      - name: Check the API key reached the runner
-        run: |
-          if [ -z "$ANTHROPIC_API_KEY" ]; then
-            echo "::error::ANTHROPIC_API_KEY is EMPTY — secret missing or has no value."; exit 1
-          fi
-          case "$ANTHROPIC_API_KEY" in
-            sk-ant-*) echo "ANTHROPIC_API_KEY looks valid (sk-ant-…, length ${#ANTHROPIC_API_KEY})." ;;
-            *) echo "::error::ANTHROPIC_API_KEY is set but does NOT start with 'sk-ant-' — that's not an Anthropic API key (looks like an OAuth token or a placeholder). Create a real key at console.anthropic.com and paste the sk-ant-... value."; exit 1 ;;
-          esac
-
-      - name: Translate to an email block (Claude Code, headless)
-        # NOTE on --bare: it gives reproducible CI runs but trims tools to Read/Edit/Bash (no
-        # Write). This pipeline REFRESHES existing blocks (Edit is enough), so --bare is safe
-        # for refreshes; it's omitted here so Write also works if a target file doesn't exist yet.
-        run: |
-          claude -p "Regenerate the email block at $OUTPUT_PATH from the Figma design in \
-            ./_figma_in/node.json and ./_figma_in/node.png. Follow \
-            developer-skills/rules_figma_download.md exactly: translate to email-safe table HTML, \
-            keep the [BRACKETED] placeholders, preserve hand edits per the Refresh section, and \
-            recompute the figma-source generated-sha. Write ONLY the updated block to \
-            $OUTPUT_PATH and its playground; change nothing else." \
-            --allowedTools "Read,Edit,Write,Bash(python3 *)" \
-            --permission-mode dontAsk \
-            --max-turns 12 --max-budget-usd 2.00 \
-            --output-format json
+      # Use the official action: raw `claude -p` ignores ANTHROPIC_API_KEY in headless CI
+      # (a known issue) and fails with "Not logged in". The action reads the key as a param.
+      - name: Translate to an email block (Claude Code action)
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: >-
+            Regenerate the email block at
+            ${{ github.event.client_payload.output_path || github.event.inputs.output_path }}
+            from the Figma design in ./_figma_in/node.json and ./_figma_in/node.png. Follow
+            developer-skills/rules_figma_download.md exactly: translate to email-safe table HTML,
+            keep the [BRACKETED] placeholders, preserve hand edits per the Refresh section, and
+            recompute the figma-source generated-sha. Write ONLY the updated block and its
+            playground; change nothing else. Do NOT run git or commit; a later step validates and commits.
+          claude_args: |
+            --allowedTools Read,Edit,Write,Bash(python3 *)
+            --max-turns 12
+            --max-budget-usd 2.00
 
       - name: Regenerate the manifest
         run: python3 figma-pipeline/generate_manifest.py
