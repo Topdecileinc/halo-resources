@@ -55,6 +55,14 @@ jobs:
       - name: Install Claude Code
         run: npm install -g @anthropic-ai/claude-code
 
+      - name: Check the Claude token reached the runner
+        run: |
+          if [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
+            echo "::error::CLAUDE_CODE_OAUTH_TOKEN is EMPTY — secret missing or has no value."
+            exit 1
+          fi
+          echo "CLAUDE_CODE_OAUTH_TOKEN present (length ${#CLAUDE_CODE_OAUTH_TOKEN})."
+
       - name: Translate to an email block (Claude Code, headless)
         # NOTE on --bare: it gives reproducible CI runs but trims tools to Read/Edit/Bash (no
         # Write). This pipeline REFRESHES existing blocks (Edit is enough), so --bare is safe
