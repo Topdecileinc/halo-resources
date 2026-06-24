@@ -6,8 +6,8 @@
 # (GitHub requires workflows under .github/workflows/); the real logic is in figma-pipeline/.
 #
 # DEV TO DO before this runs:
-#   - Add repo Actions secrets: ANTHROPIC_API_KEY, FIGMA_CLIENT_ID, FIGMA_CLIENT_SECRET,
-#     FIGMA_REFRESH_TOKEN.
+#   - Add repo Actions secrets: ANTHROPIC_AUTH_TOKEN (from `claude setup-token`, uses your
+#     Claude subscription), FIGMA_CLIENT_ID, FIGMA_CLIENT_SECRET, FIGMA_REFRESH_TOKEN.
 #   - This is UNTESTED here (no runner/secrets) — smoke-test with the manual trigger first.
 #   - Confirm the Claude Code install command + flags against current docs at deploy time.
 
@@ -36,7 +36,7 @@ jobs:
       FIGMA_CLIENT_ID:     ${{ secrets.FIGMA_CLIENT_ID }}
       FIGMA_CLIENT_SECRET: ${{ secrets.FIGMA_CLIENT_SECRET }}
       FIGMA_REFRESH_TOKEN: ${{ secrets.FIGMA_REFRESH_TOKEN }}
-      ANTHROPIC_API_KEY:   ${{ secrets.ANTHROPIC_API_KEY }}
+      ANTHROPIC_AUTH_TOKEN: ${{ secrets.ANTHROPIC_AUTH_TOKEN }}
       FILE_KEY:    ${{ github.event.client_payload.file_key    || github.event.inputs.file_key }}
       NODE_ID:     ${{ github.event.client_payload.node_id     || github.event.inputs.node_id }}
       OUTPUT_PATH: ${{ github.event.client_payload.output_path || github.event.inputs.output_path }}
@@ -48,6 +48,9 @@ jobs:
 
       - name: Pull the node from Figma (REST, headless)
         run: python3 figma-pipeline/figma_fetch.py --file "$FILE_KEY" --node "$NODE_ID" --out ./_figma_in
+
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
 
       - name: Install Claude Code
         run: npm install -g @anthropic-ai/claude-code
