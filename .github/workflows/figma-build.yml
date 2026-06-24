@@ -55,13 +55,15 @@ jobs:
       - name: Install Claude Code
         run: npm install -g @anthropic-ai/claude-code
 
-      - name: Check the Claude token reached the runner
+      - name: Check the API key reached the runner
         run: |
           if [ -z "$ANTHROPIC_API_KEY" ]; then
-            echo "::error::ANTHROPIC_API_KEY is EMPTY — secret missing or has no value."
-            exit 1
+            echo "::error::ANTHROPIC_API_KEY is EMPTY — secret missing or has no value."; exit 1
           fi
-          echo "ANTHROPIC_API_KEY present (length ${#ANTHROPIC_API_KEY})."
+          case "$ANTHROPIC_API_KEY" in
+            sk-ant-*) echo "ANTHROPIC_API_KEY looks valid (sk-ant-…, length ${#ANTHROPIC_API_KEY})." ;;
+            *) echo "::error::ANTHROPIC_API_KEY is set but does NOT start with 'sk-ant-' — that's not an Anthropic API key (looks like an OAuth token or a placeholder). Create a real key at console.anthropic.com and paste the sk-ant-... value."; exit 1 ;;
+          esac
 
       - name: Translate to an email block (Claude Code, headless)
         # NOTE on --bare: it gives reproducible CI runs but trims tools to Read/Edit/Bash (no
