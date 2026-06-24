@@ -53,7 +53,7 @@ jobs:
       - name: Translate to an email block (Claude Code action)
         uses: anthropics/claude-code-action@v1
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: >-
             Regenerate the email block at
             ${{ github.event.client_payload.output_path || github.event.inputs.output_path }}
@@ -65,7 +65,6 @@ jobs:
           claude_args: |
             --allowedTools Read,Edit,Write,Bash(python3 *)
             --max-turns 12
-            --max-budget-usd 2.00
 
       - name: Regenerate the manifest
         run: python3 figma-pipeline/generate_manifest.py
