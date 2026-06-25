@@ -5,6 +5,17 @@
   "targets": [
     {
       "figma_file_key": "cXkVxm0fI9G49nZtKPbYY7",
+      "figma_node_id": "1588:301",
+      "kind": "section",
+      "output_path": "email-design-system/sections/section_aquisitions_no_background.html",
+      "playground_path": "email-design-system/playground/aquisitions_no_background.html",
+      "uses_components": [
+        "email-design-system/components/component_button.html"
+      ],
+      "figma_url": "https://www.figma.com/design/cXkVxm0fI9G49nZtKPbYY7/Halo-Email-Design-System--Copy---Copy-?node-id=1588-301"
+    },
+    {
+      "figma_file_key": "cXkVxm0fI9G49nZtKPbYY7",
       "figma_node_id": "4618:108",
       "kind": "section",
       "output_path": "email-design-system/sections/section_hero_overlay.html",

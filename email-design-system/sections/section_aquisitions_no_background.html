@@ -1,0 +1,135 @@
+<!-- section-desc: Acquisitions launch block — badge, large display headline, sub-headline, CTA, product photo, three-point "How it works" explainer (labeled bold + body copy rows), and a second CTA, all on a solid-color panel with no background image. -->
+<!--
+  section_aquisitions_no_background.html  (root class="section-aquisitions-no-background")
+  Acquisitions product-launch section: a solid dark panel with a small badge (NEW),
+  a display-scale headline, sub-headline, primary CTA, full-width product photo, an
+  explainer section ("How does X work?" heading + three Problem/Fix/Result rows), and
+  a second CTA. The name "no-background" distinguishes it from a sister node that uses a
+  hero background image behind the text.
+
+  RECONCILIATION FLAGS (Figma vs style guide):
+   - Panel background #171E34 (dark navy) is NOT in the style-guide palette. Exposed as
+     [PANEL_BG] so it stays a campaign knob and is not added to the style guide.
+   - Badge and CTA fill #F5FF6A (yellow-green, from Figma) DOES NOT match style-guide Halo
+     Yellow #FCD62D. This appears to be an updated brand yellow in this design. Flagged here;
+     not added to the style guide. [BADGE_BG] and [CTA_FILL] default to the Figma value.
+   - The "NEW" badge is rendered as a styled table cell with border-radius:5px (matching
+     Figma cornerRadius:5) — not a pill shape, so it does not violate the "CTAs only" pill
+     rule.
+   - Headline is 72px Regular (not Bold) per Figma, well above the style-guide H1 (34px Bold).
+     This is an intentional display/hero choice from the design spec.
+   - Both CTA buttons link to the same action; they share [CTA_LABEL] and [CTA_URL].
+
+  DYNAMIC ([BRACKETED]): PANEL_BG, BADGE_LABEL, BADGE_BG, BADGE_TEXT_COLOR, HEADLINE,
+  SUBHEADLINE, CTA_LABEL, CTA_URL, CTA_FILL, CTA_TEXT_COLOR, IMG_PRODUCT_URL,
+  IMG_PRODUCT_ALT, EXPLAINER_HEADING, ACCENT_COLOR, POINT1_LABEL, POINT1_BODY,
+  POINT2_LABEL, POINT2_BODY, POINT3_LABEL, POINT3_BODY.
+-->
+<!-- figma-source
+     file:          cXkVxm0fI9G49nZtKPbYY7
+     node:          1588:301
+     url:           https://www.figma.com/design/cXkVxm0fI9G49nZtKPbYY7/Halo-Email-Design-System--Copy---Copy-?node-id=1588-301
+     kind:          section
+     fetched:       2026-06-25
+     generated-sha: a9e8e1802659197aed447499d1c0478d23529fab8347206d124766e646043da7
+     On "refresh" this node is re-pulled and this file + its playground are rebuilt.
+     See developer-skills/rules_figma_download.md -> Refresh for how hand edits are preserved. -->
+<tr class="section-aquisitions-no-background">
+  <td bgcolor="[PANEL_BG]" align="center" style="background-color:[PANEL_BG]; border-radius:24px; padding:0; font-family:'Inter',Arial,Helvetica,sans-serif;">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:100%;">
+
+      <!-- Badge -->
+      <tr>
+        <td align="center" style="padding:30px 0 1px 0;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td bgcolor="[BADGE_BG]" align="center" style="background-color:[BADGE_BG]; border-radius:5px; padding:3px 5px; font-family:'Inter',Arial,Helvetica,sans-serif; font-size:20px; line-height:24px; font-weight:700; color:[BADGE_TEXT_COLOR];">[BADGE_LABEL]</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+
+      <!-- Display headline -->
+      <tr>
+        <td align="center" style="padding:0 20px 10px 20px; font-family:'Inter',Arial,Helvetica,sans-serif; font-size:72px; line-height:1; font-weight:400; color:#ffffff; text-align:center;">[HEADLINE]</td>
+      </tr>
+
+      <!-- Sub-headline -->
+      <tr>
+        <td align="center" style="padding:0 30px 25px 30px; font-family:'Inter',Arial,Helvetica,sans-serif; font-size:20px; line-height:24px; font-weight:400; color:#ffffff; text-align:center;">[SUBHEADLINE]</td>
+      </tr>
+
+      <!-- CTA Button 1 -->
+      <tr>
+        <td align="center" style="padding:0 0 10px 0;">
+          <!-- CTA — component_button.html (bulletproof pill) -->
+          <table class="component-button" role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+            <tr>
+              <td align="center" style="border-radius:999px; background-color:[CTA_FILL];">
+                <!--[if mso]>
+                <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="[CTA_URL]" style="height:52px;v-text-anchor:middle;width:242px;" arcsize="100%" stroke="f" fillcolor="[CTA_FILL]">
+                  <w:anchorlock/>
+                  <center style="color:[CTA_TEXT_COLOR];font-family:Arial,sans-serif;font-size:18px;font-weight:bold;">[CTA_LABEL]</center>
+                </v:roundrect>
+                <![endif]-->
+                <!--[if !mso]><!-- -->
+                <a href="[CTA_URL]" target="_blank" style="display:inline-block; padding:15px 40px; font-family:'Inter',Arial,Helvetica,sans-serif; font-size:18px; font-weight:700; color:[CTA_TEXT_COLOR]; text-decoration:none; border-radius:999px; mso-hide:all;">[CTA_LABEL]</a>
+                <!--<![endif]-->
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+
+      <!-- Product image -->
+      <tr>
+        <td style="padding:10px 0 20px 0; font-size:0; line-height:0;">
+          <img src="[IMG_PRODUCT_URL]" width="600" height="400" alt="[IMG_PRODUCT_ALT]" style="display:block; width:100%; max-width:600px; height:auto;" />
+        </td>
+      </tr>
+
+      <!-- Explainer heading -->
+      <tr>
+        <td style="padding:0 54px 12px 54px; font-family:'Inter',Arial,Helvetica,sans-serif; font-size:30px; line-height:36px; font-weight:400; color:#ffffff; text-align:left;">[EXPLAINER_HEADING]</td>
+      </tr>
+
+      <!-- Point 1 -->
+      <tr>
+        <td style="padding:0 54px 23px 54px; font-family:'Inter',Arial,Helvetica,sans-serif; font-size:20px; line-height:24px; font-weight:400; color:#ffffff; text-align:left;"><strong style="color:[ACCENT_COLOR]; font-weight:700;">[POINT1_LABEL]</strong>&nbsp;&nbsp;[POINT1_BODY]</td>
+      </tr>
+
+      <!-- Point 2 -->
+      <tr>
+        <td style="padding:0 54px 23px 54px; font-family:'Inter',Arial,Helvetica,sans-serif; font-size:20px; line-height:24px; font-weight:400; color:#ffffff; text-align:left;"><strong style="color:[ACCENT_COLOR]; font-weight:700;">[POINT2_LABEL]</strong>&nbsp;&nbsp;[POINT2_BODY]</td>
+      </tr>
+
+      <!-- Point 3 -->
+      <tr>
+        <td style="padding:0 54px 23px 54px; font-family:'Inter',Arial,Helvetica,sans-serif; font-size:20px; line-height:24px; font-weight:400; color:#ffffff; text-align:left;"><strong style="color:[ACCENT_COLOR]; font-weight:700;">[POINT3_LABEL]</strong>&nbsp;&nbsp;[POINT3_BODY]</td>
+      </tr>
+
+      <!-- CTA Button 2 -->
+      <tr>
+        <td align="center" style="padding:0 0 30px 0;">
+          <!-- CTA — component_button.html (bulletproof pill) -->
+          <table class="component-button" role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+            <tr>
+              <td align="center" style="border-radius:999px; background-color:[CTA_FILL];">
+                <!--[if mso]>
+                <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="[CTA_URL]" style="height:52px;v-text-anchor:middle;width:242px;" arcsize="100%" stroke="f" fillcolor="[CTA_FILL]">
+                  <w:anchorlock/>
+                  <center style="color:[CTA_TEXT_COLOR];font-family:Arial,sans-serif;font-size:18px;font-weight:bold;">[CTA_LABEL]</center>
+                </v:roundrect>
+                <![endif]-->
+                <!--[if !mso]><!-- -->
+                <a href="[CTA_URL]" target="_blank" style="display:inline-block; padding:15px 40px; font-family:'Inter',Arial,Helvetica,sans-serif; font-size:18px; font-weight:700; color:[CTA_TEXT_COLOR]; text-decoration:none; border-radius:999px; mso-hide:all;">[CTA_LABEL]</a>
+                <!--<![endif]-->
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+
+    </table>
+  </td>
+</tr>

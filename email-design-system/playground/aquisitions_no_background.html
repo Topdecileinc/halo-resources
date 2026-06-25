@@ -1,0 +1,158 @@
+<!-- figma-source: file cXkVxm0fI9G49nZtKPbYY7 · node 1588:301 — playground for section_aquisitions_no_background.html. Refreshed alongside the section. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Acquisitions (no background) playground — Halo Email Resources</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="playground.css">
+</head>
+<body>
+  <header class="halo-header">
+    <div class="halo-header__inner">
+      <img src="https://topdecileinc.github.io/halo-resources/email-design-system/assets/shared-images/halo-logo-dark.svg" alt="Halo">
+      <span class="halo-header__tag">PLAYGROUND</span>
+      <span class="spacer"></span>
+      <a class="home" href="/halo-resources/">All resources</a>
+    </div>
+  </header>
+
+  <main>
+    <a class="back" href="/halo-resources/">&larr; Back to resources</a>
+    <p class="kind">Section</p>
+    <h1>Acquisitions — no background image</h1>
+    <p class="lede">Badge, large display headline, sub-headline, CTA, product photo, and a
+      three-point "How it works" explainer (labeled bold + body copy) with a second CTA &mdash;
+      all on a solid-color panel. Downloaded from Figma (<code>node 1588:301</code>).
+      <strong>Note:</strong> the panel navy (#171E34) and yellow-green (#F5FF6A) are campaign
+      colors from Figma that differ from style-guide tokens; they are exposed as editable knobs.</p>
+
+    <div class="pg-grid">
+      <form class="pg-controls" id="pg-controls" autocomplete="off" onsubmit="return false;">
+        <h2>Controls</h2>
+      </form>
+
+      <div class="pg-preview">
+        <div class="pg-bar"><span class="label">Preview</span> &middot; 600px email width</div>
+        <iframe class="pg-frame" id="pg-frame" title="Acquisitions (no background) preview"></iframe>
+        <details class="pg-source">
+          <summary>View &amp; copy HTML</summary>
+          <button type="button" class="copy-btn" id="pg-copy">Copy HTML</button>
+          <pre id="pg-src"></pre>
+        </details>
+      </div>
+    </div>
+  </main>
+
+  <script src="playground.js"></script>
+  <script>
+    initPlayground({
+      template:
+'<tr class="section-aquisitions-no-background">\n' +
+'  <td bgcolor="[PANEL_BG]" align="center" style="background-color:[PANEL_BG]; border-radius:24px; padding:0; font-family:\'Inter\',Arial,Helvetica,sans-serif;">\n' +
+'    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:100%;">\n' +
+'\n' +
+'      <tr>\n' +
+'        <td align="center" style="padding:30px 0 1px 0;">\n' +
+'          <table role="presentation" cellpadding="0" cellspacing="0" border="0">\n' +
+'            <tr>\n' +
+'              <td bgcolor="[BADGE_BG]" align="center" style="background-color:[BADGE_BG]; border-radius:5px; padding:3px 5px; font-family:\'Inter\',Arial,Helvetica,sans-serif; font-size:20px; line-height:24px; font-weight:700; color:[BADGE_TEXT_COLOR];">[BADGE_LABEL]</td>\n' +
+'            </tr>\n' +
+'          </table>\n' +
+'        </td>\n' +
+'      </tr>\n' +
+'\n' +
+'      <tr>\n' +
+'        <td align="center" style="padding:0 20px 10px 20px; font-family:\'Inter\',Arial,Helvetica,sans-serif; font-size:72px; line-height:1; font-weight:400; color:#ffffff; text-align:center;">[HEADLINE]</td>\n' +
+'      </tr>\n' +
+'\n' +
+'      <tr>\n' +
+'        <td align="center" style="padding:0 30px 25px 30px; font-family:\'Inter\',Arial,Helvetica,sans-serif; font-size:20px; line-height:24px; font-weight:400; color:#ffffff; text-align:center;">[SUBHEADLINE]</td>\n' +
+'      </tr>\n' +
+'\n' +
+'      <tr>\n' +
+'        <td align="center" style="padding:0 0 10px 0;">\n' +
+'          <table class="component-button" role="presentation" cellpadding="0" cellspacing="0" border="0" align="center"><tr>\n' +
+'            <td align="center" style="border-radius:999px; background-color:[CTA_FILL];">\n' +
+'              <a href="[CTA_URL]" target="_blank" style="display:inline-block; padding:15px 40px; font-family:\'Inter\',Arial,Helvetica,sans-serif; font-size:18px; font-weight:700; color:[CTA_TEXT_COLOR]; text-decoration:none; border-radius:999px;">[CTA_LABEL]</a>\n' +
+'            </td>\n' +
+'          </tr></table>\n' +
+'        </td>\n' +
+'      </tr>\n' +
+'\n' +
+'      <tr>\n' +
+'        <td style="padding:10px 0 20px 0; font-size:0; line-height:0;">\n' +
+'          <img src="[IMG_PRODUCT_URL]" width="600" height="400" alt="[IMG_PRODUCT_ALT]" style="display:block; width:100%; max-width:600px; height:auto;" />\n' +
+'        </td>\n' +
+'      </tr>\n' +
+'\n' +
+'      <tr>\n' +
+'        <td style="padding:0 54px 12px 54px; font-family:\'Inter\',Arial,Helvetica,sans-serif; font-size:30px; line-height:36px; font-weight:400; color:#ffffff; text-align:left;">[EXPLAINER_HEADING]</td>\n' +
+'      </tr>\n' +
+'\n' +
+'      <tr>\n' +
+'        <td style="padding:0 54px 23px 54px; font-family:\'Inter\',Arial,Helvetica,sans-serif; font-size:20px; line-height:24px; font-weight:400; color:#ffffff; text-align:left;"><strong style="color:[ACCENT_COLOR]; font-weight:700;">[POINT1_LABEL]</strong>&nbsp;&nbsp;[POINT1_BODY]</td>\n' +
+'      </tr>\n' +
+'\n' +
+'      <tr>\n' +
+'        <td style="padding:0 54px 23px 54px; font-family:\'Inter\',Arial,Helvetica,sans-serif; font-size:20px; line-height:24px; font-weight:400; color:#ffffff; text-align:left;"><strong style="color:[ACCENT_COLOR]; font-weight:700;">[POINT2_LABEL]</strong>&nbsp;&nbsp;[POINT2_BODY]</td>\n' +
+'      </tr>\n' +
+'\n' +
+'      <tr>\n' +
+'        <td style="padding:0 54px 23px 54px; font-family:\'Inter\',Arial,Helvetica,sans-serif; font-size:20px; line-height:24px; font-weight:400; color:#ffffff; text-align:left;"><strong style="color:[ACCENT_COLOR]; font-weight:700;">[POINT3_LABEL]</strong>&nbsp;&nbsp;[POINT3_BODY]</td>\n' +
+'      </tr>\n' +
+'\n' +
+'      <tr>\n' +
+'        <td align="center" style="padding:0 0 30px 0;">\n' +
+'          <table class="component-button" role="presentation" cellpadding="0" cellspacing="0" border="0" align="center"><tr>\n' +
+'            <td align="center" style="border-radius:999px; background-color:[CTA_FILL];">\n' +
+'              <a href="[CTA_URL]" target="_blank" style="display:inline-block; padding:15px 40px; font-family:\'Inter\',Arial,Helvetica,sans-serif; font-size:18px; font-weight:700; color:[CTA_TEXT_COLOR]; text-decoration:none; border-radius:999px;">[CTA_LABEL]</a>\n' +
+'            </td>\n' +
+'          </tr></table>\n' +
+'        </td>\n' +
+'      </tr>\n' +
+'\n' +
+'    </table>\n' +
+'  </td>\n' +
+'</tr>',
+      fields: [
+        { key: "PANEL_BG",         label: "Panel background",        type: "color",    default: "#171E34",
+          hint: "Campaign color (dark navy from Figma, not a style-guide token)." },
+        { key: "BADGE_LABEL",      label: "Badge label",             type: "text",     default: "NEW" },
+        { key: "BADGE_BG",         label: "Badge background",        type: "color",    default: "#F5FF6A",
+          hint: "Campaign yellow-green from Figma. Style-guide Halo Yellow is #FCD62D." },
+        { key: "BADGE_TEXT_COLOR", label: "Badge text color",        type: "color",    default: "#333333" },
+        { key: "HEADLINE",         label: "Headline",                type: "text",     default: "Precision" },
+        { key: "SUBHEADLINE",      label: "Sub-headline",            type: "textarea", default: "A new standard in GPS accuracy, only from Halo™" },
+        { key: "CTA_LABEL",        label: "CTA label",               type: "text",     default: "Shop Halo Collar 5" },
+        { key: "CTA_URL",          label: "CTA URL",                 type: "url",      default: "https://www.halocollar.com/" },
+        { key: "CTA_FILL",         label: "CTA fill",                type: "color",    default: "#F5FF6A",
+          hint: "Campaign yellow-green. Style-guide options: Yellow #FCD62D, Blue #2F93F3, White #ffffff." },
+        { key: "CTA_TEXT_COLOR",   label: "CTA text color",          type: "color",    default: "#434343" },
+        { key: "IMG_PRODUCT_URL",  label: "Product image URL",       type: "url",      default: "https://placehold.co/600x400?text=Product+image",
+          hint: "Default is a placeholder. Paste a real hosted URL to preview." },
+        { key: "IMG_PRODUCT_ALT",  label: "Product image alt text",  type: "text",     default: "Halo Collar product photo" },
+        { key: "EXPLAINER_HEADING",label: "Explainer heading",       type: "text",     default: "How does Precision+ work?" },
+        { key: "ACCENT_COLOR",     label: "Explainer label color",   type: "color",    default: "#F5FF6A",
+          hint: "Color for bold point labels (e.g. The Problem, The Fix, The Result). Campaign yellow-green from Figma." },
+        { key: "POINT1_LABEL",     label: "Point 1 label",           type: "text",     default: "The Problem" },
+        { key: "POINT1_BODY",      label: "Point 1 body",            type: "textarea", default: "Standard GPS isn’t perfect. Atmosphere, trees, and terrain can add 10 to 30 feet of error." },
+        { key: "POINT2_LABEL",     label: "Point 2 label",           type: "text",     default: "The Fix" },
+        { key: "POINT2_BODY",      label: "Point 2 body",            type: "textarea", default: "A global network of ground stations augment satellite data to help correct GPS errors in real time." },
+        { key: "POINT3_LABEL",     label: "Point 3 label",           type: "text",     default: "The Result" },
+        { key: "POINT3_BODY",      label: "Point 3 body",            type: "textarea", default: "The most precise GPS dog fence ever built, with your dog’s location accurate to within 2 feet." }
+      ],
+      wrap: function (html) {
+        return '<!DOCTYPE html><html><head><meta charset="utf-8">' +
+          '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">' +
+          '<style>html,body{margin:0}body{font-family:Inter,Arial,sans-serif;background:#e9edee;padding:24px 12px;}</style></head>' +
+          '<body><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" align="center" style="width:600px;max-width:100%;background:#ffffff;margin:0 auto;">' +
+          html + '</table></body></html>';
+      }
+    });
+  </script>
+</body>
+</html>
