@@ -5,8 +5,8 @@ figma-pipeline/generate_manifest.py
 Builds figma-pipeline/figma_manifest.json from the `figma-source` comments that
 the Figma download flow (see rules_figma_download.md) stamps into every downloaded
 block. The comments are the single source of truth for the Figma-node -> output-file
-mapping; this script just collects them so the webhook receiver / CI can look up
-"which file(s) does this published node rebuild" without a human pasting links.
+mapping; this script just collects them so the poller (poll.py) can look up
+"which output file does this Figma node map to" without a human pasting links.
 
 Only blocks that carry a `figma-source` comment appear in the manifest — i.e. only
 the ones actually downloaded from Figma (hand-built blocks like the header/footer

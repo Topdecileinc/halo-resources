@@ -1,11 +1,14 @@
-# Figma → email block POLLER (Stage 1 trigger for Professional plans).
+# Figma → email block POLLER. The TRIGGER (Figma won't deliver webhooks on a Professional
+# plan, so we read on a schedule instead).
 #
-# Figma only DELIVERS webhook events on Organization/Enterprise plans, so on a Professional
-# plan we poll instead: every 20 minutes (and on demand) this checks each tracked block for a
-# design change and rebuilds ONLY the ones that changed, by calling figma-build.yml.
+# Every 20 minutes (and on demand) poll.py reads the Figma file and looks at every node marked
+# "Ready for dev". A ready node that isn't tracked yet is ONBOARDED (a new block is created); a
+# ready node already tracked is REBUILT only if its design changed. Nothing that isn't marked
+# Ready for dev is ever touched. Each block to build is handed to figma-build.yml.
 #
 # Needs the same secrets as figma-build.yml: FIGMA_CLIENT_ID / FIGMA_CLIENT_SECRET /
 # FIGMA_REFRESH_TOKEN and CLAUDE_CODE_OAUTH_TOKEN (the build call inherits them).
+# Full docs: figma-pipeline/GUIDE.md.
 
 name: figma-poll
 

@@ -1,15 +1,14 @@
-# Figma → email block builder (Stage 1).
+# Figma → email block BUILDER. The worker that builds ONE block.
 #
-# Triggered by the webhook receiver via repository_dispatch (or run manually for testing).
-# Pulls one Figma node via REST, translates it to an email block with Claude Code, runs the
-# block validation gate, and commits ONLY if the gate passes. The thin wrapper lives here
-# (GitHub requires workflows under .github/workflows/); the real logic is in figma-pipeline/.
+# Called by the poller (figma-poll.yml, via workflow_call) once per block to (re)build, and
+# also runnable on its own: the "Run workflow" button (workflow_dispatch) or an external
+# repository_dispatch. Pulls one Figma node via REST, translates it to an email block with
+# Claude Code (create-from-scratch or refresh), runs the validation gate, and commits ONLY if
+# the gate passes. Thin wrapper here (GitHub requires workflows under .github/workflows/); the
+# real logic is in figma-pipeline/. Full docs: figma-pipeline/GUIDE.md.
 #
-# DEV TO DO before this runs:
-#   - Add repo Actions secrets: ANTHROPIC_API_KEY (from console.anthropic.com — API billing,
-#     pennies/run), FIGMA_CLIENT_ID, FIGMA_CLIENT_SECRET, FIGMA_REFRESH_TOKEN.
-#   - This is UNTESTED here (no runner/secrets) — smoke-test with the manual trigger first.
-#   - Confirm the Claude Code install command + flags against current docs at deploy time.
+# Required repo Actions secrets: CLAUDE_CODE_OAUTH_TOKEN, FIGMA_CLIENT_ID, FIGMA_CLIENT_SECRET,
+# FIGMA_REFRESH_TOKEN.  (See GUIDE.md "Secrets & tokens" for how to obtain each.)
 
 name: figma-build
 
