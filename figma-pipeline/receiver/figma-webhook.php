@@ -34,6 +34,19 @@ function respond(int $code, string $body = ''): void {
     exit;
 }
 
+/**
+ * Append a debug line to the log file (best-effort; NEVER logs the passcode).
+ * Default path /var/log/figma-receiver.log; override with 'log_file' in the config.
+ * Falls back to the Apache error log if the file isn't writable.
+ */
+function dbg(array $cfg, string $msg): void {
+    $line = gmdate('c') . ' ' . $msg . "\n";
+    $path = $cfg['log_file'] ?? '/var/log/figma-receiver.log';
+    if (@file_put_contents($path, $line, FILE_APPEND | LOCK_EX) === false) {
+        error_log('figma-webhook ' . $msg);
+    }
+}
+
 /** Load the secrets file (outside the webroot, never in git). */
 function load_config(): array {
     $path = getenv('FIGMA_RECEIVER_CONFIG') ?: '/etc/figma-receiver-config.php';
@@ -95,8 +108,8 @@ function load_manifest(string $url): array {
     return is_array($data) ? $data : [];
 }
 
-/** Trigger the figma-build workflow for one block via repository_dispatch. */
-function dispatch_build(array $cfg, string $fileKey, string $nodeId, string $outputPath): void {
+/** Trigger the figma-build workflow for one block via repository_dispatch. Returns the HTTP code (204 = ok). */
+function dispatch_build(array $cfg, string $fileKey, string $nodeId, string $outputPath): int {
     $payload = json_encode([
         'event_type'     => 'figma-publish',
         'client_payload' => [
@@ -122,9 +135,7 @@ function dispatch_build(array $cfg, string $fileKey, string $nodeId, string $out
     curl_exec($ch);
     $code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);   // 204 on success
     curl_close($ch);
-    if ($code !== 204) {
-        error_log("figma-webhook: dispatch for $outputPath returned HTTP $code");
-    }
+    return $code;
 }
 
 // ---- request handling --------------------------------------------------------
@@ -136,8 +147,13 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
 $cfg     = load_config();
 $payload = json_decode(file_get_contents('php://input'), true) ?: [];
 
+dbg($cfg, sprintf('POST event=%s status=%s file=%s node=%s',
+    $payload['event_type'] ?? '-', $payload['status'] ?? '-',
+    $payload['file_key'] ?? '-', $payload['node_id'] ?? '-'));
+
 // 1. validate the passcode Figma echoes back
 if (($payload['passcode'] ?? null) !== $cfg['passcode']) {
+    dbg($cfg, '  -> 403 passcode mismatch');
     respond(403, 'invalid passcode');
 }
 
@@ -145,6 +161,7 @@ $event = $payload['event_type'] ?? null;
 
 // 2. Figma sends a PING when the webhook is created — ack it
 if ($event === 'PING') {
+    dbg($cfg, '  -> PING ack');
     respond(200);
 }
 
@@ -152,6 +169,7 @@ if ($event === 'PING') {
 $eid = $event . ':' . ($payload['file_key'] ?? '') . ':' . ($payload['node_id'] ?? '')
      . ':' . ($payload['timestamp'] ?? '');
 if (already_seen($eid)) {
+    dbg($cfg, '  -> duplicate, skipped');
     respond(200);
 }
 
@@ -163,12 +181,20 @@ if ($event === 'DEV_MODE_STATUS_UPDATE') {
         $fileKey  = $payload['file_key'] ?? '';
         $nodeId   = $payload['node_id'] ?? '';
         $manifest = load_manifest($cfg['manifest_url']);
+        $matched  = 0;
         foreach (($manifest['targets'] ?? []) as $t) {
             if (($t['figma_file_key'] ?? null) === $fileKey
                 && ($t['figma_node_id'] ?? null) === $nodeId) {
-                dispatch_build($cfg, $fileKey, $nodeId, $t['output_path']);
+                $code = dispatch_build($cfg, $fileKey, $nodeId, $t['output_path']);
+                dbg($cfg, "  -> dispatched {$t['output_path']} (GitHub HTTP $code)");
+                $matched++;
             }
         }
+        if ($matched === 0) {
+            dbg($cfg, "  -> no manifest target matched file=$fileKey node=$nodeId");
+        }
+    } else {
+        dbg($cfg, '  -> ignored (status not READY_FOR_DEV)');
     }
     respond(200);
 }
