@@ -38,6 +38,15 @@
     },
     {
       "figma_file_key": "cXkVxm0fI9G49nZtKPbYY7",
+      "figma_node_id": "4645:425",
+      "kind": "section",
+      "output_path": "email-design-system/sections/section_members_background.html",
+      "playground_path": "email-design-system/playground/members_background.html",
+      "uses_components": [],
+      "figma_url": "https://www.figma.com/design/cXkVxm0fI9G49nZtKPbYY7/Halo-Email-Design-System--Copy---Copy-?node-id=4645-425"
+    },
+    {
+      "figma_file_key": "cXkVxm0fI9G49nZtKPbYY7",
       "figma_node_id": "4675:400",
       "kind": "section",
       "output_path": "email-design-system/sections/section_hero_stacked.html",

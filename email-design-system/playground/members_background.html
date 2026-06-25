@@ -1,0 +1,101 @@
+<!-- figma-source: file cXkVxm0fI9G49nZtKPbYY7 · node 4645:425 — playground for section_members_background.html. Refreshed alongside the section. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Members background playground — Halo Email Resources</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="playground.css">
+</head>
+<body>
+  <header class="halo-header">
+    <div class="halo-header__inner">
+      <img src="https://topdecileinc.github.io/halo-resources/email-design-system/assets/shared-images/halo-logo-dark.svg" alt="Halo">
+      <span class="halo-header__tag">PLAYGROUND</span>
+      <span class="spacer"></span>
+      <a class="home" href="/halo-resources/">All resources</a>
+    </div>
+  </header>
+
+  <main>
+    <a class="back" href="/halo-resources/">&larr; Back to resources</a>
+    <p class="kind">Section</p>
+    <h1>Members background</h1>
+    <p class="lede">600&times;600 square card with a background photo and headline/body text overlaid in the upper-left.
+       Downloaded from Figma (<code>node 4645:425</code>) and built to the email rules. Text is overlaid via a
+       background image with an Outlook fallback color. Edit the image URL to preview a real photo.
+       <strong>Note:</strong> the right padding (200px) on the body text keeps it in the left portion of the card
+       so the photo is visible on the right. The headline uses 36px (Figma spec; style-guide H1 is 34px).</p>
+
+    <div class="pg-grid">
+      <form class="pg-controls" id="pg-controls" autocomplete="off" onsubmit="return false;">
+        <h2>Controls</h2>
+      </form>
+
+      <div class="pg-preview">
+        <div class="pg-bar"><span class="label">Preview</span> &middot; 600px email width</div>
+        <iframe class="pg-frame" id="pg-frame" title="Members background preview"></iframe>
+        <details class="pg-source">
+          <summary>View &amp; copy HTML</summary>
+          <button type="button" class="copy-btn" id="pg-copy">Copy HTML</button>
+          <pre id="pg-src"></pre>
+        </details>
+      </div>
+    </div>
+  </main>
+
+  <script src="playground.js"></script>
+  <script>
+    initPlayground({
+      template:
+'<tr class="section-members-background">\n' +
+'  <td align="center" style="padding:0;">\n' +
+'    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:100%;">\n' +
+'      <tr>\n' +
+'        <td background="[IMG_BG_URL]" bgcolor="[BG_FALLBACK]" valign="top" style="background-color:[BG_FALLBACK]; background-image:url(\'[IMG_BG_URL]\'); background-position:center top; background-repeat:no-repeat; background-size:cover; border-radius:24px; font-family:\'Inter\',Arial,Helvetica,sans-serif;">\n' +
+'          <div>\n' +
+'            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">\n' +
+'              <tr>\n' +
+'                <td align="left" valign="top" style="padding:30px 30px 15px 30px;">\n' +
+'                  <h2 style="margin:0; font-family:\'Inter\',Arial,Helvetica,sans-serif; font-size:36px; line-height:44px; font-weight:700; color:#333333;">[HEADLINE]</h2>\n' +
+'                </td>\n' +
+'              </tr>\n' +
+'              <tr>\n' +
+'                <td align="left" valign="top" style="padding:0 200px 0 30px;">\n' +
+'                  <p style="margin:0; font-family:\'Inter\',Arial,Helvetica,sans-serif; font-size:18px; line-height:22px; font-weight:400; color:#333333;">[BODY_TEXT]</p>\n' +
+'                </td>\n' +
+'              </tr>\n' +
+'              <tr><td style="font-size:1px; line-height:1px; height:350px;">&nbsp;</td></tr>\n' +
+'            </table>\n' +
+'          </div>\n' +
+'        </td>\n' +
+'      </tr>\n' +
+'    </table>\n' +
+'  </td>\n' +
+'</tr>',
+      fields: [
+        { key: "IMG_BG_URL", label: "Background image URL", type: "url",
+          default: "https://placehold.co/600x600?text=Background+photo",
+          hint: "Default is a placeholder so nothing renders broken. Paste a real hosted URL to preview." },
+        { key: "HEADLINE", label: "Headline", type: "text",
+          default: "A quick Wi-Fi check<br>for your dog" },
+        { key: "BODY_TEXT", label: "Body text", type: "textarea",
+          default: "A strong Wi-Fi connection helps your Halo Collar run at its best by improving connectivity and supporting longer battery life." },
+        { key: "BG_FALLBACK", label: "Outlook fallback color", type: "select",
+          options: ["#F2F4F4", "#F5F5F5", "#FFFFFF"], default: "#F2F4F4",
+          hint: "Shown behind the text in Outlook (which drops the photo). Keep it light so the dark text stays readable." }
+      ],
+      wrap: function (html) {
+        return '<!DOCTYPE html><html><head><meta charset="utf-8">' +
+          '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">' +
+          '<style>html,body{margin:0}body{font-family:Inter,Arial,sans-serif;background:#e9edee;padding:24px 12px;}</style></head>' +
+          '<body><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" align="center" style="width:600px;max-width:100%;background:#ffffff;margin:0 auto;">' +
+          html + '</table></body></html>';
+      }
+    });
+  </script>
+</body>
+</html>

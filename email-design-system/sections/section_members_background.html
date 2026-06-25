@@ -1,0 +1,63 @@
+<!-- section-desc: Members background — 600×600 square card with a background photo and headline/body text overlaid in the upper-left. -->
+<!--
+  section_members_background.html  (root class="section-members-background")
+  A square image card: a full-bleed background photo with a bold headline and body text
+  overlaid in the top-left. The photo fills the lower portion. Drop inside the 600px
+  container table, e.g. after section_header.
+
+  RENDER (background-image + fallback): text is overlaid via the bulletproof VML/CSS
+  pattern. Outlook replaces the photo with [BG_FALLBACK] (a light color) and shows the
+  dark text on that background. The photo height is client-sensitive; tune the spacer
+  if needed. (See rules_email_build.md → "Always flag rendering risks".)
+
+  DYNAMIC ([BRACKETED]): background image URL, Outlook fallback color, headline, body text.
+  Images default to placehold.co so nothing renders broken.
+
+  STYLE (rules_email_style_guide.md): 24px card radius; text color #333333 (--text).
+  Headline: Inter Bold 36px (Figma spec; style-guide H1 is 34px Bold — kept at 36px per
+  the Figma source). Body: Inter Regular 18px / 22px line-height.
+-->
+<!-- figma-source
+     file:          cXkVxm0fI9G49nZtKPbYY7
+     node:          4645:425
+     url:           https://www.figma.com/design/cXkVxm0fI9G49nZtKPbYY7/Halo-Email-Design-System--Copy---Copy-?node-id=4645-425
+     kind:          section
+     fetched:       2026-06-25
+     generated-sha: c07c0bcdc8db3c095abf63c1259e55edff86bf8a654edeef5d1aca4df27f899f
+     On "refresh" this node is re-pulled and this file + its playground are rebuilt.
+     See developer-skills/rules_figma_download.md -> Refresh for how hand edits are preserved. -->
+<tr class="section-members-background">
+  <td align="center" style="padding:0;">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:100%;">
+      <tr>
+        <td background="[IMG_BG_URL]" bgcolor="[BG_FALLBACK]" valign="top" style="background-color:[BG_FALLBACK]; background-image:url('[IMG_BG_URL]'); background-position:center top; background-repeat:no-repeat; background-size:cover; border-radius:24px; font-family:'Inter',Arial,Helvetica,sans-serif;">
+          <!--[if gte mso 9]>
+          <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false" style="width:600px;height:600px;">
+            <v:fill type="frame" src="[IMG_BG_URL]" color="[BG_FALLBACK]" />
+            <v:textbox inset="0,0,0,0">
+          <![endif]-->
+          <div>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="left" valign="top" style="padding:30px 30px 15px 30px;">
+                  <h2 style="margin:0; font-family:'Inter',Arial,Helvetica,sans-serif; font-size:36px; line-height:44px; font-weight:700; color:#333333;">[HEADLINE]</h2>
+                </td>
+              </tr>
+              <tr>
+                <td align="left" valign="top" style="padding:0 200px 0 30px;">
+                  <p style="margin:0; font-family:'Inter',Arial,Helvetica,sans-serif; font-size:18px; line-height:22px; font-weight:400; color:#333333;">[BODY_TEXT]</p>
+                </td>
+              </tr>
+              <!-- spacer: lets the background photo show in the lower portion of the card (Figma Spacer: 350px). Tune per preview. -->
+              <tr><td style="font-size:1px; line-height:1px; height:350px;">&nbsp;</td></tr>
+            </table>
+          </div>
+          <!--[if gte mso 9]>
+            </v:textbox>
+          </v:rect>
+          <![endif]-->
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
