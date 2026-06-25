@@ -70,7 +70,7 @@ jobs:
             playground; change nothing else. Do NOT run git or commit; a later step validates and commits.
           claude_args: |
             --allowedTools "Read,Edit,Write,Bash(python3 *)"
-            --max-turns 12
+            --max-turns 40
 
       - name: Regenerate the manifest
         run: python3 figma-pipeline/generate_manifest.py
