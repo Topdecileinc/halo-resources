@@ -120,7 +120,17 @@ jobs:
             git config user.email "figma-pipeline@users.noreply.github.com"
             git add -A
             git commit -m "figma: rebuild ${OUTPUT_PATH} from node ${NODE_ID}"
-            git push
+            # main can advance during the ~6-min build (another publish, a human commit).
+            # Rebase our single block commit onto the latest main, then push — with a few
+            # retries in case it moves again between the rebase and the push.
+            for attempt in 1 2 3; do
+              git pull --rebase origin "${GITHUB_REF_NAME}" || exit 1
+              if git push origin "HEAD:${GITHUB_REF_NAME}"; then
+                echo "Pushed on attempt ${attempt}."; exit 0
+              fi
+              echo "Push rejected (main moved); retrying (${attempt}/3)..."
+            done
+            echo "::error::Could not push after 3 rebase attempts."; exit 1
           else
             echo "No changes — nothing to commit."
           fi
