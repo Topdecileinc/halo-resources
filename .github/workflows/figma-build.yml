@@ -119,6 +119,9 @@ jobs:
       - name: Regenerate the manifest
         run: python3 figma-pipeline/generate_manifest.py
 
+      - name: Add new blocks to the index (append-only)
+        run: python3 figma-pipeline/generate_index.py
+
       - name: Validation gate (blocks the commit on failure)
         run: python3 figma-pipeline/validate_block.py "$OUTPUT_PATH"
 

@@ -115,24 +115,55 @@ the repo. It is recoverable from git history if the Figma plan is ever upgraded 
 
 ## 4. Day-to-day: how you actually use it
 
-**To publish or update an email block:**
-1. Design it in Figma, in the tracked file (see the file key in §9).
-2. Mark it **"Ready for dev."**
-3. Wait up to ~20 minutes (or trigger a poll manually — §5). The block appears/updates as a commit
-   on `main`, with its playground preview alongside it.
+### The full lifecycle, step by step
 
-**To stop maintaining a block:** unmark it (remove the Ready-for-dev status). The pipeline will
-leave the existing file as-is and stop updating it. (It does **not** delete the file.)
+Here is exactly what happens, from a designer's edit to a committed file:
 
-**To rename a block's file:** rename the frame in Figma — the filename is derived from the frame
-name (§10). The next build creates the new name. (The old file is not auto-deleted; remove it by
-hand if you don't want it.)
+**The designer's side (in Figma):**
+1. The designer opens a design in the tracked file (§9).
+2. **(Recommended while actively editing)** they **unmark** "Ready for dev" so the pipeline doesn't
+   grab a half-finished version mid-edit. *(This step is optional — see the note below.)*
+3. They make their edits.
+4. When the design is final, they **set it back to "Ready for dev."**
+
+**The system's side (GitHub, automatic):**
+5. On its schedule (every ~20 min) — or when someone triggers it manually — the **poller** wakes up
+   and reads the whole Figma file.
+6. It looks at **every node currently marked "Ready for dev"** and computes a fingerprint (hash) of
+   each one's design.
+7. It compares each fingerprint to what it saw last time (`poll_state.json`):
+   - **new** Ready-for-dev design (never built) → schedule a **create**
+   - tracked design whose fingerprint **changed** → schedule a **rebuild**
+   - tracked design that's **unchanged** → skip
+8. For each scheduled block, the **builder** runs: download the node from Figma → Claude translates
+   it to email HTML + a playground → "did Claude error?" guard → regenerate the manifest → add new
+   blocks to `index.html` → validation gate → **commit & push to `main`.**
+9. The committed result: the block HTML, its playground preview, the updated manifest, and (for new
+   blocks) a new entry on the index page.
+
+So the designer's only job is the **Ready-for-dev flag**; everything from step 5 on is automatic.
+
+> **Do you *have* to toggle the flag off and back on?** No. The pipeline notices changes by
+> comparing design fingerprints, not by watching the flag — so if a design stays marked Ready for
+> dev and you change it, the next poll rebuilds it. **But** toggling it **off while you edit** and
+> **on when you're done** is the recommended habit, because otherwise a poll could fire in the
+> middle of your edits and build a half-finished version. Off = "I'm working." On = "build this."
+
+### Quick reference
+
+- **Publish / update a block:** mark it Ready for dev → wait ≤20 min (or trigger a poll, §5).
+- **Stop maintaining a block:** unmark it. The pipeline leaves the existing file alone and stops
+  updating it. (It does **not** delete the file or its index entry.)
+- **Rename a block's file:** rename the frame in Figma — the filename is derived from the frame
+  name (§10). The next build creates the new name. (The old file isn't auto-deleted.)
 
 **Things to keep in mind:**
 - Only designs in the one tracked Figma file are seen (§9).
 - The HTML uses `[BRACKETED]` placeholders for dynamic content (headline, image URL, CTA, etc.) —
   these are intentional; they get filled in later by the email-building step, not by Figma.
 - Re-running with no design change does nothing (the pipeline detects "no change" and skips).
+- New blocks are **appended** to the index page; your existing curated index entries are never
+  altered (§6).
 
 ---
 
@@ -182,7 +213,7 @@ under `figma-pipeline/`.
 | File | What it is |
 |---|---|
 | **`figma-poll.yml`** | The **trigger**. Two jobs: `detect` (runs `poll.py`, commits the new state) and `build` (a matrix that calls `figma-build.yml` once per block to build). Has the cron schedule and the manual `onboard_cap` input. |
-| **`figma-build.yml`** | The **worker**. Builds ONE block: checkout → `figma_fetch.py` → `claude-code-action` (translate/create) → "fail if Claude errored" guard → `generate_manifest.py` → `validate_block.py` (gate) → commit-and-push (with rebase-retry). Reusable via `workflow_call`; also runnable manually or via `repository_dispatch`. |
+| **`figma-build.yml`** | The **worker**. Builds ONE block: checkout → `figma_fetch.py` → `claude-code-action` (translate/create) → "fail if Claude errored" guard → `generate_manifest.py` → `generate_index.py` → `validate_block.py` (gate) → commit-and-push (with rebase-retry). Reusable via `workflow_call`; also runnable manually or via `repository_dispatch`. |
 
 ### Scripts & data (`figma-pipeline/`)
 
@@ -193,6 +224,7 @@ under `figma-pipeline/`.
 | **`figma_fetch.py`** | Headless Figma read for the builder. Turns the refresh token into a short-lived access token, then downloads one node's structure (`node.json`) and a rendered PNG (`node.png`) into `./_figma_in/`. |
 | **`generate_manifest.py`** | Builds `figma_manifest.json` by scanning the `figma-source` comments embedded in every block. Run after each build so new blocks get tracked. `--check` mode verifies it's up to date (for CI). |
 | **`figma_manifest.json`** | The map of `Figma node → output file`, derived from the blocks themselves. This is the list `poll.py` checks for change-detection. |
+| **`generate_index.py`** | Keeps the top-level `index.html` listing in sync — **append-only**. Adds an entry (link to the playground + the block's own description) for any block not yet listed; never edits the hand-curated entries. Runs in the builder after each block is built. |
 | **`validate_block.py`** | The safety gate. Hard-fails the build (blocking the commit) if a generated block is broken: missing class marker, missing/!fake `figma-source` comment, broken image URLs, `display:flex/grid` (not email-safe), etc. |
 | **`GUIDE.md`** | This document. |
 | **`README.md`** | Short orientation that points here. |
