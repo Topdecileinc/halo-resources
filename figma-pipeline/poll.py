@@ -174,15 +174,19 @@ def main():
                 changed.append({"file_key": fk, "node_id": nid, "output_path": out})
 
         # --- B. discovery: new top-level frames not tracked yet ---
+        frames = top_level_frames(document)
+        print(f"  discovery: {len(frames)} top-level frame(s) under the rule")
         pending = 0          # new frames found in this file
         onboarded_here = 0   # of those, how many we onboarded this cycle
-        for frame in top_level_frames(document):
+        for frame in frames:
             nid = frame.get("id")
             if nid in known:
+                print(f"  (skip {frame.get('name')!r}: already tracked)")
                 continue
             # Skip if this frame already CONTAINS a tracked node — it's represented already
             # (e.g. a section/frame wrapping an existing component). Prevents duplicates.
             if set(index_by_id(frame, {}).keys()) & known:
+                print(f"  (skip {frame.get('name')!r}: contains a tracked node)")
                 continue
             out = output_path_for(frame.get("name", ""))
             if out in tracked_paths:
