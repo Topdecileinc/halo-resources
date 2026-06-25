@@ -1,0 +1,71 @@
+# Figma → email block POLLER (Stage 1 trigger for Professional plans).
+#
+# Figma only DELIVERS webhook events on Organization/Enterprise plans, so on a Professional
+# plan we poll instead: every 20 minutes (and on demand) this checks each tracked block for a
+# design change and rebuilds ONLY the ones that changed, by calling figma-build.yml.
+#
+# Needs the same secrets as figma-build.yml: FIGMA_CLIENT_ID / FIGMA_CLIENT_SECRET /
+# FIGMA_REFRESH_TOKEN and CLAUDE_CODE_OAUTH_TOKEN (the build call inherits them).
+
+name: figma-poll
+
+on:
+  schedule:
+    - cron: "*/20 * * * *"   # every 20 minutes
+  workflow_dispatch: {}        # manual "poll now" button
+
+permissions:
+  contents: write              # to commit poll_state.json (and the build commits the block)
+
+concurrency:                   # never run two polls at once
+  group: figma-poll
+  cancel-in-progress: false
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.poll.outputs.changed }}
+      any:     ${{ steps.poll.outputs.any }}
+    env:
+      FIGMA_CLIENT_ID:     ${{ secrets.FIGMA_CLIENT_ID }}
+      FIGMA_CLIENT_SECRET: ${{ secrets.FIGMA_CLIENT_SECRET }}
+      FIGMA_REFRESH_TOKEN: ${{ secrets.FIGMA_REFRESH_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.x" }
+
+      - name: Detect changed blocks
+        id: poll
+        run: python3 figma-pipeline/poll.py
+
+      - name: Record the new state (so changes aren't re-triggered)
+        run: |
+          if [ -n "$(git status --porcelain figma-pipeline/poll_state.json)" ]; then
+            git config user.name  "figma-pipeline[bot]"
+            git config user.email "figma-pipeline@users.noreply.github.com"
+            git add figma-pipeline/poll_state.json
+            git commit -m "figma-poll: update change-detection state"
+            for attempt in 1 2 3; do
+              git pull --rebase origin "${GITHUB_REF_NAME}" || exit 1
+              if git push origin "HEAD:${GITHUB_REF_NAME}"; then break; fi
+              echo "push rejected, retrying (${attempt}/3)..."
+            done
+          else
+            echo "No state change."
+          fi
+
+  build:
+    needs: detect
+    if: needs.detect.outputs.any == 'true'
+    strategy:
+      max-parallel: 1          # serialize: shares figma-build's refresh-token/commit path
+      matrix:
+        target: ${{ fromJson(needs.detect.outputs.changed) }}
+    uses: ./.github/workflows/figma-build.yml
+    with:
+      file_key:    ${{ matrix.target.file_key }}
+      node_id:     ${{ matrix.target.node_id }}
+      output_path: ${{ matrix.target.output_path }}
+    secrets: inherit

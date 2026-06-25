@@ -21,6 +21,11 @@ on:
       file_key:    { description: "Figma file key", required: true }
       node_id:     { description: "Figma node id (e.g. 4618:108)", required: true }
       output_path: { description: "Block file to (re)generate", required: true }
+  workflow_call:            # called by figma-poll.yml, once per changed block
+    inputs:
+      file_key:    { type: string, required: true }
+      node_id:     { type: string, required: true }
+      output_path: { type: string, required: true }
 
 permissions:
   contents: write           # to commit the regenerated block
@@ -37,9 +42,10 @@ jobs:
       FIGMA_CLIENT_ID:     ${{ secrets.FIGMA_CLIENT_ID }}
       FIGMA_CLIENT_SECRET: ${{ secrets.FIGMA_CLIENT_SECRET }}
       FIGMA_REFRESH_TOKEN: ${{ secrets.FIGMA_REFRESH_TOKEN }}
-      FILE_KEY:    ${{ github.event.client_payload.file_key    || github.event.inputs.file_key }}
-      NODE_ID:     ${{ github.event.client_payload.node_id     || github.event.inputs.node_id }}
-      OUTPUT_PATH: ${{ github.event.client_payload.output_path || github.event.inputs.output_path }}
+      # inputs.* covers workflow_dispatch AND workflow_call; client_payload covers repository_dispatch
+      FILE_KEY:    ${{ inputs.file_key    || github.event.client_payload.file_key }}
+      NODE_ID:     ${{ inputs.node_id     || github.event.client_payload.node_id }}
+      OUTPUT_PATH: ${{ inputs.output_path || github.event.client_payload.output_path }}
     steps:
       - uses: actions/checkout@v4
 
@@ -61,7 +67,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           prompt: >-
             Regenerate the email block at
-            ${{ github.event.client_payload.output_path || github.event.inputs.output_path }}
+            ${{ inputs.output_path || github.event.client_payload.output_path }}
             from the Figma design in ./_figma_in/node.json and ./_figma_in/node.png. Follow
             developer-skills/rules_figma_download.md exactly: translate to email-safe table HTML,
             keep the [BRACKETED] placeholders, preserve hand edits per the Refresh section, and
