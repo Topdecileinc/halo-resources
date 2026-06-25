@@ -16,6 +16,7 @@ on:
 
 permissions:
   contents: write              # to commit poll_state.json (and the build commits the block)
+  id-token: write              # the called figma-build uses OIDC; a caller can't grant less
 
 concurrency:                   # never run two polls at once
   group: figma-poll
@@ -60,7 +61,6 @@ jobs:
     needs: detect
     if: needs.detect.outputs.any == 'true'
     strategy:
-      max-parallel: 1          # serialize: shares figma-build's refresh-token/commit path
       matrix:
         target: ${{ fromJson(needs.detect.outputs.changed) }}
     uses: ./.github/workflows/figma-build.yml
