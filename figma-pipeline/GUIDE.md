@@ -414,6 +414,27 @@ automatically. (A cron change only counts once it's on the **default branch**, `
    commits regularly (including the bot's own commits), so it won't trip — but if the repo went
    totally silent for two months, you'd re-enable it with one click (above).
 
+### Runs never overlap (even if one takes longer than the interval)
+
+A poll run can take longer than 20 minutes — building many blocks takes ~6–7 min **each**, and they
+run one at a time (next paragraph), so a big batch can run 40+ min. That is safe: **two poll runs
+can never overlap.** Two `concurrency` guards enforce it:
+
+- **The poller** (`figma-poll.yml`) has `concurrency: { group: figma-poll, cancel-in-progress: false }`.
+  A whole run — detection **and** all its builds — is "in progress" until everything finishes, so a
+  cron tick that fires while a run is still going **queues and waits** instead of starting alongside.
+  `cancel-in-progress: false` means the running one is never killed mid-commit.
+- **The builder** (`figma-build.yml`) shares one `concurrency: { group: figma-build }`, so even
+  within a single poll the per-block builds run **one at a time** — they never race each other on the
+  Figma token or the git push.
+
+**What this means in practice:** if builds consistently run longer than the cron interval, GitHub
+keeps **at most one** run queued (a newer cron tick supersedes an older still-pending one), so there
+is **no pileup and no overlap** — the effective cadence just becomes "after each run finishes"
+instead of strictly every 20 minutes, and it always catches up. To keep individual runs short, lower
+`onboard_cap` (fewer new blocks per run) or widen the cron interval — neither is required, since
+overlap is already impossible; they only change how big each run gets.
+
 ---
 
 ## 9. How change detection works
