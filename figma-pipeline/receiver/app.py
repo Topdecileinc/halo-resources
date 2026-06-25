@@ -79,8 +79,8 @@ def figma_webhook():
     if event == "PING":
         return ("", 200)
 
-    # 3. dedupe (best-effort)
-    eid = f"{event}:{payload.get('file_key')}:{payload.get('timestamp')}"
+    # 3. dedupe (best-effort) — include node id so two layers flagged together don't collide
+    eid = f"{event}:{payload.get('file_key')}:{payload.get('node_id')}:{payload.get('timestamp')}"
     if eid in _seen_set:
         return ("", 200)
     _seen_set.add(eid)
@@ -88,7 +88,19 @@ def figma_webhook():
     if len(_seen_set) > _seen.maxlen:
         _seen_set.intersection_update(_seen)
 
-    # 4. on a content event for a file we build from, rebuild its targets
+    # 4. DEV_MODE_STATUS_UPDATE — the "Ready for dev" trigger. Precise: the event names the
+    #    exact node flagged, so rebuild ONLY that block. Act only on READY_FOR_DEV.
+    if event == "DEV_MODE_STATUS_UPDATE":
+        if payload.get("status") == "READY_FOR_DEV":
+            file_key = payload.get("file_key")
+            node_id = payload.get("node_id")
+            manifest = _load_manifest()
+            for t in manifest.get("targets", []):
+                if t.get("figma_file_key") == file_key and t.get("figma_node_id") == node_id:
+                    _dispatch(file_key, node_id, t["output_path"])
+        return ("", 200)
+
+    # 5. on a content event for a file we build from, rebuild its targets
     if event in CONTENT_EVENTS:
         file_key = payload.get("file_key")
         manifest = _load_manifest()

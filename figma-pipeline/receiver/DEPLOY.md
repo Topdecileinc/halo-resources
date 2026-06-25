@@ -113,29 +113,38 @@ curl -s -X POST 'https://api.figma.com/v1/oauth/refresh' \
 # -> {"access_token":"...","expires_in":...}   (copy the access_token)
 ```
 
-Then register the webhook pointing at your subdomain:
+Then register the webhook pointing at your subdomain. **Recommended trigger:
+`DEV_MODE_STATUS_UPDATE`** — it fires when you mark a layer **"Ready for dev"** and names the
+exact node, so the receiver rebuilds *only that block* (precise, no library setup needed):
 ```bash
 curl -X POST 'https://api.figma.com/v2/webhooks' \
   -H 'Authorization: Bearer <FIGMA_ACCESS_TOKEN>' \
   -H 'Content-Type: application/json' \
   -d '{
-    "event_type": "LIBRARY_PUBLISH",
+    "event_type": "DEV_MODE_STATUS_UPDATE",
     "team_id": "<TEAM_ID>",
     "endpoint": "https://hooks.example.com/figma-webhook.php",
     "passcode": "<A_LONG_RANDOM_PASSCODE>",
-    "description": "Halo email design-system publish events"
+    "description": "Halo email design-system — Ready for dev"
   }'
 ```
+
+The receiver also still handles `LIBRARY_PUBLISH` (coarse: rebuilds every block in the file)
+if you prefer that trigger — just swap the `event_type`. A webhook's `event_type` is fixed at
+creation, so to switch an existing one, delete it (`DELETE /v2/webhooks/<id>`) and re-create.
 
 Figma immediately sends a `PING`; the receiver acks it `200`. Confirm it's active:
 ```bash
 curl -H 'Authorization: Bearer <FIGMA_ACCESS_TOKEN>' \
   https://api.figma.com/v2/teams/<TEAM_ID>/webhooks
 ```
+(Listing needs the `webhooks:read` scope; registering only needs `webhooks:write`.)
 
 ## 7. End-to-end test
 
-In Figma, **publish** the library (Assets → publish). Within a few seconds:
+With the `DEV_MODE_STATUS_UPDATE` trigger: in Figma, select the node that matches a block
+(e.g. the hero component, node `4618:108`) and mark it **Ready for dev** (Dev Mode → set
+status). Within a few seconds:
 1. a new run appears in the repo's **Actions** tab,
 2. an auto-commit lands on `main` if the design changed.
 

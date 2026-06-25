@@ -13,9 +13,17 @@ The always-on service that turns a Figma publish event into builder runs. It mus
 ## Flow
 
 ```
-Figma (LIBRARY_PUBLISH) → POST /figma-webhook.php → validate passcode → look up figma_manifest.json
-                        → repository_dispatch (per affected block) → .github/workflows/figma-build.yml
+Figma ("Ready for dev" / publish) → POST /figma-webhook.php → validate passcode → look up
+                        figma_manifest.json → repository_dispatch → .github/workflows/figma-build.yml
 ```
+
+**Trigger options** (the receiver handles both):
+- **`DEV_MODE_STATUS_UPDATE`** (recommended) — fires when you mark a layer **"Ready for dev"**.
+  The event names the exact node, so only *that* block rebuilds. Precise; no library setup.
+- **`LIBRARY_PUBLISH`** — fires on a library publish; rebuilds *every* block mapped to that
+  file (coarse). Requires the file to be a published team library.
+
+You pick which by the `event_type` you register the webhook with (see [DEPLOY.md](DEPLOY.md) step 6).
 
 ## Secrets (never in the repo)
 

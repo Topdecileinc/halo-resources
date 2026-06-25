@@ -148,22 +148,40 @@ if ($event === 'PING') {
     respond(200);
 }
 
-// 3. dedupe (best-effort)
-$eid = $event . ':' . ($payload['file_key'] ?? '') . ':' . ($payload['timestamp'] ?? '');
+// 3. dedupe (best-effort) — include node id so two layers flagged together don't collide
+$eid = $event . ':' . ($payload['file_key'] ?? '') . ':' . ($payload['node_id'] ?? '')
+     . ':' . ($payload['timestamp'] ?? '');
 if (already_seen($eid)) {
     respond(200);
 }
 
-// 4. on a content event for a file we build from, rebuild its targets
+// 4. DEV_MODE_STATUS_UPDATE — the "Ready for dev" trigger. Precise: the event names the
+//    exact node flagged, so we rebuild ONLY that block (not the whole file). We act only
+//    when a layer is marked READY_FOR_DEV; COMPLETED / NONE (cleared) are ignored.
+if ($event === 'DEV_MODE_STATUS_UPDATE') {
+    if (($payload['status'] ?? null) === 'READY_FOR_DEV') {
+        $fileKey  = $payload['file_key'] ?? '';
+        $nodeId   = $payload['node_id'] ?? '';
+        $manifest = load_manifest($cfg['manifest_url']);
+        foreach (($manifest['targets'] ?? []) as $t) {
+            if (($t['figma_file_key'] ?? null) === $fileKey
+                && ($t['figma_node_id'] ?? null) === $nodeId) {
+                dispatch_build($cfg, $fileKey, $nodeId, $t['output_path']);
+            }
+        }
+    }
+    respond(200);
+}
+
+// 5. on a library/file content event, rebuild every target in that file
 if (in_array($event, CONTENT_EVENTS, true)) {
     $fileKey  = $payload['file_key'] ?? '';
     $manifest = load_manifest($cfg['manifest_url']);
     foreach (($manifest['targets'] ?? []) as $t) {
         // NOTE: LIBRARY_PUBLISH reports *which components* changed (by component key),
         // but the manifest keys on node id, so we can't yet filter to just the changed
-        // ones — this rebuilds every target in that file (correct, just coarse). To make
-        // it precise, record the published component key in the figma-source comment /
-        // manifest, then match payload['created_components'/'modified_components'] here.
+        // ones — this rebuilds every target in that file (correct, just coarse). The
+        // DEV_MODE_STATUS_UPDATE path above IS precise — prefer it as the trigger.
         if (($t['figma_file_key'] ?? null) === $fileKey) {
             dispatch_build($cfg, $fileKey, $t['figma_node_id'], $t['output_path']);
         }
