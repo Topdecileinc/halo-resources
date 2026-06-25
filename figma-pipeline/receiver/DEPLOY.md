@@ -56,9 +56,18 @@ FIGMA_RECEIVER_CONFIG /your/path` in the vhost below.)
 ## 4. Create the GitHub token (least privilege)
 
 GitHub → Settings → Developer settings → **Fine-grained tokens** → Generate:
-- Repository access: **only** `Topdecileinc/halo-resources`
-- Permissions: **Contents: Read and write** + **Metadata: Read** (dispatch rides on Contents)
+- **Resource owner: `Topdecileinc`** (the org — not your personal account, or the repo won't
+  show up). The org must allow fine-grained tokens; as an org owner, enable it under
+  Org → Settings → Personal access tokens.
+- Repository access: **Only select repositories** → `halo-resources`
+- **Repository permissions → Contents: Read and write** — that's the only one. Each permission
+  has its own dropdown (defaults to "No access"); set Contents and leave the rest. **Metadata:
+  Read-only** is added automatically. (The `repository_dispatch` call this token makes lives
+  under the Contents permission.)
 - Paste the token into `github_token` in `/etc/figma-receiver-config.php`.
+
+(Classic-token alternative: a token with the `repo` scope also works if the fine-grained org
+setup is a hassle.)
 
 ## 5. Apache — a vhost for the subdomain + HTTPS
 

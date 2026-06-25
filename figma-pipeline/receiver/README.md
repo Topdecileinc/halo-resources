@@ -20,9 +20,22 @@ Figma (LIBRARY_PUBLISH) → POST /figma-webhook.php → validate passcode → lo
 ## Secrets (never in the repo)
 
 The receiver needs: a **passcode** (you invent it; Figma echoes it back so the call can be
-trusted), a **GitHub token** (fine-grained: Contents R/W on `Topdecileinc/halo-resources`),
-the **repo** name, and the **manifest URL**
+trusted), a **GitHub token** (see below), the **repo** name, and the **manifest URL**
 (`https://raw.githubusercontent.com/Topdecileinc/halo-resources/main/figma-pipeline/figma_manifest.json`).
+
+**GitHub token — exact settings.** The token only needs to trigger this repo's build
+(`repository_dispatch`). Create a **fine-grained** token (Settings → Developer settings →
+Fine-grained tokens):
+- **Resource owner: `Topdecileinc`** (the org — *not* your personal account, or the repo
+  won't appear). The org must allow fine-grained tokens; an org owner enables this under
+  Org → Settings → Personal access tokens.
+- **Repository access:** Only select repositories → `halo-resources`.
+- **Repository permissions → Contents: Read and write** — this is the only one to set; each
+  permission has its own dropdown (defaults to "No access"). **Metadata: Read-only** is added
+  automatically. Leave everything else at "No access".
+
+(Classic token alternative: a token with the `repo` scope also works — broader, but fine for a
+single-purpose token.)
 
 - PHP (`figma-webhook.php`): a `return [...]` array in `/etc/figma-receiver-config.php` (see DEPLOY.md step 3).
 - Python (`app.py`): the env vars `FIGMA_WEBHOOK_PASSCODE`, `GITHUB_TOKEN`, `GITHUB_REPO`, `MANIFEST_URL`.
