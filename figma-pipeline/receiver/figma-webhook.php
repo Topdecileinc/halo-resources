@@ -36,12 +36,14 @@ function respond(int $code, string $body = ''): void {
 
 /**
  * Append a debug line to the log file (best-effort; NEVER logs the passcode).
- * Default path /var/log/figma-receiver.log; override with 'log_file' in the config.
- * Falls back to the Apache error log if the file isn't writable.
+ * Defaults to figma-receiver.log NEXT TO this script (a dir www-data can write);
+ * override with 'log_file' in the config. Falls back to the Apache error log.
+ * NOTE: if this script sits in the web root, the log is web-readable — it holds no
+ * secrets (no passcode), but lock it down or move it via 'log_file' once debugging is done.
  */
 function dbg(array $cfg, string $msg): void {
     $line = gmdate('c') . ' ' . $msg . "\n";
-    $path = $cfg['log_file'] ?? '/var/log/figma-receiver.log';
+    $path = $cfg['log_file'] ?? __DIR__ . '/figma-receiver.log';
     if (@file_put_contents($path, $line, FILE_APPEND | LOCK_EX) === false) {
         error_log('figma-webhook ' . $msg);
     }
