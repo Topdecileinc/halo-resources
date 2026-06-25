@@ -83,8 +83,21 @@ jobs:
           path = os.environ.get("EXECUTION_FILE", "")
           if not path or not os.path.isfile(path):
               sys.exit("::error::No Claude execution file at %r — cannot confirm success." % path)
-          data = json.load(open(path))
-          events = data if isinstance(data, list) else [data]
+          raw = open(path).read().strip()
+          # The file may be a JSON array OR concatenated/JSONL objects — handle both.
+          events = []
+          try:
+              obj = json.loads(raw)
+              events = obj if isinstance(obj, list) else [obj]
+          except json.JSONDecodeError:
+              dec, i, n = json.JSONDecoder(), 0, len(raw)
+              while i < n:
+                  while i < n and raw[i].isspace():
+                      i += 1
+                  if i >= n:
+                      break
+                  o, i = dec.raw_decode(raw, i)
+                  events.append(o)
           results = [e for e in events if isinstance(e, dict) and e.get("type") == "result"]
           if not results:
               sys.exit("::error::No result event in Claude output — treating as failure.")
