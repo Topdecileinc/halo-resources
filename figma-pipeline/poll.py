@@ -2,32 +2,34 @@
 """
 figma-pipeline/poll.py
 
-The polling trigger (Professional-plan-friendly; Figma only DELIVERS webhook events on
-Org/Enterprise). Built to SCALE to hundreds of blocks, and it does TWO things per cycle:
+The polling trigger (Professional plan — Figma won't DELIVER webhook events, but the REST API
+DOES expose dev status, so we read it on a schedule).
 
-  A. CHANGE DETECTION for blocks already tracked in figma_manifest.json — rebuild the ones
-     whose Figma design changed.
-  B. DISCOVERY — find brand-new top-level frames in the file that aren't tracked yet and
-     onboard them (the builder creates the block + adds it to the manifest). "Each top-level
-     frame, whole file" is the rule (configurable below).
+THE RULE: a Figma node is an email block if and only if it is marked **Ready for dev**
+(devStatus.type == "READY_FOR_DEV"). Nothing else is ever pulled, created, or updated. That one
+gate governs everything:
+  - a Ready-for-dev node NOT yet tracked  -> ONBOARD it (the builder creates the block)
+  - a Ready-for-dev node already tracked   -> rebuild it IF its design changed
+  - a node that is NOT Ready-for-dev        -> ignored entirely (even if previously tracked)
 
-Scale: per Figma FILE it does a cheap version check (GET /v1/files/:key?depth=1). If the
-version is unchanged, the whole file is skipped — no per-node work. Only a file whose version
-moved gets ONE full fetch, and both A and B run off that single response. So cost is
-~O(files), not O(nodes).
+So junk frames, style-guide scaffolding, references, WIP — none of it is touched unless you
+deliberately mark it Ready for dev. Mark it -> it builds. Unmark it -> it's left alone.
 
-Guardrails on discovery (B):
-  - skips frames that are hidden or whose name starts with "_" or "." (park WIP there)
-  - onboards at most ONBOARD_CAP (default 10) new frames per cycle, so a big file doesn't
-    fire dozens of Claude builds at once; the rest are picked up on later cycles
-  - skips a frame whose derived filename already belongs to another block (no clobbering)
+Scale: one full-file fetch per Figma FILE per cycle (NOT one call per node), then everything is
+read locally — so 3 blocks or 300, it's ~one API call per file. (We don't use the file `version`
+to skip, because toggling a dev status must always be noticed.)
 
 State (poll_state.json, committed by the workflow):
-  { "file_versions": {<file_key>: <version>},
-    "node_hashes":   {"<file_key>:<node_id>": <sha256 of the node's design subtree>} }
-A node's first sighting is a silent baseline (already built / just onboarded -> in sync).
+  { "node_hashes": {"<file_key>:<node_id>": <sha256 of the node's design subtree>} }
+A Ready-for-dev node's first sighting is a silent baseline if it's already tracked (in sync);
+if it's new, first sighting onboards it.
 
-Env (CI secrets): FIGMA_CLIENT_ID/SECRET/REFRESH_TOKEN.  ONBOARD_CAP optional.
+Guardrails on onboarding new blocks:
+  - at most ONBOARD_CAP (default 10) per cycle, so a big batch doesn't fire dozens of builds
+  - skip a new block whose derived filename collides with an existing one (no clobbering)
+
+Env (CI secrets): FIGMA_CLIENT_ID/SECRET/REFRESH_TOKEN. ONBOARD_CAP optional.
+Optional DISCOVERY_FILE_KEYS (comma-sep) scans files that have no tracked blocks yet.
 Output: writes `changed` (JSON array of {file_key,node_id,output_path}) + `any` to $GITHUB_OUTPUT.
 """
 
@@ -59,46 +61,21 @@ def _get(url, token, timeout=120):
         raise SystemExit(f"HTTP {e.code} from {url}\n  {body}") from None
 
 
-def file_version(file_key, token):
-    return _get(f"{API}/v1/files/{file_key}?depth=1", token, timeout=30).get("version")
-
-
-def index_by_id(node, out):
-    nid = node.get("id")
-    if nid is not None:
-        out[nid] = node
-    for child in (node.get("children") or []):
-        index_by_id(child, out)
+def ready_nodes(node, out):
+    """Walk the tree; collect nodes whose devStatus is READY_FOR_DEV."""
+    if isinstance(node, dict):
+        ds = node.get("devStatus")
+        if isinstance(ds, dict) and ds.get("type") == "READY_FOR_DEV":
+            out.append(node)
+        for c in (node.get("children") or []):
+            ready_nodes(c, out)
     return out
 
 
 def design_hash(node):
-    canon = json.dumps(node, sort_keys=True, separators=(",", ":"))
-    return hashlib.sha256(canon.encode("utf-8")).hexdigest()
-
-
-def top_level_frames(document):
-    """The discovery rule: every FRAME directly on a page, or one level inside a page Section.
-    Hidden frames and names starting with '_' or '.' are skipped (park WIP there)."""
-    found = []
-    for page in (document.get("children") or []):
-        if page.get("type") != "CANVAS":
-            continue
-        for child in (page.get("children") or []):
-            t = child.get("type")
-            if t == "FRAME":
-                found.append(child)
-            elif t == "SECTION":
-                found += [g for g in (child.get("children") or []) if g.get("type") == "FRAME"]
-    out = []
-    for f in found:
-        if f.get("visible") is False:
-            continue
-        name = f.get("name", "")
-        if name.startswith("_") or name.startswith("."):
-            continue
-        out.append(f)
-    return out
+    return hashlib.sha256(
+        json.dumps(node, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
 
 
 def slugify(name):
@@ -110,20 +87,20 @@ def output_path_for(name):
     return f"{SECTIONS_DIR}/section_{slugify(name)}.html"
 
 
-def load_state():
+def load_node_hashes():
     if not os.path.exists(STATE):
-        return {}, {}
+        return {}
     with open(STATE, encoding="utf-8") as f:
         raw = json.load(f)
-    if "node_hashes" in raw or "file_versions" in raw:
-        return raw.get("file_versions", {}), raw.get("node_hashes", {})
-    return {}, raw  # legacy flat format
+    if isinstance(raw, dict) and "node_hashes" in raw:
+        return raw["node_hashes"]
+    return raw if isinstance(raw, dict) else {}  # tolerate older/flat formats
 
 
 def main():
     with open(MANIFEST, encoding="utf-8") as f:
         manifest = json.load(f)
-    file_versions, node_hashes = load_state()
+    node_hashes = load_node_hashes()
 
     try:
         cid = os.environ["FIGMA_CLIENT_ID"]
@@ -133,93 +110,59 @@ def main():
         raise SystemExit(f"Missing required env var: {e}")
     token = refresh_access_token(cid, secret, refresh)
 
-    by_file = {}
+    # tracked: file_key -> {node_id -> output_path}
+    tracked = {}
     for t in manifest.get("targets", []):
-        by_file.setdefault(t["figma_file_key"], []).append(t)
-    # Optional: scan extra files that have no tracked blocks yet (bootstrap a fresh file).
+        tracked.setdefault(t["figma_file_key"], {})[t["figma_node_id"]] = t["output_path"]
     for fk in filter(None, os.environ.get("DISCOVERY_FILE_KEYS", "").split(",")):
-        by_file.setdefault(fk.strip(), [])
+        tracked.setdefault(fk.strip(), {})
     tracked_paths = {t["output_path"] for t in manifest.get("targets", [])}
 
     changed = []
-    onboarded_total = 0
-    for fk, items in by_file.items():
-        ver = file_version(fk, token)
-        if ver is not None and file_versions.get(fk) == ver:
-            print(f"file {fk}: unchanged (version {ver}) — skipped {len(items)} block(s)")
-            continue
-        print(f"file {fk}: changed (version {ver})")
+    onboarded = 0
+    for fk, node_to_path in tracked.items():
         document = _get(f"{API}/v1/files/{fk}", token).get("document", {})
-        idx = index_by_id(document, {})
-
-        # node ids we already know about in this file (manifest + anything baselined in state)
-        known = {t["figma_node_id"] for t in items}
-        known |= {k.split(":", 1)[1] for k in node_hashes if k.split(":", 1)[0] == fk}
-
-        # --- A. change detection for tracked blocks ---
-        for t in items:
-            nid, out = t["figma_node_id"], t["output_path"]
-            node = idx.get(nid)
-            if node is None:
-                print(f"  WARN: tracked node {nid} not found (deleted/renamed?)", file=sys.stderr)
-                continue
+        ready = ready_nodes(document, [])
+        print(f"file {fk}: {len(ready)} node(s) marked Ready for dev")
+        for node in ready:
+            nid = node.get("id")
             h = design_hash(node)
             key = f"{fk}:{nid}"
             prev = node_hashes.get(key)
-            node_hashes[key] = h
-            if prev is None:
-                print(f"  baseline: {out}")
-            elif prev != h:
-                print(f"  CHANGED: {out}")
+            if nid in node_to_path:                      # already a tracked block
+                out = node_to_path[nid]
+                node_hashes[key] = h
+                if prev is None:
+                    print(f"  baseline: {out}")
+                elif prev != h:
+                    print(f"  CHANGED: {out}")
+                    changed.append({"file_key": fk, "node_id": nid, "output_path": out})
+                else:
+                    print(f"  unchanged: {out}")
+            else:                                        # Ready-for-dev but not tracked yet
+                if prev is not None:
+                    continue                             # already onboarded; build pending
+                out = output_path_for(node.get("name", ""))
+                if out in tracked_paths:
+                    print(f"  SKIP new {nid} ({node.get('name')!r}): name collides with {out}",
+                          file=sys.stderr)
+                    continue
+                over = onboarded >= ONBOARD_CAP
+                print(f"  NEW{' (queued for a later cycle)' if over else ''}: "
+                      f"{node.get('name')!r} -> {out}  (node {nid})")
+                if over:
+                    continue
                 changed.append({"file_key": fk, "node_id": nid, "output_path": out})
-
-        # --- B. discovery: new top-level frames not tracked yet ---
-        frames = top_level_frames(document)
-        print(f"  discovery: {len(frames)} top-level frame(s) under the rule")
-        pending = 0          # new frames found in this file
-        onboarded_here = 0   # of those, how many we onboarded this cycle
-        for frame in frames:
-            nid = frame.get("id")
-            if nid in known:
-                print(f"  (skip {frame.get('name')!r}: already tracked)")
-                continue
-            # Skip if this frame already CONTAINS a tracked node — it's represented already
-            # (e.g. a section/frame wrapping an existing component). Prevents duplicates.
-            if set(index_by_id(frame, {}).keys()) & known:
-                print(f"  (skip {frame.get('name')!r}: contains a tracked node)")
-                continue
-            out = output_path_for(frame.get("name", ""))
-            if out in tracked_paths:
-                print(f"  SKIP new {nid}: name collides with existing {out}", file=sys.stderr)
-                continue
-            pending += 1
-            over = onboarded_total >= ONBOARD_CAP
-            print(f"  NEW{' (queued for a later cycle)' if over else ''}: "
-                  f"{frame.get('name')!r} -> {out}  (node {nid})")
-            if over:
-                continue  # over the per-cycle cap (or a DRY-RUN with cap 0)
-            changed.append({"file_key": fk, "node_id": nid, "output_path": out})
-            node_hashes[f"{fk}:{nid}"] = design_hash(frame)  # baseline so we don't re-onboard
-            tracked_paths.add(out)
-            known.add(nid)
-            onboarded_total += 1
-            onboarded_here += 1
-
-        leftover = pending - onboarded_here
-        if leftover > 0:
-            # Capped with frames still to onboard — leave the version stale so we re-scan
-            # next cycle and drain the rest.
-            print(f"  {leftover} more new frame(s) pending (cap {ONBOARD_CAP}); next cycle continues.")
-        else:
-            file_versions[fk] = ver
+                node_hashes[key] = h
+                tracked_paths.add(out)
+                onboarded += 1
 
     with open(STATE, "w", encoding="utf-8") as f:
-        json.dump({"file_versions": file_versions, "node_hashes": node_hashes},
-                  f, indent=2, sort_keys=True)
+        json.dump({"node_hashes": node_hashes}, f, indent=2, sort_keys=True)
         f.write("\n")
 
-    print(f"\n{len(changed)} block(s) to build ({onboarded_total} new, "
-          f"{len(changed) - onboarded_total} changed).")
+    print(f"\n{len(changed)} block(s) to build ({onboarded} new, "
+          f"{len(changed) - onboarded} changed).")
     gho = os.environ.get("GITHUB_OUTPUT")
     if gho:
         with open(gho, "a", encoding="utf-8") as f:
