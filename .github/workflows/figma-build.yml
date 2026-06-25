@@ -66,13 +66,17 @@ jobs:
           # exchange (which needs the Claude GitHub App installed on the repo).
           github_token: ${{ secrets.GITHUB_TOKEN }}
           prompt: >-
-            Regenerate the email block at
+            Build the email block at
             ${{ inputs.output_path || github.event.client_payload.output_path }}
             from the Figma design in ./_figma_in/node.json and ./_figma_in/node.png. Follow
-            developer-skills/rules_figma_download.md exactly: translate to email-safe table HTML,
-            keep the [BRACKETED] placeholders, preserve hand edits per the Refresh section, and
-            recompute the figma-source generated-sha. Write ONLY the updated block and its
-            playground; change nothing else. Do NOT run git or commit; a later step validates and commits.
+            developer-skills/rules_figma_download.md exactly: translate to email-safe table HTML
+            and keep [BRACKETED] placeholders for dynamic content. IF the file already exists,
+            refresh it preserving hand edits per the Refresh section. IF it does NOT exist yet,
+            CREATE it from scratch per the doc: classify it, write the section/component HTML,
+            add the figma-source comment (file/node/url/kind/fetched + a real generated-sha), and
+            generate its matching playground under email-design-system/playground/. Either way,
+            recompute the generated-sha and write ONLY that block and its playground — change
+            nothing else. Do NOT run git or commit; a later step validates and commits.
           claude_args: |
             --allowedTools "Read,Edit,Write,Bash(python3 *)"
             --max-turns 40

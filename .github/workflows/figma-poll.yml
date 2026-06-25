@@ -12,7 +12,12 @@ name: figma-poll
 on:
   schedule:
     - cron: "*/20 * * * *"   # every 20 minutes
-  workflow_dispatch: {}        # manual "poll now" button
+  workflow_dispatch:           # manual "poll now" button
+    inputs:
+      onboard_cap:
+        description: "Max NEW frames to onboard this run (0 = dry-run: list new frames, build none)"
+        required: false
+        default: "10"
 
 permissions:
   contents: write              # to commit poll_state.json (and the build commits the block)
@@ -37,8 +42,10 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.x" }
 
-      - name: Detect changed blocks
+      - name: Detect changed + new blocks
         id: poll
+        env:
+          ONBOARD_CAP: ${{ github.event.inputs.onboard_cap || '10' }}
         run: python3 figma-pipeline/poll.py
 
       - name: Record the new state (so changes aren't re-triggered)
