@@ -52,6 +52,7 @@ jobs:
       # Use the official action: raw `claude -p` ignores ANTHROPIC_API_KEY in headless CI
       # (a known issue) and fails with "Not logged in". The action reads the key as a param.
       - name: Translate to an email block (Claude Code action)
+        id: translate
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -69,6 +70,29 @@ jobs:
           claude_args: |
             --allowedTools "Read,Edit,Write,Bash(python3 *)"
             --max-turns 40
+
+      # The action can exit 0 even when Claude failed (e.g. an auth error returns
+      # is_error:true but a "success" subtype). Without this, a broken token would
+      # silently produce a green "no changes" run. Fail loudly instead.
+      - name: Fail if Claude errored
+        env:
+          EXECUTION_FILE: ${{ steps.translate.outputs.execution_file }}
+        run: |
+          python3 - <<'PY'
+          import json, os, sys
+          path = os.environ.get("EXECUTION_FILE", "")
+          if not path or not os.path.isfile(path):
+              sys.exit("::error::No Claude execution file at %r — cannot confirm success." % path)
+          data = json.load(open(path))
+          events = data if isinstance(data, list) else [data]
+          results = [e for e in events if isinstance(e, dict) and e.get("type") == "result"]
+          if not results:
+              sys.exit("::error::No result event in Claude output — treating as failure.")
+          r = results[-1]
+          if r.get("is_error") or r.get("api_error_status"):
+              sys.exit("::error::Claude failed: %s" % r.get("result", "(no message)"))
+          print("Claude step succeeded (%s turns)." % r.get("num_turns", "?"))
+          PY
 
       - name: Regenerate the manifest
         run: python3 figma-pipeline/generate_manifest.py
