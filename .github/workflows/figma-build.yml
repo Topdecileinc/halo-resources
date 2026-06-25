@@ -17,7 +17,7 @@ on:
     types: [figma-publish]
   workflow_dispatch:        # manual trigger for smoke-testing
     inputs:
-      file_key:    { description: "Figma file key", required: true }
+      file_key:    { description: "Figma file key (blank = use the FIGMA_FILE_KEY variable)", required: false }
       node_id:     { description: "Figma node id (e.g. 4618:108)", required: true }
       output_path: { description: "Block file to (re)generate", required: true }
   workflow_call:            # called by figma-poll.yml, once per changed block
@@ -41,8 +41,9 @@ jobs:
       FIGMA_CLIENT_ID:     ${{ secrets.FIGMA_CLIENT_ID }}
       FIGMA_CLIENT_SECRET: ${{ secrets.FIGMA_CLIENT_SECRET }}
       FIGMA_REFRESH_TOKEN: ${{ secrets.FIGMA_REFRESH_TOKEN }}
-      # inputs.* covers workflow_dispatch AND workflow_call; client_payload covers repository_dispatch
-      FILE_KEY:    ${{ inputs.file_key    || github.event.client_payload.file_key }}
+      # inputs.* covers workflow_dispatch AND workflow_call; client_payload covers repository_dispatch.
+      # FILE_KEY falls back to the FIGMA_FILE_KEY variable so nothing hardcodes the file.
+      FILE_KEY:    ${{ inputs.file_key    || github.event.client_payload.file_key    || vars.FIGMA_FILE_KEY }}
       NODE_ID:     ${{ inputs.node_id     || github.event.client_payload.node_id }}
       OUTPUT_PATH: ${{ inputs.output_path || github.event.client_payload.output_path }}
     steps:

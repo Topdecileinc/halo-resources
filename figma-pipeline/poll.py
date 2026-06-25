@@ -6,31 +6,33 @@ The polling trigger (Professional plan — Figma won't DELIVER webhook events, b
 DOES expose dev status, so we read it on a schedule).
 
 THE RULE: a Figma node is an email block if and only if it is marked **Ready for dev**
-(devStatus.type == "READY_FOR_DEV"). Nothing else is ever pulled, created, or updated. That one
-gate governs everything:
+(devStatus.type == "READY_FOR_DEV"). Nothing else is ever pulled, created, or updated. That gate
+drives everything:
   - a Ready-for-dev node NOT yet tracked  -> ONBOARD it (the builder creates the block)
   - a Ready-for-dev node already tracked   -> rebuild it IF its design changed
   - a node that is NOT Ready-for-dev        -> ignored entirely (even if previously tracked)
 
-So junk frames, style-guide scaffolding, references, WIP — none of it is touched unless you
-deliberately mark it Ready for dev. Mark it -> it builds. Unmark it -> it's left alone.
+WHICH FIGMA FILE: the single tracked file is the **FIGMA_FILE_KEY** repo variable — NOT hardcoded
+and NOT read from the blocks. Point the pipeline at a different file by changing that one variable
+in GitHub (Settings -> Secrets and variables -> Actions -> Variables); no file edits, no rebuild.
+The manifest only supplies the node -> output-file mapping for already-tracked blocks.
 
-Scale: one full-file fetch per Figma FILE per cycle (NOT one call per node), then everything is
-read locally — so 3 blocks or 300, it's ~one API call per file. (We don't use the file `version`
-to skip, because toggling a dev status must always be noticed.)
+Scale: one full-file fetch per cycle (NOT one call per node), then everything is read locally — so
+3 blocks or 300, it's one API call. (We always fetch, rather than skip on the file `version`, so a
+freshly-set dev status is always noticed.)
 
 State (poll_state.json, committed by the workflow):
   { "node_hashes": {"<file_key>:<node_id>": <sha256 of the node's design subtree>} }
-A Ready-for-dev node's first sighting is a silent baseline if it's already tracked (in sync);
-if it's new, first sighting onboards it.
+A Ready-for-dev node's first sighting is a silent baseline if it's already tracked (in sync); if
+it's new, first sighting onboards it.
 
 Guardrails on onboarding new blocks:
   - at most ONBOARD_CAP (default 10) per cycle, so a big batch doesn't fire dozens of builds
   - skip a new block whose derived filename collides with an existing one (no clobbering)
 
-Env (CI secrets): FIGMA_CLIENT_ID/SECRET/REFRESH_TOKEN. ONBOARD_CAP optional.
-Optional DISCOVERY_FILE_KEYS (comma-sep) scans files that have no tracked blocks yet.
-Output: writes `changed` (JSON array of {file_key,node_id,output_path}) + `any` to $GITHUB_OUTPUT.
+Env: FIGMA_FILE_KEY (repo variable), FIGMA_CLIENT_ID/SECRET/REFRESH_TOKEN (secrets), ONBOARD_CAP
+(optional). Output: writes `changed` (JSON array of {file_key,node_id,output_path}) + `any` to
+$GITHUB_OUTPUT.
 """
 
 import hashlib
@@ -103,59 +105,58 @@ def main():
     node_hashes = load_node_hashes()
 
     try:
+        file_key = os.environ["FIGMA_FILE_KEY"]
         cid = os.environ["FIGMA_CLIENT_ID"]
         secret = os.environ["FIGMA_CLIENT_SECRET"]
         refresh = os.environ["FIGMA_REFRESH_TOKEN"]
     except KeyError as e:
-        raise SystemExit(f"Missing required env var: {e}")
+        raise SystemExit(f"Missing required env var: {e} "
+                         "(FIGMA_FILE_KEY is a repo variable; the rest are secrets).")
     token = refresh_access_token(cid, secret, refresh)
 
-    # tracked: file_key -> {node_id -> output_path}
-    tracked = {}
-    for t in manifest.get("targets", []):
-        tracked.setdefault(t["figma_file_key"], {})[t["figma_node_id"]] = t["output_path"]
-    for fk in filter(None, os.environ.get("DISCOVERY_FILE_KEYS", "").split(",")):
-        tracked.setdefault(fk.strip(), {})
-    tracked_paths = {t["output_path"] for t in manifest.get("targets", [])}
+    # node -> output path for blocks we already track (the file key now comes from the variable,
+    # so a stored manifest file key is ignored — change the variable to repoint everything).
+    node_to_path = {t["figma_node_id"]: t["output_path"] for t in manifest.get("targets", [])}
+    tracked_paths = set(node_to_path.values())
+
+    document = _get(f"{API}/v1/files/{file_key}", token).get("document", {})
+    ready = ready_nodes(document, [])
+    print(f"file {file_key}: {len(ready)} node(s) marked Ready for dev")
 
     changed = []
     onboarded = 0
-    for fk, node_to_path in tracked.items():
-        document = _get(f"{API}/v1/files/{fk}", token).get("document", {})
-        ready = ready_nodes(document, [])
-        print(f"file {fk}: {len(ready)} node(s) marked Ready for dev")
-        for node in ready:
-            nid = node.get("id")
-            h = design_hash(node)
-            key = f"{fk}:{nid}"
-            prev = node_hashes.get(key)
-            if nid in node_to_path:                      # already a tracked block
-                out = node_to_path[nid]
-                node_hashes[key] = h
-                if prev is None:
-                    print(f"  baseline: {out}")
-                elif prev != h:
-                    print(f"  CHANGED: {out}")
-                    changed.append({"file_key": fk, "node_id": nid, "output_path": out})
-                else:
-                    print(f"  unchanged: {out}")
-            else:                                        # Ready-for-dev but not tracked yet
-                if prev is not None:
-                    continue                             # already onboarded; build pending
-                out = output_path_for(node.get("name", ""))
-                if out in tracked_paths:
-                    print(f"  SKIP new {nid} ({node.get('name')!r}): name collides with {out}",
-                          file=sys.stderr)
-                    continue
-                over = onboarded >= ONBOARD_CAP
-                print(f"  NEW{' (queued for a later cycle)' if over else ''}: "
-                      f"{node.get('name')!r} -> {out}  (node {nid})")
-                if over:
-                    continue
-                changed.append({"file_key": fk, "node_id": nid, "output_path": out})
-                node_hashes[key] = h
-                tracked_paths.add(out)
-                onboarded += 1
+    for node in ready:
+        nid = node.get("id")
+        h = design_hash(node)
+        key = f"{file_key}:{nid}"
+        prev = node_hashes.get(key)
+        if nid in node_to_path:                          # already a tracked block
+            out = node_to_path[nid]
+            node_hashes[key] = h
+            if prev is None:
+                print(f"  baseline: {out}")
+            elif prev != h:
+                print(f"  CHANGED: {out}")
+                changed.append({"file_key": file_key, "node_id": nid, "output_path": out})
+            else:
+                print(f"  unchanged: {out}")
+        else:                                            # Ready-for-dev but not tracked yet
+            if prev is not None:
+                continue                                 # already onboarded; build pending
+            out = output_path_for(node.get("name", ""))
+            if out in tracked_paths:
+                print(f"  SKIP new {nid} ({node.get('name')!r}): name collides with {out}",
+                      file=sys.stderr)
+                continue
+            over = onboarded >= ONBOARD_CAP
+            print(f"  NEW{' (queued for a later cycle)' if over else ''}: "
+                  f"{node.get('name')!r} -> {out}  (node {nid})")
+            if over:
+                continue
+            changed.append({"file_key": file_key, "node_id": nid, "output_path": out})
+            node_hashes[key] = h
+            tracked_paths.add(out)
+            onboarded += 1
 
     with open(STATE, "w", encoding="utf-8") as f:
         json.dump({"node_hashes": node_hashes}, f, indent=2, sort_keys=True)

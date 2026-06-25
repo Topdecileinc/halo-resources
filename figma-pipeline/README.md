@@ -31,8 +31,12 @@ The two workflows live at `.github/workflows/figma-poll.yml` (the trigger, on a 
 `.github/workflows/figma-build.yml` (the per-block builder). The translation rules Claude follows
 live in `developer-skills/rules_figma_download.md`.
 
-## Secrets (set in GitHub → Settings → Secrets and variables → Actions)
+## Config (GitHub → Settings → Secrets and variables → Actions)
 
-`FIGMA_CLIENT_ID`, `FIGMA_CLIENT_SECRET`, `FIGMA_REFRESH_TOKEN`, `CLAUDE_CODE_OAUTH_TOKEN`.
-`GITHUB_TOKEN` is automatic. See [GUIDE.md §7](GUIDE.md#7-secrets--tokens--how-to-get-each-one) for
-exactly how to obtain each.
+- **Variables** tab: `FIGMA_FILE_KEY` — which Figma file to track. Change this one value to repoint
+  the whole pipeline at a different file (no rebuild, nothing hardcoded).
+- **Secrets** tab: `FIGMA_CLIENT_ID`, `FIGMA_CLIENT_SECRET`, `FIGMA_REFRESH_TOKEN`,
+  `CLAUDE_CODE_OAUTH_TOKEN`. `GITHUB_TOKEN` is automatic.
+
+See [GUIDE.md §7](GUIDE.md#7-secrets--tokens--how-to-get-each-one) for exactly what each does and how
+to obtain it.

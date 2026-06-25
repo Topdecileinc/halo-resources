@@ -37,6 +37,7 @@ jobs:
       changed: ${{ steps.poll.outputs.changed }}
       any:     ${{ steps.poll.outputs.any }}
     env:
+      FIGMA_FILE_KEY:      ${{ vars.FIGMA_FILE_KEY }}     # which Figma file to track (a VARIABLE)
       FIGMA_CLIENT_ID:     ${{ secrets.FIGMA_CLIENT_ID }}
       FIGMA_CLIENT_SECRET: ${{ secrets.FIGMA_CLIENT_SECRET }}
       FIGMA_REFRESH_TOKEN: ${{ secrets.FIGMA_REFRESH_TOKEN }}

@@ -119,12 +119,15 @@ the repo. It is recoverable from git history if the Figma plan is ever upgraded 
 
 Here is exactly what happens, from a designer's edit to a committed file:
 
-**The designer's side (in Figma):**
-1. The designer opens a design in the tracked file (§9).
-2. **(Recommended while actively editing)** they **unmark** "Ready for dev" so the pipeline doesn't
-   grab a half-finished version mid-edit. *(This step is optional — see the note below.)*
-3. They make their edits.
-4. When the design is final, they **set it back to "Ready for dev."**
+**The designer's side (in Figma) — the standard workflow:**
+1. Before editing, **unmark "Ready for dev"** on the design you're about to change. This takes it
+   out of scope so the pipeline won't touch it while you work.
+2. Make your edits. Figma autosaves continuously — that's fine, because the design is unmarked, so
+   no poll will pick it up.
+3. When the design is **finished**, set it back to **"Ready for dev."**
+4. The next poll sees it's ready (and changed) and builds the finished version.
+
+Think of the flag as a switch: **off = "I'm still working," on = "this is done, build it."**
 
 **The system's side (GitHub, automatic):**
 5. On its schedule (every ~20 min) — or when someone triggers it manually — the **poller** wakes up
@@ -143,11 +146,12 @@ Here is exactly what happens, from a designer's edit to a committed file:
 
 So the designer's only job is the **Ready-for-dev flag**; everything from step 5 on is automatic.
 
-> **Do you *have* to toggle the flag off and back on?** No. The pipeline notices changes by
-> comparing design fingerprints, not by watching the flag — so if a design stays marked Ready for
-> dev and you change it, the next poll rebuilds it. **But** toggling it **off while you edit** and
-> **on when you're done** is the recommended habit, because otherwise a poll could fire in the
-> middle of your edits and build a half-finished version. Off = "I'm working." On = "build this."
+> **Why unmark while editing — this matters.** The pipeline notices changes by comparing design
+> fingerprints, and it polls on a timer. So if you **leave** a design marked Ready for dev and edit
+> it, a poll can fire **in the middle of your work** (Figma autosaves as you go) and build a
+> half-finished version. Unmarking while you edit prevents that completely: an unmarked design is
+> invisible to the pipeline no matter how many times it autosaves. Re-mark it only when it's truly
+> done. **This is the recommended standard practice for the whole team.**
 
 ### Quick reference
 
@@ -257,12 +261,45 @@ recomputes `generated-sha`. Don't delete it — it's how a block stays connected
 
 ## 7. Secrets & tokens — how to get each one
 
-The pipeline uses **four** repository secrets. They are stored in GitHub, never in the code.
+The pipeline's configuration is **all in GitHub, nothing hardcoded** — four secrets, one variable,
+and one automatic token. They live under GitHub → the repo → **Settings** → **Secrets and
+variables** → **Actions**. That page has **two tabs**:
 
-**Where to put them:** GitHub → the repo → **Settings** → **Secrets and variables** → **Actions** →
-**New repository secret**. Add each by exact name below.
+- **Secrets** tab — for sensitive values (passwords/tokens). Hidden after you save.
+- **Variables** tab — for non-sensitive config (like a file ID). Visible/editable any time.
 
-A fifth token, `GITHUB_TOKEN`, is **provided automatically** by GitHub Actions — you do not create it.
+| Name | Tab | Sensitive? |
+|---|---|---|
+| `FIGMA_FILE_KEY` | **Variables** | No — it's just an ID from a shareable URL |
+| `FIGMA_CLIENT_ID` | Secrets | Yes |
+| `FIGMA_CLIENT_SECRET` | Secrets | Yes |
+| `FIGMA_REFRESH_TOKEN` | Secrets | Yes |
+| `CLAUDE_CODE_OAUTH_TOKEN` | Secrets | Yes |
+| `GITHUB_TOKEN` | (automatic) | — provided by Actions, you don't create it |
+
+### 7.0 `FIGMA_FILE_KEY` (variable) — which Figma file the pipeline tracks
+
+This is the single source of truth for **which Figma file** the pipeline reads. It is **not**
+hardcoded anywhere and **not** read from the blocks — change this one value and the entire pipeline
+repoints to a different file on the **next poll, with no rebuild and no file edits.** (This is the
+fix for the "wrong file ID" problem — you just edit the variable.)
+
+- **What it is:** a Figma *file key* — the random string in a Figma design URL.
+- **How to get it:** open the file in Figma and look at the URL:
+  `https://www.figma.com/design/`**`cXkVxm0fI9G49nZtKPbYY7`**`/Halo-Email-...` — the **bolded part**,
+  between `/design/` and the next `/`, is the file key.
+- **Where to set it:** Settings → Secrets and variables → Actions → **Variables** tab → **New
+  repository variable** → name `FIGMA_FILE_KEY`, value = that key.
+- It's a *variable*, not a secret, because a file key isn't sensitive (it's in any share link) and
+  because you want to be able to read/change it easily.
+
+> Note: each block still records where it came from in its `figma-source` comment (for humans and
+> the clickable URL), but the **pipeline ignores that** for targeting — only the variable decides
+> which file is read. After you repoint and the blocks rebuild, those comments self-correct.
+
+### The secrets
+
+Add each on the **Secrets** tab (**New repository secret**), by exact name.
 
 ### 7.1 `FIGMA_CLIENT_ID` and `FIGMA_CLIENT_SECRET` — the Figma OAuth app
 
@@ -331,13 +368,14 @@ which needs a fine-grained PAT with **Actions: Read and write**.
 
 ### Summary
 
-| Secret name | What it's for | How you get it |
-|---|---|---|
-| `FIGMA_CLIENT_ID` | Identifies the Figma OAuth app | Figma → create OAuth app |
-| `FIGMA_CLIENT_SECRET` | Secret for that app | same screen |
-| `FIGMA_REFRESH_TOKEN` | Long-lived read access to your files | one-time OAuth code flow (§7.2) |
-| `CLAUDE_CODE_OAUTH_TOKEN` | Run Claude on your subscription | `claude setup-token` |
-| `GITHUB_TOKEN` | Commit results / auth Claude action | **automatic** — nothing to do |
+| Name | Tab | What it's for | How you get it |
+|---|---|---|---|
+| `FIGMA_FILE_KEY` | Variables | Which Figma file to track | the key in the file's URL (§7.0) |
+| `FIGMA_CLIENT_ID` | Secrets | Identifies the Figma OAuth app | Figma → create OAuth app |
+| `FIGMA_CLIENT_SECRET` | Secrets | Secret for that app | same screen |
+| `FIGMA_REFRESH_TOKEN` | Secrets | Long-lived read access to your files | one-time OAuth code flow (§7.2) |
+| `CLAUDE_CODE_OAUTH_TOKEN` | Secrets | Run Claude on your subscription | `claude setup-token` |
+| `GITHUB_TOKEN` | (automatic) | Commit results / auth Claude action | **automatic** — nothing to do |
 
 ---
 
@@ -378,14 +416,12 @@ automatically. (A cron change only counts once it's on the **default branch**, `
 
 ## 9. How change detection works
 
-The pipeline tracks **one Figma file** (the design system). Its key is recorded in every block's
-`figma-source` comment and collected into `figma_manifest.json`. Currently:
+The pipeline tracks **one Figma file** (the design system), named by the **`FIGMA_FILE_KEY`
+variable** (§7.0) — not by anything in the code or the blocks. Currently that variable is set to
+`cXkVxm0fI9G49nZtKPbYY7` ("Halo Email Design System (Copy)"). To track a different file, change the
+variable; nothing else.
 
-```
-file key:  cXkVxm0fI9G49nZtKPbYY7   ("Halo Email Design System (Copy)")
-```
-
-Each poll (`poll.py`) does this, per tracked file:
+Each poll (`poll.py`) does this:
 
 1. **Fetch the whole file once** via the Figma REST API (`GET /v1/files/<key>`). One call, not one
    per node — this is what makes it scale to hundreds of blocks.
@@ -469,7 +505,7 @@ After updating any secret, you can verify with a manual poll (§5) or by running
 
 | Symptom | Likely cause / fix |
 |---|---|
-| Marked Ready for dev but nothing built | Wrong file (must be `cXkVxm0fI9G49nZtKPbYY7`), or the poll hasn't run yet (≤20 min) — trigger manually. Run a **dry-run** (`onboard_cap=0`) to see what the poller detects. |
+| Marked Ready for dev but nothing built | Wrong file — check the `FIGMA_FILE_KEY` **variable** matches the file you're editing (§7.0). Or the poll hasn't run yet (≤20 min) — trigger manually. Run a **dry-run** (`onboard_cap=0`) to see what the poller detects. |
 | A build run failed (red ✗) | Open it in the Actions tab. "Fail if Claude errored" red = Claude/token problem (re-mint `CLAUDE_CODE_OAUTH_TOKEN`). "Validation gate" red = the generated block was malformed; the log lists exactly which check failed. |
 | Figma fetch step fails | Refresh token invalid/revoked → re-mint `FIGMA_REFRESH_TOKEN` (§7.2). The error prints the HTTP status from Figma. |
 | It built something I didn't want | That node was marked Ready for dev — unmark it in Figma. (It won't delete the file; remove it by hand if needed.) |
