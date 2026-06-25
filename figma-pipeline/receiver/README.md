@@ -1,5 +1,11 @@
 # Webhook receiver
 
+> ⚠️ **Not in use on this account.** Figma only *delivers* webhook events on **Organization/
+> Enterprise** plans. This account is **Professional** — webhooks register and send a PING, but the
+> actual events never fire. The live trigger is **polling** (`../poll.py` + `.github/workflows/figma-poll.yml`).
+> This receiver is kept only for if the plan is upgraded.
+
+
 The always-on service that turns a Figma publish event into builder runs. It must return
 `200` quickly. Two equivalent implementations are here — **deploy one:**
 
