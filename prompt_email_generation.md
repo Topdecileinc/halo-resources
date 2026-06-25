@@ -89,13 +89,15 @@ halo-resources/
 │   ├── rules_email_style_guide.md      ← visual design standards
 │   ├── rules_email_build.md            ← HTML/code standards
 │   ├── rules_email_footer.md           ← stable footer/legal boilerplate
-│   ├── sections/                       ← section_*.html (header, footer, tech specs, reviews, membership)
+│   ├── sections/                       ← section_*.html (header, footer, tech specs, reviews, membership, hero variants, …)
 │   ├── components/                     ← component_*.html (button)
+│   ├── playground/                     ← <name>.html  (a rendered preview per section/component)
 │   └── assets/
 │       ├── shared-images/              ← img_*.webp  (reference copies; emails link to hosted URLs)
 │       └── social-icons/               ← social_*.webp
 ├── developer-skills/
-│   └── rules_braze_send.md             ← Braze /messages/send schema + safety
+│   ├── rules_braze_send.md             ← Braze /messages/send schema + safety
+│   └── rules_figma_download.md         ← turn a Figma node into an email block (interactive path)
 ├── email-examples/                     ← sample_*.html
 └── brief/
     └── brief_sample.md                 ← the brief template (copy per campaign → brief_<name>.md)

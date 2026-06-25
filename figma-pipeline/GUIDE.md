@@ -181,7 +181,9 @@ The **poller** (`figma-poll.yml`) can start four ways:
 It shows one field, **"Max NEW frames to onboard this run"** (`onboard_cap`):
 - `10` (default) — create up to 10 new blocks this run; rebuild any changed ones.
 - `1` — create at most one new block (good for testing one at a time).
-- `0` — **dry-run**: list what it *would* build, but build nothing. Safe preview.
+- `0` — onboard **no new** blocks this run, but **log every new one it found** (a preview of what
+  would be created). Note: this is a "no new blocks" switch, not a full no-op — a *changed existing*
+  block still rebuilds, because updates aren't capped (see the next bullet).
 - The cap only limits **creating new** blocks. **Updating** existing blocks is never capped — if 2
   changed, it always does those 2. A high cap (e.g. 50) just means "I'm fine creating up to 50 new
   ones"; it never invents work.
@@ -505,7 +507,7 @@ After updating any secret, you can verify with a manual poll (§5) or by running
 
 | Symptom | Likely cause / fix |
 |---|---|
-| Marked Ready for dev but nothing built | Wrong file — check the `FIGMA_FILE_KEY` **variable** matches the file you're editing (§7.0). Or the poll hasn't run yet (≤20 min) — trigger manually. Run a **dry-run** (`onboard_cap=0`) to see what the poller detects. |
+| Marked Ready for dev but nothing built | Wrong file — check the `FIGMA_FILE_KEY` **variable** matches the file you're editing (§7.0). Or the poll hasn't run yet (≤20 min) — trigger manually. Run with `onboard_cap=0` (onboards nothing new, but logs what it found) to see what the poller detects. |
 | A build run failed (red ✗) | Open it in the Actions tab. "Fail if Claude errored" red = Claude/token problem (re-mint `CLAUDE_CODE_OAUTH_TOKEN`). "Validation gate" red = the generated block was malformed; the log lists exactly which check failed. |
 | Figma fetch step fails | Refresh token invalid/revoked → re-mint `FIGMA_REFRESH_TOKEN` (§7.2). The error prints the HTTP status from Figma. |
 | It built something I didn't want | That node was marked Ready for dev — unmark it in Figma. (It won't delete the file; remove it by hand if needed.) |

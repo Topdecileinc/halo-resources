@@ -341,7 +341,7 @@ register a new file.
 | Campaign offer, CTAs, hero URL, segment (per send) | the active `brief_` file |
 | Composed blocks (header, footer, tech specs, reviews, membership, ...) | `email-design-system/sections/` |
 | Reusable primitives (button, card, ...) used inside sections | `email-design-system/components/` |
-| Email skeletons | `email-design-system/templates/` |
+| Email skeletons (reserved `template_*` prefix — none built yet) | would live in `email-design-system/templates/` |
 | Tone / pattern reference | `email-examples/` |
 | Logo, icons | `email-design-system/assets/` |
 | Pre-send validation (JSON, HTML, brief reconciliation, optional W3C) | `test/validate.py` (config in `test/config.ini`) |
@@ -475,6 +475,11 @@ preview under `email-design-system/playground/`:
 | `tech specs` | Key product specs in a light stats panel. Facts from `rules_brand.md` (*Technical Features*). | **Yes** — opt-in. |
 | `reviews` | Customer reviews as quote cards. Quotes from `rules_brand.md` (*Social Proof*). | **Yes** — opt-in. |
 | `membership` | Pack Membership Plan details panel. Facts from `rules_brand.md` (*Membership*). | **Yes** — opt-in. |
+
+Plus the **Figma-sourced** blocks the pipeline generates: the hero variants
+(`section_hero_overlay/_stacked/_offer.html`) and anything auto-onboarded from a Figma frame marked
+"Ready for dev" (e.g. `section_aquisitions_no_background.html`). They live in `sections/` like the
+rest — see `figma-pipeline/GUIDE.md`. (The folder is always the source of truth for what exists.)
 
 ### Not chosen in §7 (driven by other fields)
 

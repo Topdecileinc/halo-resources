@@ -18,7 +18,7 @@ on:
   workflow_dispatch:           # manual "poll now" button
     inputs:
       onboard_cap:
-        description: "Max NEW frames to onboard this run (0 = dry-run: list new frames, build none)"
+        description: "Max NEW frames to onboard this run (0 = onboard none; changed existing blocks still rebuild)"
         required: false
         default: "10"
 

@@ -20,13 +20,15 @@ exclude:
   - "*.pyc"
   - "__pycache__"
   - ".gitignore"
-  # PHP form + pipeline are hosted on a PHP-capable server, not GitHub Pages.
-  # Don't publish them (Pages would serve PHP as raw text).
+  # The PHP brief form is hosted on a PHP-capable server, not GitHub Pages.
+  # Don't publish it (Pages would serve PHP as raw text).
   - brief/form.php
   - brief/lib
   - brief/config.sample.php
   - submissions/
   - generated/
+  # Internal Figma→email automation (runs on GitHub Actions) — not part of the public resource site.
+  - figma-pipeline/
 
 # Tell Jekyll to also process README files into pages.
 include:

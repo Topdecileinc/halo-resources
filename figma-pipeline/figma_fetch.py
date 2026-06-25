@@ -9,11 +9,11 @@ This pulls the same design *spec* via the Figma REST API using the OAuth app's r
 token — fully unattended.
 
 Given a file key + node id, it:
-  1. refreshes the OAuth access token (refresh token never expires; access token ~90d),
+  1. refreshes the OAuth access token (refresh token is long-lived/reusable until revoked; the
+     access token it returns is short-lived),
   2. fetches the node's structure JSON  (GET /v1/files/:key/nodes),
   3. fetches a rendered PNG of the node  (GET /v1/images/:key),
-and writes both to an output dir for the builder (claude -p) to translate per
-rules_figma_download.md.
+and writes both to an output dir for the builder to translate per rules_figma_download.md.
 
 Credentials come from the environment (set these as CI secrets — never in the repo):
   FIGMA_CLIENT_ID, FIGMA_CLIENT_SECRET, FIGMA_REFRESH_TOKEN
@@ -22,8 +22,6 @@ Usage:
   python3 figma-pipeline/figma_fetch.py --file <FILE_KEY> --node 4618:108 --out ./_figma_in
 
 Zero dependencies (stdlib only), to match test/ and generate_manifest.py.
-NOTE: not runnable without live credentials, so it has not been executed here — your dev
-should smoke-test it once with the real token before wiring it into the workflow.
 """
 
 import argparse

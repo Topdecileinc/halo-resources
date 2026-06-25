@@ -5,9 +5,11 @@
 > **What this is — a developer procedure for turning a Figma design into a reusable email block.**
 > Given a Figma node, it decides whether the node is a `component_`, `section_`, or `template_`,
 > builds it as email-compliant HTML, generates a playground for it, and stamps a link back to
-> Figma so the block can be **refreshed** when the design changes. The chat assistant runs this
-> using the connected **Figma Dev Mode MCP**; the PHP pipeline can't reach Figma, which is why
-> this lives in `developer-skills/`.
+> Figma so the block can be **refreshed** when the design changes. Two things follow this same
+> procedure: the **interactive chat assistant** (which pulls the design from the connected **Figma
+> Dev Mode MCP**) and the **automated GitHub Actions builder** (`.github/workflows/figma-build.yml`,
+> which is handed the same design via the REST API as `./_figma_in/node.json` + `node.png` — see
+> `figma-pipeline/figma_fetch.py`). Where the two differ, it's called out inline.
 >
 > **Use it when** someone gives you a Figma node/URL and asks to "download" or "import" it, or asks
 > to "refresh the design."
@@ -84,6 +86,10 @@ segment; the **node id** is `<id1>:<id2>` (the tools accept the URL's `4618-108`
   top-level frame name (e.g. `acquisitions-background`) is the design's intent; the `mj-*` child names
   (`mj-hero-Frame`, `mj-text-Frame`, `mj-button-Frame`, `mj-section`, `mj-column`) are MJML-ish email
   block hints. **600px wide = full email width.**
+
+> **In the automated builder** these three MCP calls don't exist — read the equivalents that
+> `figma_fetch.py` already downloaded: `./_figma_in/node.json` (structure, tokens, layer tree) and
+> `./_figma_in/node.png` (the screenshot / visual source of truth).
 
 ## Step 3 — Reconcile tokens with the style guide
 
@@ -213,13 +219,15 @@ Then:
 
 - Confirm the new **section** reads correctly in the brief form's §7 list (the form auto-discovers
   `section_*.html` minus header/footer — no list to hand-maintain).
-- **Wire it into the index:** add one `<li>` under the *Email Design System* group in `index.html`
-  linking the block's **rendered playground**
-  (`/halo-resources/email-design-system/playground/<name>.html`), matching the existing
-  section/component entries. (The index links each block via its playground, not a separate area.)
+- **Wire it into the index** — *interactive path only.* Add one `<li>` under the *Email Design
+  System* group in `index.html` linking the block's rendered playground
+  (`/halo-resources/email-design-system/playground/<name>.html`), matching the existing entries.
+  **In the automated pipeline this is done for you** by `figma-pipeline/generate_index.py`
+  (append-only — it adds the entry).
 - Run `test/validate.py` against a sample build that uses the block.
-- **Commit and push** (`git add -A && git commit && git push origin main`) — work is tested against
-  the deployed site, so always push.
+- **Commit and push** — *interactive path only* (`git add -A && git commit && git push origin main`).
+  **In the automated pipeline the builder must NOT commit** (the build prompt says so); the
+  workflow's "Commit on green" step pushes for you, only after the validation gate passes.
 
 ---
 

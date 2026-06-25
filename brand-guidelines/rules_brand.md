@@ -36,7 +36,7 @@
 ## Voice (always)
 
 - **Warm and inviting** — this is the standing tone for every email, not a per-campaign choice. Encouraging, plain-spoken, confident but not hype-y.
-- See `email-examples/` (`sample_*.html`) for the established tone in practice.
+- See the `sample_*.html` inside each `email-examples/<name>/` folder for the established tone in practice.
 
 ## What still comes from the brief
 

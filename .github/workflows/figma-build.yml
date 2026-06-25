@@ -55,8 +55,9 @@ jobs:
       - name: Pull the node from Figma (REST, headless)
         run: python3 figma-pipeline/figma_fetch.py --file "$FILE_KEY" --node "$NODE_ID" --out ./_figma_in
 
-      # Use the official action: raw `claude -p` ignores ANTHROPIC_API_KEY in headless CI
-      # (a known issue) and fails with "Not logged in". The action reads the key as a param.
+      # Use the official action with the subscription OAuth token: the raw `claude` CLI ignores
+      # env-var credentials in headless CI (a known issue) and fails "Not logged in"; the action
+      # authenticates properly.
       - name: Translate to an email block (Claude Code action)
         id: translate
         uses: anthropics/claude-code-action@v1
