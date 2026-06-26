@@ -24,7 +24,7 @@
     <a class="back" href="/halo-resources/">&larr; Back to resources</a>
     <p class="kind">Section</p>
     <h1>Members background</h1>
-    <p class="lede">600&times;600 square card with a background photo and headline/body text overlaid in the upper-left.
+    <p class="lede">600&times;600 square card with a background photo, headline, body text, and a CTA button overlaid in the upper-left.
        Downloaded from Figma (<code>node 4645:425</code>) and built to the email rules. Text is overlaid via a
        background image with an Outlook fallback color. Edit the image URL to preview a real photo.
        <strong>Note:</strong> the right padding (200px) on the body text keeps it in the left portion of the card
@@ -68,7 +68,18 @@
 '                  <p style="margin:0; font-family:\'Inter\',Arial,Helvetica,sans-serif; font-size:18px; line-height:22px; font-weight:400; color:#333333;">[BODY_TEXT]</p>\n' +
 '                </td>\n' +
 '              </tr>\n' +
-'              <tr><td style="font-size:1px; line-height:1px; height:350px;">&nbsp;</td></tr>\n' +
+'              <tr>\n' +
+'                <td align="left" valign="top" style="padding:15px 30px 0 30px;">\n' +
+'                  <table class="component-button" role="presentation" cellpadding="0" cellspacing="0" border="0" align="left">\n' +
+'                    <tr>\n' +
+'                      <td align="center" style="border-radius:999px; background-color:[CTA_FILL];">\n' +
+'                        <a href="[CTA_URL]" target="_blank" style="display:inline-block; padding:15px 40px; font-family:\'Inter\',Arial,Helvetica,sans-serif; font-size:18px; font-weight:bold; color:[CTA_TEXT_COLOR]; text-decoration:none; border-radius:999px;">[CTA_LABEL]</a>\n' +
+'                      </td>\n' +
+'                    </tr>\n' +
+'                  </table>\n' +
+'                </td>\n' +
+'              </tr>\n' +
+'              <tr><td style="font-size:1px; line-height:1px; height:283px;">&nbsp;</td></tr>\n' +
 '            </table>\n' +
 '          </div>\n' +
 '        </td>\n' +
@@ -84,6 +95,15 @@
           default: "A quick Wi-Fi check<br>for your dog" },
         { key: "BODY_TEXT", label: "Body text", type: "textarea",
           default: "A strong Wi-Fi connection helps your Halo Collar run at its best by improving connectivity and supporting longer battery life." },
+        { key: "CTA_LABEL", label: "Button label", type: "text",
+          default: "Shop now" },
+        { key: "CTA_URL", label: "Button URL", type: "url",
+          default: "https://example.com" },
+        { key: "CTA_FILL", label: "Button fill color", type: "color",
+          default: "#FCD62D",
+          hint: "Halo Yellow (#FCD62D) is the primary CTA color per the style guide." },
+        { key: "CTA_TEXT_COLOR", label: "Button text color", type: "color",
+          default: "#333333" },
         { key: "BG_FALLBACK", label: "Outlook fallback color", type: "select",
           options: ["#F2F4F4", "#F5F5F5", "#FFFFFF"], default: "#F2F4F4",
           hint: "Shown behind the text in Outlook (which drops the photo). Keep it light so the dark text stays readable." }

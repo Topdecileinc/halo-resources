@@ -1,29 +1,31 @@
-<!-- section-desc: Members background — 600×600 square card with a background photo and headline/body text overlaid in the upper-left. -->
+<!-- section-desc: Members background — 600×600 square card with a background photo, headline, body text, and CTA button overlaid in the upper-left. -->
 <!--
   section_members_background.html  (root class="section-members-background")
-  A square image card: a full-bleed background photo with a bold headline and body text
-  overlaid in the top-left. The photo fills the lower portion. Drop inside the 600px
-  container table, e.g. after section_header.
+  A square image card: a full-bleed background photo with a bold headline, body text,
+  and a CTA button overlaid in the top-left. The photo fills the lower portion.
+  Drop inside the 600px container table, e.g. after section_header.
 
   RENDER (background-image + fallback): text is overlaid via the bulletproof VML/CSS
   pattern. Outlook replaces the photo with [BG_FALLBACK] (a light color) and shows the
   dark text on that background. The photo height is client-sensitive; tune the spacer
   if needed. (See rules_email_build.md → "Always flag rendering risks".)
 
-  DYNAMIC ([BRACKETED]): background image URL, Outlook fallback color, headline, body text.
+  DYNAMIC ([BRACKETED]): background image URL, Outlook fallback color, headline, body text,
+  CTA label, CTA URL, CTA fill color, CTA text color.
   Images default to placehold.co so nothing renders broken.
 
   STYLE (rules_email_style_guide.md): 24px card radius; text color #333333 (--text).
   Headline: Inter Bold 36px (Figma spec; style-guide H1 is 34px Bold — kept at 36px per
   the Figma source). Body: Inter Regular 18px / 22px line-height.
+  Button: Yellow pill (#FCD62D fill, #333333 text) per component_button.html.
 -->
 <!-- figma-source
      file:          cXkVxm0fI9G49nZtKPbYY7
      node:          4645:425
      url:           https://www.figma.com/design/cXkVxm0fI9G49nZtKPbYY7/Halo-Email-Design-System--Copy---Copy-?node-id=4645-425
      kind:          section
-     fetched:       2026-06-25
-     generated-sha: c07c0bcdc8db3c095abf63c1259e55edff86bf8a654edeef5d1aca4df27f899f
+     fetched:       2026-06-26
+     generated-sha: d0731e95350d050fe6881bc5c574864afc13b416723912517aaf075d9bf46c35
      On "refresh" this node is re-pulled and this file + its playground are rebuilt.
      See developer-skills/rules_figma_download.md -> Refresh for how hand edits are preserved. -->
 <tr class="section-members-background">
@@ -48,8 +50,27 @@
                   <p style="margin:0; font-family:'Inter',Arial,Helvetica,sans-serif; font-size:18px; line-height:22px; font-weight:400; color:#333333;">[BODY_TEXT]</p>
                 </td>
               </tr>
-              <!-- spacer: lets the background photo show in the lower portion of the card (Figma Spacer: 350px). Tune per preview. -->
-              <tr><td style="font-size:1px; line-height:1px; height:350px;">&nbsp;</td></tr>
+              <tr>
+                <td align="left" valign="top" style="padding:15px 30px 0 30px;">
+                  <table class="component-button" role="presentation" cellpadding="0" cellspacing="0" border="0" align="left">
+                    <tr>
+                      <td align="center" style="border-radius:999px; background-color:[CTA_FILL];">
+                        <!--[if mso]>
+                        <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="[CTA_URL]" style="height:52px;v-text-anchor:middle;width:167px;" arcsize="100%" stroke="f" fillcolor="[CTA_FILL]">
+                          <w:anchorlock/>
+                          <center style="color:[CTA_TEXT_COLOR];font-family:Arial,sans-serif;font-size:18px;font-weight:bold;">[CTA_LABEL]</center>
+                        </v:roundrect>
+                        <![endif]-->
+                        <!--[if !mso]><!-- -->
+                        <a href="[CTA_URL]" target="_blank" style="display:inline-block; padding:15px 40px; font-family:'Inter',Arial,Helvetica,sans-serif; font-size:18px; font-weight:bold; color:[CTA_TEXT_COLOR]; text-decoration:none; border-radius:999px; mso-hide:all;">[CTA_LABEL]</a>
+                        <!--<![endif]-->
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <!-- spacer: lets the background photo show in the lower portion of the card (Figma Spacer: 350px; 67px consumed by button row → 283px). Tune per preview. -->
+              <tr><td style="font-size:1px; line-height:1px; height:283px;">&nbsp;</td></tr>
             </table>
           </div>
           <!--[if gte mso 9]>
