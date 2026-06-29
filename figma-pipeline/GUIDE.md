@@ -39,17 +39,20 @@ There is exactly **one rule** that governs everything:
 > **A Figma node becomes (and stays) an email block IF AND ONLY IF it is marked "Ready for dev"
 > in Figma's Dev Mode.**
 
-From that single rule:
+From that single rule — **the repo mirrors the Ready-for-dev set of the file:**
 
 - **Marked Ready for dev + never built before** → the pipeline **creates** a new block from it.
 - **Marked Ready for dev + already a block + design changed** → the pipeline **rebuilds** it.
 - **Marked Ready for dev + already a block + nothing changed** → left alone.
-- **Not marked Ready for dev** → **completely ignored.** Never created, never updated — even if it
-  was a block before. (Unmark something and the pipeline stops maintaining it.)
+- **No longer Ready for dev** (status **cleared**, or the frame **removed** from Figma) → the block
+  is **DELETED** (recoverable from git history).
+- **Set to "Completed"** → **protected**: kept as-is, never rebuilt, never deleted.
+- **Never marked at all** → completely ignored.
 
 This is why the file can be full of style guides, references, and work-in-progress without the
-pipeline touching any of it. You opt a design in by marking it Ready for dev, and opt it out by
-unmarking it.
+pipeline touching any of it. You opt a design **in** by marking it Ready for dev, and **out** (which
+removes it) by clearing the status. **Caution:** because clearing the status deletes the block,
+don't clear it just to pause editing — see §4.
 
 **How to mark Ready for dev:** in Figma, right-click a section/frame (or use the status control
 in Dev Mode's right panel) and set its status to **"Ready for dev."** The status is read by the
@@ -119,55 +122,55 @@ the repo. It is recoverable from git history if the Figma plan is ever upgraded 
 
 Here is exactly what happens, from a designer's edit to a committed file:
 
-**The designer's side (in Figma) — the standard workflow:**
-1. Before editing, **unmark "Ready for dev"** on the design you're about to change. This takes it
-   out of scope so the pipeline won't touch it while you work.
-2. Make your edits. Figma autosaves continuously — that's fine, because the design is unmarked, so
-   no poll will pick it up.
-3. When the design is **finished**, set it back to **"Ready for dev."**
-4. The next poll sees it's ready (and changed) and builds the finished version.
+**The designer's side (in Figma).** "Ready for dev" is the **on/off switch for whether a component
+is in the library** — the repo mirrors your Ready-for-dev set:
+1. **Mark a frame "Ready for dev"** → it's built into the repo (created if new, updated whenever its
+   design changes) and kept in sync.
+2. **Clear its status, or delete the frame** → the block, its playground, **and** its index entry
+   are **deleted** from the repo (recoverable from git history).
+3. **Set it to "Completed"** → the block is **kept and frozen**: never rebuilt, never deleted. Use
+   this for "done, leave it alone."
 
-Think of the flag as a switch: **off = "I'm still working," on = "this is done, build it."**
+> ⚠️ **Do NOT clear a live component's status just to edit it — that deletes it.** Because clearing
+> the status removes the block, the old "unmark while you work" habit is **not** available here. To
+> change a live component, **edit it while it stays marked Ready for dev.** A poll could rebuild it
+> mid-edit, so to avoid shipping a half-finished version, **edit in a Figma branch and merge when
+> it's done** — the main file's frame stays stable until the merge. *(This is the trade-off the
+> client chose: a dead-simple "library = whatever is marked Ready for dev," at the cost of the
+> unmark-to-edit convenience.)*
 
 **The system's side (GitHub, automatic):**
-5. On its schedule (every ~20 min) — or when someone triggers it manually — the **poller** wakes up
-   and reads the whole Figma file.
-6. It looks at **every node currently marked "Ready for dev"** and computes a fingerprint (hash) of
-   each one's design.
-7. It compares each fingerprint to what it saw last time (`poll_state.json`):
-   - **new** Ready-for-dev design (never built) → schedule a **create**
-   - tracked design whose fingerprint **changed** → schedule a **rebuild**
-   - tracked design that's **unchanged** → skip
-8. For each scheduled block, the **builder** runs: download the node from Figma → Claude translates
-   it to email HTML + a playground → "did Claude error?" guard → regenerate the manifest → add new
-   blocks to `index.html` → validation gate → **commit & push to `main`.**
-9. The committed result: the block HTML, its playground preview, the updated manifest, and (for new
-   blocks) a new entry on the index page.
+4. On its schedule (every ~20 min) — or a manual trigger — the **poller** reads the whole Figma file
+   and looks at every node's dev status.
+5. It fingerprints each **Ready-for-dev** node's design and compares to last time (`poll_state.json`):
+   **new** ready design → **create**; tracked design that **changed** → **rebuild**; **unchanged** → skip.
+6. It finds tracked blocks that are **no longer Ready for dev** (status cleared, or frame removed)
+   and **deletes** them — block, playground, manifest entry, index entry. (Completed blocks are
+   skipped; safety caps refuse a mass-delete — see §9.)
+7. For each create/rebuild, the **builder** runs: download the node → Claude translates it to email
+   HTML + playground → "did Claude error?" guard → regenerate manifest → update index → validation
+   gate → **commit & push.** Deletions are committed by the poller itself.
 
-So the designer's only job is the **Ready-for-dev flag**; everything from step 5 on is automatic.
-
-> **Why unmark while editing — this matters.** The pipeline notices changes by comparing design
-> fingerprints, and it polls on a timer. So if you **leave** a design marked Ready for dev and edit
-> it, a poll can fire **in the middle of your work** (Figma autosaves as you go) and build a
-> half-finished version. Unmarking while you edit prevents that completely: an unmarked design is
-> invisible to the pipeline no matter how many times it autosaves. Re-mark it only when it's truly
-> done. **This is the recommended standard practice for the whole team.**
+So the designer's only job is the **Ready-for-dev flag**; everything else is automatic.
 
 ### Quick reference
 
 - **Publish / update a block:** mark it Ready for dev → wait ≤20 min (or trigger a poll, §5).
-- **Stop maintaining a block:** unmark it. The pipeline leaves the existing file alone and stops
-  updating it. (It does **not** delete the file or its index entry.)
-- **Rename a block's file:** rename the frame in Figma — the filename is derived from the frame
-  name (§10). The next build creates the new name. (The old file isn't auto-deleted.)
+- **Delete a block:** clear its Ready-for-dev status, or delete the frame in Figma → removed on the
+  next poll (recoverable from git history).
+- **Keep a block but stop changing it:** set it to **Completed** — frozen, not rebuilt, not deleted.
+- **Edit a live block:** edit it **while it stays Ready for dev** (don't clear the status — that
+  deletes it); use a Figma branch to avoid a mid-edit rebuild.
+- **Rename a block's file:** clear the status (deletes the old file), rename the frame, then mark
+  Ready for dev again (creates it under the new name).
 
 **Things to keep in mind:**
 - Only designs in the one tracked Figma file are seen (§9).
-- The HTML uses `[BRACKETED]` placeholders for dynamic content (headline, image URL, CTA, etc.) —
-  these are intentional; they get filled in later by the email-building step, not by Figma.
+- The HTML uses `[BRACKETED]` placeholders for dynamic content — filled in later by the
+  email-building step, not by Figma.
 - Re-running with no design change does nothing (the pipeline detects "no change" and skips).
-- New blocks are **appended** to the index page; your existing curated index entries are never
-  altered (§6).
+- The index page auto-syncs both ways — new blocks **added**, deleted blocks **removed** — while
+  your hand-curated entries (header/footer/rules/assets) are never altered (§6).
 
 ---
 
@@ -225,12 +228,12 @@ under `figma-pipeline/`.
 
 | File | What it does |
 |---|---|
-| **`poll.py`** | The change detector. Reads the Figma file, finds every **Ready-for-dev** node, hashes each one's design, compares to `poll_state.json`. Outputs the list of blocks to build (new ones to create + tracked ones that changed). One full-file fetch per file — scales to hundreds of nodes. |
+| **`poll.py`** | The change detector. Reads the Figma file, finds every **Ready-for-dev** node, hashes each one's design, compares to `poll_state.json`. Outputs the list of blocks to build (new to create + tracked that changed), **and deletes** the blocks of tracked nodes no longer Ready for dev (Completed is protected; safety caps prevent a mass-delete). One full-file fetch per file — scales to hundreds of nodes. |
 | **`poll_state.json`** | The memory. `{ "node_hashes": { "<file>:<node>": "<hash>" } }` — the last-seen design hash of each tracked node, so the poller knows what actually changed. Committed by the workflow each run. |
 | **`figma_fetch.py`** | Headless Figma read for the builder. Turns the refresh token into a short-lived access token, then downloads one node's structure (`node.json`) and a rendered PNG (`node.png`) into `./_figma_in/`. |
 | **`generate_manifest.py`** | Builds `figma_manifest.json` by scanning the `figma-source` comments embedded in every block. Run after each build so new blocks get tracked. `--check` mode verifies it's up to date (for CI). |
 | **`figma_manifest.json`** | The map of `Figma node → output file`, derived from the blocks themselves. This is the list `poll.py` checks for change-detection. |
-| **`generate_index.py`** | Keeps the top-level `index.html` listing in sync — **append-only**. Adds an entry (link to the playground + the block's own description) for any block not yet listed; never edits the hand-curated entries. Runs in the builder after each block is built. |
+| **`generate_index.py`** | Keeps the top-level `index.html` listing in sync — **adds** an entry for any block not yet listed and **removes** entries whose playground no longer exists (deleted blocks). Never edits the hand-curated entries (header/footer/rules/assets). Runs in the builder and in the poller. |
 | **`validate_block.py`** | The safety gate. Hard-fails the build (blocking the commit) if a generated block is broken: missing class marker, missing/!fake `figma-source` comment, broken image URLs, `display:flex/grid` (not email-safe), etc. |
 | **`GUIDE.md`** | This document. |
 | **`README.md`** | Short orientation that points here. |
@@ -448,17 +451,28 @@ Each poll (`poll.py`) does this:
 
 1. **Fetch the whole file once** via the Figma REST API (`GET /v1/files/<key>`). One call, not one
    per node — this is what makes it scale to hundreds of blocks.
-2. **Find Ready-for-dev nodes** — walk the file tree and collect every node whose
-   `devStatus.type == "READY_FOR_DEV"`.
-3. **Hash each one's design** — a SHA-256 of the node's design subtree (the geometry/text/layout).
-   Volatile file metadata (thumbnails, timestamps) is excluded, so the hash only changes when the
-   *design* changes.
+2. **Read every node's dev status** — walk the file tree once, collecting nodes marked
+   `READY_FOR_DEV` and the ids of nodes marked `COMPLETED` (those are protected).
+3. **Hash each Ready-for-dev node's design** — a SHA-256 of the node's design subtree
+   (geometry/text/layout). Volatile file metadata (thumbnails, timestamps) is excluded, so the hash
+   only changes when the *design* changes.
 4. **Compare to memory** (`poll_state.json`):
    - tracked node, hash differs → **rebuild** it.
    - tracked node, hash same → skip.
    - **not** tracked yet → **onboard** it (create a new block), up to the per-run cap.
    - a node's *first* sighting is recorded as a silent baseline (it's already in sync / just built).
-5. **Write the new hashes** back to `poll_state.json` (committed by the workflow).
+5. **Find deletions** — any **tracked** node (in the manifest) that is **no longer Ready for dev**
+   (status cleared, or the frame was removed from Figma) → its block + playground are **deleted**,
+   and it's dropped from the manifest, index, and `poll_state.json`. **`COMPLETED` nodes are
+   exempt** (kept, frozen).
+6. **Write the new hashes** back to `poll_state.json` (committed by the workflow, along with any
+   deletions).
+
+**Deletion safety stops** (`poll.py`): a bad or partial Figma read must never wipe the library, so
+deletion **refuses** to run if it would remove more than **`DELETE_CAP`** blocks in one cycle
+(default 10), or if it would remove **every** tracked block at once. Either case logs an error and
+skips all deletions that cycle. If you genuinely need to delete more than the cap, raise the
+`DELETE_CAP` env var on the poll workflow. Deleted files are always recoverable from git history.
 
 So `poll_state.json` is the pipeline's memory of "what each design looked like last time," and the
 manifest is "which node maps to which file."
@@ -476,9 +490,12 @@ name**:
   `email-design-system/playground/<slug>.html` preview.
 
 **Implications:**
-- **Spelling matters.** The frame named `aquisitions-no-background` (missing the "c") produces
-  `section_aquisitions_no_background.html`. Rename the frame to fix it; the next build makes the new
-  name (the old file isn't auto-deleted).
+- **Spelling matters, and the name locks at creation.** The frame named `aquisitions-no-background`
+  (missing the "c") creates `section_aquisitions_no_background.html`. **Renaming the frame later does
+  NOT rename the file** — the name is fixed when the block is first created (the manifest maps the
+  Figma node id to that path; later rebuilds reuse it). To fix a name: **clear the frame's
+  Ready-for-dev status** (deletes the old file), rename the frame, then **mark Ready for dev again**
+  (re-creates it under the new name).
 - **Name collisions are skipped, not clobbered.** If a new frame's slug matches an existing block's
   file, the pipeline skips it and logs a warning rather than overwriting.
 
@@ -531,7 +548,9 @@ After updating any secret, you can verify with a manual poll (§5) or by running
 | Marked Ready for dev but nothing built | Wrong file — check the `FIGMA_FILE_KEY` **variable** matches the file you're editing (§7.0). Or the poll hasn't run yet (≤20 min) — trigger manually. Run with `onboard_cap=0` (onboards nothing new, but logs what it found) to see what the poller detects. |
 | A build run failed (red ✗) | Open it in the Actions tab. "Fail if Claude errored" red = Claude/token problem (re-mint `CLAUDE_CODE_OAUTH_TOKEN`). "Validation gate" red = the generated block was malformed; the log lists exactly which check failed. |
 | Figma fetch step fails | Refresh token invalid/revoked → re-mint `FIGMA_REFRESH_TOKEN` (§7.2). The error prints the HTTP status from Figma. |
-| It built something I didn't want | That node was marked Ready for dev — unmark it in Figma. (It won't delete the file; remove it by hand if needed.) |
+| It built something I didn't want | That node was marked Ready for dev. **Clear its status** in Figma → the next poll deletes the block (recoverable from git). |
+| It deleted a block I wanted to keep | Its status was cleared (or the frame removed). Restore the file from git history, then either re-mark it Ready for dev or set it to **Completed** (which is protected from deletion). |
+| A big unmark didn't delete anything | Hit a safety cap — more than `DELETE_CAP` (10) blocks, or *all* of them, would have been removed in one cycle. Check the run log; raise `DELETE_CAP` if the bulk delete is intentional. |
 | A tracked block stopped updating | It's no longer marked Ready for dev. Re-mark it. |
 | Two builds collided on commit | Handled automatically — the commit step rebases and retries up to 3×. |
 | Wrong/misspelled filename | Derived from the frame name — rename the frame (§10). |

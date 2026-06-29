@@ -21,6 +21,10 @@ on:
         description: "Max NEW frames to onboard this run (0 = onboard none; changed existing blocks still rebuild)"
         required: false
         default: "10"
+      delete_cap:
+        description: "Max blocks to DELETE this run (0 = preview only: list what would be deleted, delete nothing)"
+        required: false
+        default: "0"
 
 permissions:
   contents: write              # to commit poll_state.json (and the build commits the block)
@@ -50,22 +54,29 @@ jobs:
         id: poll
         env:
           ONBOARD_CAP: ${{ github.event.inputs.onboard_cap || '10' }}
+          # Deletion starts PREVIEW-ONLY (0): scheduled runs won't delete until this default is
+          # raised to e.g. 10. Lets the team confirm the library state before auto-delete goes live.
+          DELETE_CAP:  ${{ github.event.inputs.delete_cap  || '0' }}
         run: python3 figma-pipeline/poll.py
 
-      - name: Record the new state (so changes aren't re-triggered)
+      # poll.py may have DELETED block + playground files (nodes no longer Ready for dev).
+      # Reflect that in the manifest and index, then commit state + deletions together.
+      - name: Reconcile manifest + index, then commit (state, deletions)
         run: |
-          if [ -n "$(git status --porcelain figma-pipeline/poll_state.json)" ]; then
+          python3 figma-pipeline/generate_manifest.py
+          python3 figma-pipeline/generate_index.py
+          if [ -n "$(git status --porcelain)" ]; then
             git config user.name  "figma-pipeline[bot]"
             git config user.email "figma-pipeline@users.noreply.github.com"
-            git add figma-pipeline/poll_state.json
-            git commit -m "figma-poll: update change-detection state"
+            git add -A
+            git commit -m "figma-poll: sync change-detection state + remove unmarked blocks"
             for attempt in 1 2 3; do
               git pull --rebase origin "${GITHUB_REF_NAME}" || exit 1
               if git push origin "HEAD:${GITHUB_REF_NAME}"; then break; fi
               echo "push rejected, retrying (${attempt}/3)..."
             done
           else
-            echo "No state change."
+            echo "No state/deletion changes."
           fi
 
   build:

@@ -5,12 +5,14 @@ figma-pipeline/poll.py
 The polling trigger (Professional plan — Figma won't DELIVER webhook events, but the REST API
 DOES expose dev status, so we read it on a schedule).
 
-THE RULE: a Figma node is an email block if and only if it is marked **Ready for dev**
-(devStatus.type == "READY_FOR_DEV"). Nothing else is ever pulled, created, or updated. That gate
-drives everything:
-  - a Ready-for-dev node NOT yet tracked  -> ONBOARD it (the builder creates the block)
-  - a Ready-for-dev node already tracked   -> rebuild it IF its design changed
-  - a node that is NOT Ready-for-dev        -> ignored entirely (even if previously tracked)
+THE RULE: the repo mirrors the **Ready for dev** set of the Figma file. devStatus drives it all:
+  - a Ready-for-dev node NOT yet tracked    -> ONBOARD it (the builder creates the block)
+  - a Ready-for-dev node already tracked    -> rebuild it IF its design changed
+  - a tracked node NO LONGER Ready for dev  -> DELETE its block + playground (status cleared, or
+                                               the frame removed from Figma)
+  - a COMPLETED node                        -> PROTECTED: kept as-is, never rebuilt, never deleted
+Deletion is guarded: it refuses to remove more than DELETE_CAP blocks, or to empty the whole
+library, in one cycle (a bad/partial Figma read shouldn't wipe everything).
 
 WHICH FIGMA FILE: the single tracked file is the **FIGMA_FILE_KEY** repo variable — NOT hardcoded
 and NOT read from the blocks. Point the pipeline at a different file by changing that one variable
@@ -51,6 +53,7 @@ MANIFEST = "figma-pipeline/figma_manifest.json"
 STATE = "figma-pipeline/poll_state.json"
 SECTIONS_DIR = "email-design-system/sections"
 ONBOARD_CAP = int(os.environ.get("ONBOARD_CAP", "10"))
+DELETE_CAP = int(os.environ.get("DELETE_CAP", "10"))
 
 
 def _get(url, token, timeout=120):
@@ -63,15 +66,26 @@ def _get(url, token, timeout=120):
         raise SystemExit(f"HTTP {e.code} from {url}\n  {body}") from None
 
 
-def ready_nodes(node, out):
-    """Walk the tree; collect nodes whose devStatus is READY_FOR_DEV."""
+def collect_statuses(node, ready, completed_ids):
+    """Walk the tree once: READY_FOR_DEV nodes -> `ready` list; COMPLETED node ids ->
+    `completed_ids` (those are protected from deletion)."""
     if isinstance(node, dict):
         ds = node.get("devStatus")
-        if isinstance(ds, dict) and ds.get("type") == "READY_FOR_DEV":
-            out.append(node)
+        if isinstance(ds, dict):
+            t = ds.get("type")
+            if t == "READY_FOR_DEV":
+                ready.append(node)
+            elif t == "COMPLETED":
+                completed_ids.add(node.get("id"))
         for c in (node.get("children") or []):
-            ready_nodes(c, out)
-    return out
+            collect_statuses(c, ready, completed_ids)
+    return ready, completed_ids
+
+
+def playground_for(output_path):
+    """email-design-system/sections/section_foo.html -> .../playground/foo.html"""
+    name = re.sub(r"^(section|component)_", "", os.path.basename(output_path)[:-5])
+    return f"email-design-system/playground/{name}.html"
 
 
 def design_hash(node):
@@ -120,8 +134,9 @@ def main():
     tracked_paths = set(node_to_path.values())
 
     document = _get(f"{API}/v1/files/{file_key}", token).get("document", {})
-    ready = ready_nodes(document, [])
-    print(f"file {file_key}: {len(ready)} node(s) marked Ready for dev")
+    ready, completed_ids = collect_statuses(document, [], set())
+    print(f"file {file_key}: {len(ready)} node(s) marked Ready for dev, "
+          f"{len(completed_ids)} Completed (protected)")
 
     changed = []
     onboarded = 0
@@ -158,12 +173,41 @@ def main():
             tracked_paths.add(out)
             onboarded += 1
 
+    # --- DELETION: tracked blocks whose node is no longer Ready for dev (status cleared, or the
+    # frame was removed from Figma). COMPLETED is protected. Two safety stops guard against a
+    # bad/partial Figma read wiping the library.
+    deleted = []
+    keep = {n.get("id") for n in ready} | completed_ids
+    to_delete = [nid for nid in node_to_path if nid not in keep]
+    if to_delete and DELETE_CAP == 0:
+        print("  -- deletion PREVIEW (DELETE_CAP=0: nothing will be deleted) --")
+        for nid in to_delete:
+            print(f"  WOULD DELETE: {node_to_path[nid]}  (node {nid})")
+    elif to_delete and len(to_delete) > DELETE_CAP:
+        print(f"::error::{len(to_delete)} block(s) would be deleted — over DELETE_CAP ({DELETE_CAP}). "
+              f"Skipping ALL deletions this cycle (safety stop). Raise DELETE_CAP or investigate.",
+              file=sys.stderr)
+    elif to_delete and len(to_delete) == len(node_to_path) and len(node_to_path) > 1:
+        print(f"::error::deletion would remove ALL {len(node_to_path)} tracked block(s) — refusing "
+              f"(looks like an empty/bad Figma read). Investigate or delete manually.", file=sys.stderr)
+    else:
+        for nid in to_delete:
+            out = node_to_path[nid]
+            for path in (out, playground_for(out)):
+                try:
+                    os.remove(path)
+                    print(f"  DELETED: {path}")
+                except FileNotFoundError:
+                    pass
+            node_hashes.pop(f"{file_key}:{nid}", None)
+            deleted.append(out)
+
     with open(STATE, "w", encoding="utf-8") as f:
         json.dump({"node_hashes": node_hashes}, f, indent=2, sort_keys=True)
         f.write("\n")
 
     print(f"\n{len(changed)} block(s) to build ({onboarded} new, "
-          f"{len(changed) - onboarded} changed).")
+          f"{len(changed) - onboarded} changed); {len(deleted)} deleted.")
     gho = os.environ.get("GITHUB_OUTPUT")
     if gho:
         with open(gho, "a", encoding="utf-8") as f:
