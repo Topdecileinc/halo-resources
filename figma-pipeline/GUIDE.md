@@ -181,22 +181,29 @@ The **poller** (`figma-poll.yml`) can start four ways:
 **A. Automatic schedule (cron).** Runs every 20 minutes on its own. See §8.
 
 **B. Manual button (no terminal).** GitHub → **Actions** tab → **figma-poll** → **Run workflow**.
-It shows one field, **"Max NEW frames to onboard this run"** (`onboard_cap`):
-- `10` (default) — create up to 10 new blocks this run; rebuild any changed ones.
+It shows two fields:
+
+*`onboard_cap` — max NEW frames to onboard (create) this run:*
+- `10` (default) — create up to 10 new blocks; rebuild any changed ones.
 - `1` — create at most one new block (good for testing one at a time).
-- `0` — onboard **no new** blocks this run, but **log every new one it found** (a preview of what
-  would be created). Note: this is a "no new blocks" switch, not a full no-op — a *changed existing*
-  block still rebuilds, because updates aren't capped (see the next bullet).
-- The cap only limits **creating new** blocks. **Updating** existing blocks is never capped — if 2
-  changed, it always does those 2. A high cap (e.g. 50) just means "I'm fine creating up to 50 new
-  ones"; it never invents work.
+- `0` — onboard **no new** blocks but **log every new one it found** (a preview of what would be
+  created). Not a full no-op — a *changed existing* block still rebuilds (updates aren't capped).
+
+*`delete_cap` — max blocks to DELETE this run* (a block is deleted when its node is no longer
+Ready for dev):
+- `10` (default) — delete up to 10 unmarked blocks this run.
+- `0` — **preview only**: log what *would* be deleted, delete nothing. (Run this first if you're
+  unsure what's about to be removed.)
+- The safety stop still applies on top: it refuses to delete *all* tracked blocks at once (§9).
 
 **C. Manual via terminal (`gh` CLI).**
 ```
-gh workflow run figma-poll.yml                    # normal (cap 10)
-gh workflow run figma-poll.yml -f onboard_cap=1   # onboard at most 1 new block
-gh workflow run figma-poll.yml -f onboard_cap=0   # dry-run, build nothing
+gh workflow run figma-poll.yml                          # normal (onboard 10, delete 10)
+gh workflow run figma-poll.yml -f onboard_cap=1         # onboard at most 1 new block
+gh workflow run figma-poll.yml -f onboard_cap=0 -f delete_cap=0   # preview only: build/delete nothing
+gh workflow run figma-poll.yml -f delete_cap=0          # preview deletions, still onboard/rebuild
 ```
+(Add `--repo HaloCollar/MarketingOS` to target the live repo from a clone with multiple remotes.)
 
 **D. From your own server / app (optional).** A single authenticated HTTPS call triggers a poll —
 useful for a "Sync from Figma now" button in your admin. POST to:
