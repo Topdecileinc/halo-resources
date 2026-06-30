@@ -5,7 +5,7 @@ blocks automatically. It covers what every piece does, how it's wired together, 
 and configure every credential, how the schedule works, and how to operate and troubleshoot
 it. It assumes **no prior knowledge** of the system.
 
-> **Plain-English summary:** You mark a design **"Ready for dev"** in Figma. Within ~20 minutes,
+> **Plain-English summary:** You mark a design **"Ready for dev"** in Figma. On the next daily run,
 > a robot reads that design, converts it into email-safe HTML (plus a preview file), and commits
 > it to this repository. If you change the design later, it updates the file automatically. If
 > you mark a brand-new design, it creates a brand-new file. Nothing you *don't* mark is ever
@@ -67,7 +67,7 @@ pipeline through Figma's REST API.
         │                                                                                          │
   Figma │   figma-poll.yml  (the TRIGGER)                 figma-build.yml  (the WORKER)            │
   file  │   ┌───────────────────────────┐                 ┌──────────────────────────────────┐    │
-   you  │   │ every 20 min OR manual    │                 │ for ONE block:                   │    │
+   you  │   │ once a day OR manual      │                 │ for ONE block:                   │    │
   edit ─┼─► │ 1. poll.py reads the file │  per changed/   │ 1. figma_fetch.py  → node.json   │    │
         │   │ 2. find Ready-for-dev     │  new block...   │    + node.png                    │    │
         │   │    nodes; diff vs state   │ ──────────────► │ 2. claude-code-action → HTML +   │    │
@@ -108,7 +108,7 @@ mark something Ready for dev. We built that (it's gone now — see cleanup note 
 > "PING," but the real events (`DEV_MODE_STATUS_UPDATE`, file updates, etc.) **never fire.**
 
 So instead of waiting to be told, the pipeline **asks** Figma on a schedule (polling). The cost is
-a small delay (up to the poll interval, ~20 min) instead of being instant. The big advantage:
+a delay (up to a day, on the scheduled run) instead of being instant. The big advantage:
 **it runs entirely on GitHub's servers — no always-on server, no hosting, no receiver to maintain.**
 
 The old webhook receiver (a PHP/Python service that used to run on a VM) has been **removed** from
@@ -140,7 +140,7 @@ is in the library** — the repo mirrors your Ready-for-dev set:
 > unmark-to-edit convenience.)*
 
 **The system's side (GitHub, automatic):**
-4. On its schedule (every ~20 min) — or a manual trigger — the **poller** reads the whole Figma file
+4. On its schedule (once a day) — or a manual trigger — the **poller** reads the whole Figma file
    and looks at every node's dev status.
 5. It fingerprints each **Ready-for-dev** node's design and compares to last time (`poll_state.json`):
    **new** ready design → **create**; tracked design that **changed** → **rebuild**; **unchanged** → skip.
@@ -155,7 +155,7 @@ So the designer's only job is the **Ready-for-dev flag**; everything else is aut
 
 ### Quick reference
 
-- **Publish / update a block:** mark it Ready for dev → wait ≤20 min (or trigger a poll, §5).
+- **Publish / update a block:** mark it Ready for dev → it builds on the next daily run (or trigger a poll now, §5).
 - **Delete a block:** clear its Ready-for-dev status, or delete the frame in Figma → removed on the
   next poll (recoverable from git history).
 - **Keep a block but stop changing it:** set it to **Completed** — frozen, not rebuilt, not deleted.
@@ -178,7 +178,7 @@ So the designer's only job is the **Ready-for-dev flag**; everything else is aut
 
 The **poller** (`figma-poll.yml`) can start four ways:
 
-**A. Automatic schedule (cron).** Runs every 20 minutes on its own. See §8.
+**A. Automatic schedule (cron).** Runs once a day (13:00 UTC) on its own. See §8.
 
 **B. Manual button (no terminal).** GitHub → **Actions** tab → **figma-poll** → **Run workflow**.
 It shows two fields:
@@ -397,7 +397,7 @@ The schedule lives in **`.github/workflows/figma-poll.yml`**:
 ```yaml
 on:
   schedule:
-    - cron: "*/20 * * * *"   # every 20 minutes
+    - cron: "0 13 * * *"     # once a day at 13:00 UTC
 ```
 
 **Reading cron:** five fields — `minute hour day-of-month month day-of-week` — in **UTC**.
@@ -405,11 +405,13 @@ on:
 
 | Expression | Meaning |
 |---|---|
-| `*/20 * * * *` | every 20 minutes (current) |
-| `*/30 * * * *` | every 30 minutes |
-| `0 * * * *` | once an hour, on the hour |
-| `0 */2 * * *` | every 2 hours |
+| `0 13 * * *` | once a day at 13:00 UTC (current) |
 | `0 13 * * 1-5` | 13:00 UTC, Mon–Fri only |
+| `0 */6 * * *` | every 6 hours |
+| `0 * * * *` | once an hour, on the hour |
+| `*/20 * * * *` | every 20 minutes |
+
+(13:00 UTC ≈ 8 AM US Eastern / 5 AM Pacific. Change the `13` to any hour you prefer.)
 
 **To change it:** edit that `cron:` line, commit, and push to `main`. The new schedule takes effect
 automatically. (A cron change only counts once it's on the **default branch**, `main`.)
@@ -418,32 +420,29 @@ automatically. (A cron change only counts once it's on the **default branch**, `
 / **Enable workflow**. Disabling stops both the schedule and the manual button.
 
 **Two honest caveats about GitHub cron:**
-1. It is **best-effort** — runs can be delayed a few minutes under GitHub load. "Every 20 min" is
-   approximate, not to-the-second.
+1. It is **best-effort** — scheduled runs can be delayed several minutes (sometimes more) under
+   GitHub load, so "13:00 UTC" is approximate, not to-the-minute.
 2. GitHub **auto-disables** scheduled workflows after **60 days with no repo activity**. This repo
    commits regularly (including the bot's own commits), so it won't trip — but if the repo went
    totally silent for two months, you'd re-enable it with one click (above).
 
-### Runs never overlap (even if one takes longer than the interval)
+### Runs never overlap
 
-A poll run can take longer than 20 minutes — building many blocks takes ~6–7 min **each**, and they
-run one at a time (next paragraph), so a big batch can run 40+ min. That is safe: **two poll runs
-can never overlap.** Two `concurrency` guards enforce it:
+A poll run can take a while — building many blocks takes ~6–7 min **each**, and they run one at a
+time, so a big batch can run 40+ min. With a **daily** schedule that's a tiny fraction of the
+interval, so scheduled runs won't collide. And even if you **manually trigger** a poll while one is
+already running, they still can't overlap — two `concurrency` guards enforce it:
 
 - **The poller** (`figma-poll.yml`) has `concurrency: { group: figma-poll, cancel-in-progress: false }`.
-  A whole run — detection **and** all its builds — is "in progress" until everything finishes, so a
-  cron tick that fires while a run is still going **queues and waits** instead of starting alongside.
+  A whole run — detection **and** all its builds — is "in progress" until everything finishes, so any
+  new trigger (scheduled or manual) **queues and waits** instead of starting alongside.
   `cancel-in-progress: false` means the running one is never killed mid-commit.
 - **The builder** (`figma-build.yml`) shares one `concurrency: { group: figma-build }`, so even
   within a single poll the per-block builds run **one at a time** — they never race each other on the
   Figma token or the git push.
 
-**What this means in practice:** if builds consistently run longer than the cron interval, GitHub
-keeps **at most one** run queued (a newer cron tick supersedes an older still-pending one), so there
-is **no pileup and no overlap** — the effective cadence just becomes "after each run finishes"
-instead of strictly every 20 minutes, and it always catches up. To keep individual runs short, lower
-`onboard_cap` (fewer new blocks per run) or widen the cron interval — neither is required, since
-overlap is already impossible; they only change how big each run gets.
+So whether runs are triggered by the daily cron or by hand, there's **no overlap and no pileup**:
+GitHub keeps at most one run queued, and it runs once the current one finishes.
 
 ---
 
@@ -552,7 +551,7 @@ After updating any secret, you can verify with a manual poll (§5) or by running
 
 | Symptom | Likely cause / fix |
 |---|---|
-| Marked Ready for dev but nothing built | Wrong file — check the `FIGMA_FILE_KEY` **variable** matches the file you're editing (§7.0). Or the poll hasn't run yet (≤20 min) — trigger manually. Run with `onboard_cap=0` (onboards nothing new, but logs what it found) to see what the poller detects. |
+| Marked Ready for dev but nothing built | Wrong file — check the `FIGMA_FILE_KEY` **variable** matches the file you're editing (§7.0). Or the daily poll hasn't run yet — trigger one manually (§5). Run with `onboard_cap=0 delete_cap=0` to preview what the poller detects without changing anything. |
 | A build run failed (red ✗) | Open it in the Actions tab. "Fail if Claude errored" red = Claude/token problem (re-mint `CLAUDE_CODE_OAUTH_TOKEN`). "Validation gate" red = the generated block was malformed; the log lists exactly which check failed. |
 | Figma fetch step fails | Refresh token invalid/revoked → re-mint `FIGMA_REFRESH_TOKEN` (§7.2). The error prints the HTTP status from Figma. |
 | It built something I didn't want | That node was marked Ready for dev. **Clear its status** in Figma → the next poll deletes the block (recoverable from git). |

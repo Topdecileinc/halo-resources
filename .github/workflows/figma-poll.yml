@@ -1,7 +1,7 @@
 # Figma → email block POLLER. The TRIGGER (Figma won't deliver webhooks on a Professional
 # plan, so we read on a schedule instead).
 #
-# Every 20 minutes (and on demand) poll.py reads the Figma file and looks at every node marked
+# Once a day (and on demand) poll.py reads the Figma file and looks at every node marked
 # "Ready for dev". A ready node that isn't tracked yet is ONBOARDED (a new block is created); a
 # ready node already tracked is REBUILT only if its design changed. Nothing that isn't marked
 # Ready for dev is ever touched. Each block to build is handed to figma-build.yml.
@@ -14,7 +14,7 @@ name: figma-poll
 
 on:
   schedule:
-    - cron: "*/20 * * * *"   # every 20 minutes
+    - cron: "0 13 * * *"     # once a day at 13:00 UTC
   workflow_dispatch:           # manual "poll now" button
     inputs:
       onboard_cap:
