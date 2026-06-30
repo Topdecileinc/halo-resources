@@ -24,7 +24,7 @@ on:
       delete_cap:
         description: "Max blocks to DELETE this run (0 = preview only: list what would be deleted, delete nothing)"
         required: false
-        default: "0"
+        default: "10"
 
 permissions:
   contents: write              # to commit poll_state.json (and the build commits the block)
@@ -54,9 +54,9 @@ jobs:
         id: poll
         env:
           ONBOARD_CAP: ${{ github.event.inputs.onboard_cap || '10' }}
-          # Deletion starts PREVIEW-ONLY (0): scheduled runs won't delete until this default is
-          # raised to e.g. 10. Lets the team confirm the library state before auto-delete goes live.
-          DELETE_CAP:  ${{ github.event.inputs.delete_cap  || '0' }}
+          # Deletion is ACTIVE: scheduled runs delete blocks no longer Ready for dev (up to this
+          # many per cycle). Run manually with delete_cap=0 to preview without deleting.
+          DELETE_CAP:  ${{ github.event.inputs.delete_cap  || '10' }}
         run: python3 figma-pipeline/poll.py
 
       # poll.py may have DELETED block + playground files (nodes no longer Ready for dev).
